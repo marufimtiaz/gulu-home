@@ -119,11 +119,54 @@
 .h-porch-bulb { fill: var(--lamp); filter: drop-shadow(0 0 4px var(--lamp)); }
 .h-porch-glow { fill: url(#h-halo); opacity: 0.8; }
 .h-spill { fill: url(#h-spill); opacity: 0.5; }
-.h-cat { fill: var(--ink); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
-.h-cat path:last-child { fill: none; }
+.h-cat .cat-body, .h-cat .cat-skull { fill: var(--ink); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.h-cat .cat-walk { filter: drop-shadow(0 0 0.9px color-mix(in oklab, var(--indigo) 50%, var(--moon))); } /* moonlit rim, so she can find him */
+.h-cat .cat-tail { fill: none; stroke: var(--ink); stroke-width: 2.6; stroke-linecap: round; }
+.h-cat .cat-eye { fill: var(--lamp); filter: drop-shadow(0 0 1.5px var(--lamp)); }
+.h-cat .cat-pupil { fill: var(--ink); }
 .h-rail, .h-fairy, .h-smoke, .h-spill, .g-bush, .h-garden { pointer-events: none; }
-/* scenery that answers a tap (poke) */
-.h-cat, .h-tank, .h-chimney, .h-garden .g-shroom, .g-bush--l { pointer-events: auto; cursor: pointer; }
+/* scenery that answers a tap — each in its own way (react() kinds + the cat's puppet) */
+.h-cat, .h-tank, .h-chimney, .h-garden .g-shroom, .g-bush--l, .h-garden .g-tree, .h-sconce, [data-door-knock], .h-fairy-hit circle { pointer-events: auto; cursor: pointer; }
+.h-fairy-hit circle { fill: transparent; }
+.h-drop { fill: color-mix(in oklab, var(--sky) 60%, var(--paper)); stroke: var(--ink); stroke-width: 0.8; }
+.h-spore { fill: var(--butter); filter: drop-shadow(0 0 2px var(--lamp)); }
+.h-petal { fill: var(--pink); stroke: var(--ink); stroke-width: 0.6; }
+.h-firefly { fill: var(--lamp); filter: drop-shadow(0 0 3px var(--lamp)) drop-shadow(0 0 6px var(--lamp-glow)); }
+/* the moon's face (only while she's poking it) */
+.sky-moon { pointer-events: auto; cursor: pointer; }
+.moon-hit { fill: transparent; }
+.moon-face { pointer-events: none; }
+.moon-eye ellipse { fill: var(--ink); }
+.moon-happy, .moon-smile { fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; }
+.moon-blush { fill: var(--pink); }
+/* a little handwritten remark by whatever she touched (positioned in viewBox %) */
+.house-say {
+  position: absolute;
+  z-index: 3;
+  translate: -50% -100%;
+  pointer-events: none;
+  white-space: nowrap;
+  padding: 0.04em 0.55em 0.12em;
+  font-family: var(--hand);
+  font-size: clamp(0.95rem, 3.8vw, 1.2rem);
+  line-height: 1.1;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--line-thin);
+  border-radius: 8px;
+  box-shadow: var(--pop-sm);
+}
+.lang-bn .house-say { font-family: var(--bn); font-size: clamp(0.85rem, 3.4vw, 1.05rem); }
+.house-shoot {
+  position: absolute;
+  width: 80px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--star));
+  filter: drop-shadow(0 0 4px var(--lamp-glow));
+  pointer-events: none;
+  opacity: 0;
+}
 .st-glow-0 { stop-color: var(--butter); }
 .st-glow-1 { stop-color: var(--lamp); }
 .st-glow-2 { stop-color: var(--mustard); }

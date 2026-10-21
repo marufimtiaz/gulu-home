@@ -304,6 +304,7 @@
   border-radius: 18px;
   box-shadow: var(--pop-sm);
   transform-origin: 90% 100%;
+  rotate: -6deg; /* resting tilt; GSAP's rotation is for reactions */
   animation: door-bob 4s ease-in-out 1.2s infinite; /* translate only — GSAP owns transform */
 }
 .who::after { /* tail, pointing at the door */
@@ -382,10 +383,71 @@
   .who { animation: none; }
 }
 
-/* ── things that answer a tap ── */
+/* ── things that answer a tap (each one in its own way — see index.js) ── */
 .porch-art .pokeable, .leaf-art .pokeable { pointer-events: auto; cursor: pointer; }
 .pokeable { cursor: pointer; }
 .who.pokeable { pointer-events: auto; }
+.leaf-art { pointer-events: none; }
+.leaf-art [data-knock] { pointer-events: auto; cursor: pointer; }
+.scene--door .hit { fill: transparent; stroke: none; }
+.leaf-art .knob__notch { fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; opacity: 0.75; }
+.leaf-art .plate__pencil {
+  font-family: var(--hand);
+  font-size: 14px;
+  text-anchor: middle;
+  fill: color-mix(in srgb, var(--ink) 72%, var(--trim));
+  opacity: 0;
+}
+.lang-bn .leaf-art .plate__pencil { font-family: var(--bn); font-size: 11px; }
+/* under the mat: the floor is a shade cleaner where a key would lie (there is no key) */
+.porch-art .mat-key__ghost {
+  fill: color-mix(in srgb, var(--floor) 55%, var(--paper-2));
+  stroke: color-mix(in srgb, var(--paper-2) 70%, var(--floor));
+  stroke-width: 1.2;
+  stroke-dasharray: 2.5 2;
+  opacity: 0.9;
+}
+/* the cat in the gable vent */
+.porch-art .vent-cat { pointer-events: auto; cursor: pointer; }
+.porch-art .vent-cat__iris { fill: var(--lamp); stroke: var(--ink); stroke-width: 0.8; filter: drop-shadow(0 0 2px var(--lamp-glow)); }
+.porch-art .vent-cat__pupil { fill: var(--ink); }
+.porch-art .vent-cat__eye { transform-box: fill-box; transform-origin: 50% 50%; }
+/* moths from the plant */
+.porch-art .moth { pointer-events: none; }
+.porch-art .moth__wing { fill: color-mix(in srgb, var(--paper-2) 80%, var(--mustard)); stroke: var(--ink); stroke-width: 1; stroke-linejoin: round; }
+.porch-art .moth__body { fill: var(--ink); }
+.porch-art .moth__wings { transform-box: fill-box; transform-origin: 50% 40%; }
+/* little handwritten notes that pop up by the thing she touched */
+.door-note {
+  position: absolute;
+  z-index: 6;
+  padding: 0.05em 0.6em 0.14em;
+  font-family: var(--hand);
+  font-size: clamp(1.1rem, calc(var(--ph, 600px) * 0.036), 1.6rem);
+  line-height: 1.1;
+  white-space: nowrap;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--line-thin);
+  border-radius: 10px;
+  box-shadow: var(--pop-sm);
+  pointer-events: none;
+  translate: -50% -100%;
+}
+.lang-bn .door-note { font-family: var(--bn); font-size: 1.05rem; }
+/* a shooting star across the sky strip (the moon's payoff) */
+.door-shoot {
+  position: absolute;
+  width: 70px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--star));
+  filter: drop-shadow(0 0 4px var(--lamp-glow));
+  pointer-events: none;
+  opacity: 0;
+}
+/* the voice behind the door says longer things now and then */
+.who.who--long { font-size: clamp(1.15rem, calc(var(--ph) * 0.038), 1.7rem); white-space: normal; width: max-content; max-width: min(15em, calc(var(--ph) * 0.62)); }
 
 /* idle nudge: the brass catches the light while it wiggles */
 .lock svg { transition: filter 0.3s ease; }

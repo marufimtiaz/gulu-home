@@ -25,7 +25,8 @@ import { foil, paintFoil, PARKED } from './foil.js'
 import { cardToPng } from './export.js'
 import { onDrag } from '../../ui/drag.js'
 import { beat, EASE, moment, T } from '../../ui/choreo.js'
-import { haptic, nudge, poke, press, wobble } from '../../ui/feel.js'
+import { haptic, nudge, press, wobble } from '../../ui/feel.js'
+import { react } from '../../ui/react.js'
 
 const DW = 360 // design size of the card (5:7); it is laid out once at this size and scaled
 const DH = 504
@@ -222,7 +223,8 @@ export default {
                 ${door('left')}${door('right')}
               </div>
               <div class="env env-pocket">${envPocketSVG()}
-                <p class="env-to" data-env-name><span class="env-to__for">${esc(t('card.for'))}</span><span class="env-to__name">${field(card.bride)}</span></p>
+                <p class="env-to" data-env-name><span class="env-to__for">${esc(t('card.for'))}</span><span class="env-to__name">${field(card.bride)}</span>
+                  <span class="env-to__nick" data-nick aria-hidden="true"><span class="env-to__nick-text"></span><svg class="env-to__caret" viewBox="0 0 30 22"><path d="M26 2 C 22 12, 14 17, 4 18 M4 18 l6 -5 M4 18 l7 3"/></svg></span></p>
               </div>
               <button class="env seal" type="button" data-seal aria-label="${esc(t('card.seal'))}">
                 <span class="seal__half seal__half--l">${sealSVG('l')}</span>
@@ -329,14 +331,86 @@ export default {
       track(gsap.fromTo(hint, { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: T.quick, ease: EASE.out, overwrite: true }))
     }
 
-    /* ── feel: press, poke, wobble, nudge ───────────────────────────────────────────── */
+    /* ── feel: press, wobble, nudge, and things that answer like what they are ───────── */
     offs.push(press(seal, { sound: 'tap', scale: 0.9 }))
     offs.push(press(flipBtn), press(saveBtn))
-    offs.push(poke($('[data-env-name]'), { sound: 'paper' }))
-    offs.push(poke($('[data-back-alpana]'), { sound: 'sparkle' }))
     let stopWobble = wobble(seal, { deg: 4, period: 2.6 })
-    const guide = nudge(seal, { after: 4000 })
+    const d = (v) => (ctx.reduced ? 0.01 : v)
+
+    // idle guidance in the card's own language: the wax seal catches the light; the gatefold
+    // doors breathe ajar. Each is its phase's main action, so the arrow may join in.
+    let doorHeld = false
+    const coax = (el) => {
+      const tl = gsap.timeline()
+      if (el === seal) {
+        seal.classList.add('nudge--glint')
+        tl.call(() => seal.classList.remove('nudge--glint'), null, 0.9)
+      } else if ((el === doors.left || el === doors.right) && !doorHeld && !el.classList.contains('open')) {
+        const side = el === doors.left ? 'left' : 'right'
+        const sgn = side === 'left' ? -1 : 1
+        tl.to(el, { rotationY: sgn * 11, duration: 0.6, ease: 'sine.inOut', onUpdate: () => shade(side) })
+          .to(el, { rotationY: 0, duration: 0.9, ease: 'elastic.out(1, 0.5)', onUpdate: () => shade(side) })
+      }
+      return track(tl)
+    }
+    let guide = nudge(seal, { after: 4000, style: coax, arrow: true })
     offs.push(() => guide.stop())
+
+    // her name on the envelope: tap it and a pencil nickname goes up over it — a different one
+    // every time, in the old jar's order, ending on the newest one
+    const nick = $('[data-nick]')
+    const nickText = nick.querySelector('.env-to__nick-text')
+    const nicknames = t('card.nicknames')
+    let nickTl = null
+    offs.push(
+      react($('[data-env-name]'), 'flutter', {
+        sound: 'scratch',
+        strength: 0.5,
+        steps: [
+          (n) => {
+            const name = nicknames[Math.min(n, nicknames.length) - 1]
+            const last = n >= nicknames.length
+            nickTl?.kill()
+            nickTl = track(gsap.timeline())
+            if (n > 1) nickTl.to(nick, { autoAlpha: 0, y: -4, duration: d(0.12), ease: 'power1.in' })
+            nickTl.call(() => {
+              nickText.textContent = name
+              nick.classList.toggle('env-to__nick--last', last)
+            })
+            nickTl.fromTo(nick, { autoAlpha: 0, y: 6, rotation: -14, scale: 0.8 }, { autoAlpha: 1, y: 0, rotation: -7, scale: 1, duration: d(0.35), ease: 'back.out(2.2)' })
+            for (let k = 1; k < 4; k++) nickTl.call(() => sound.play('scratch'), null, `<${k * 0.08}`)
+            if (last) {
+              nickTl.call(() => {
+                const r = nickText.getBoundingClientRect()
+                fx.sparkles(r.left + r.width / 2, r.top + r.height / 2, { count: 12, colors: ['var(--card-gold-hi)', 'var(--card-gold)', 'var(--pink)'] })
+                sound.play('sparkle')
+              })
+            }
+          },
+        ],
+      }),
+    )
+
+    // the alpana: tap it and it turns a notch like a mandala, one note a turn; every sixth
+    // turn it blooms — a full turn, a breath, gold sparks
+    const NOTES = [0, 2, 4, 7, 9, 12]
+    const mandala = (el) =>
+      react(el, 'spin', {
+        deg: 30,
+        sound: null,
+        steps: [
+          (n) => {
+            sound.play('xylo', { i: NOTES[(n - 1) % NOTES.length] })
+            if (n % 6 || ctx.reduced) return
+            track(gsap.timeline().to(el, { rotation: '+=360', scale: 1.12, duration: 1.1, ease: 'power2.inOut' }).to(el, { scale: 1, duration: 0.6, ease: 'elastic.out(1, 0.5)' }))
+            const r = el.getBoundingClientRect()
+            fx.sparkles(r.left + r.width / 2, r.top + r.height / 2, { count: 16, colors: ['var(--card-gold-hi)', 'var(--card-gold)', 'var(--card-ivory)'] })
+            sound.play('sparkle')
+          },
+        ],
+      })
+    const frontAlpana = $('[data-alpana]')
+    offs.push(mandala(frontAlpana), mandala($('[data-back-alpana]')))
 
     /* ── 1. the envelope: crack the seal ────────────────────────────────────────────── */
     offs.push(
@@ -388,7 +462,9 @@ export default {
       stage = 'gate'
       scene.dataset.stage = 'gate'
       setHint(t('card.hintDoors'))
-      guide.set(Object.values(doors))
+      // the doors breathing (and the hint) say enough — an arrow across the jali only confuses
+      guide.stop()
+      guide = nudge(Object.values(doors), { after: 4000, style: coax })
       if (!ctx.reduced) {
         // the doors breathe, slightly ajar: "we open" (a few times, then nudge() takes over)
         sway = track(gsap.timeline({ repeat: 2, repeatDelay: 2.2, delay: 0.5 }))
@@ -412,6 +488,7 @@ export default {
         onDrag(el, {
           onStart() {
             if (stage !== 'gate' || opened[side]) return false
+            doorHeld = true
             moved = false
             sway?.kill()
             sway = null
@@ -426,6 +503,7 @@ export default {
             shade(side)
           },
           onEnd(p) {
+            doorHeld = false
             const out = p.dx * sign
             if (!moved || out > 60) return openDoor(side)
             track(gsap.to(el, { rotationY: 0, duration: T.reveal, ease: EASE.wobble, onUpdate: () => shade(side) }))
@@ -471,7 +549,15 @@ export default {
       stage = 'open'
       scene.dataset.stage = 'open'
       const names = [...faceEl.querySelectorAll('.cf-name')]
-      const tl = big(moment({ onComplete: () => guide.set(saveBtn) }))
+      const tl = big(
+        moment({
+          onComplete: () => {
+            // saving it is optional: a warm glow on the button, no arrow
+            guide.stop()
+            guide = nudge(saveBtn, { after: 4000 })
+          },
+        }),
+      )
       beat(tl, 'chime', T.quick)
       tl.to(draws, { strokeDashoffset: 0, duration: 2, ease: 'power1.inOut', stagger: { amount: 0.5 } }, T.quick)
         .to(fills, { opacity: 1, duration: T.reveal, ease: 'power1.out', stagger: { amount: 0.3 } }, `>-${T.reveal}`)
@@ -520,12 +606,14 @@ export default {
       track(gsap.to(fit, { x: 0, y: 0, scale: 1, duration: instant ? 0 : T.move, ease: EASE.out, overwrite: true }))
       track(gsap.to(actions, { autoAlpha: 1, duration: T.quick, overwrite: true }))
     }
-    let panFrom = null, panMoved = false
+    let panFrom = null, panMoved = false, onAlpana = false
     offs.push(
       onDrag(fit, {
         onStart(p, e) {
           if (stage !== 'open' || flipped) return false
           if (!zoomed && !e.target.closest('.cf')) return false
+          onAlpana = !!e.target.closest('[data-alpana]')
+          if (!zoomed && onAlpana) return false // a tap on the alpana turns it (react), it doesn't zoom
           panFrom = [zx, zy]
           panMoved = false
         },
@@ -537,6 +625,7 @@ export default {
         },
         onEnd(p) {
           if (panMoved) return
+          if (onAlpana) return // she was turning the mandala, not stepping back
           if (zoomed) unzoom()
           else zoomAt(p.x, p.y)
         },
@@ -585,6 +674,7 @@ export default {
             for (const el of clone.querySelectorAll('[data-draw]')) el.style.strokeDashoffset = '0'
             for (const el of clone.querySelectorAll('[data-fill]')) el.style.opacity = '1'
             paintFoil(clone, PARKED.x, PARKED.y)
+            for (const a of clone.querySelectorAll('[data-alpana]')) a.style.transform = '' // printed upright, however far she spun it
           },
         })
         const name = `${slug(card.groom)}-${slug(card.bride)}-reception.png`

@@ -11,4 +11,17 @@ export default {
   mail: 'one more thing…',
   mailLabel: 'one more thing in the letterbox — open it',
   scene: 'our front door, every light on',
+
+  // ── scenery remarks ──
+  // every lit window remembers its room (second tap on a window)
+  rooms: {
+    living: 'half past four. still my favourite time.',
+    kitchen: 'still smells like kacchi in here.',
+    garden: 'one year at a time.',
+    rooftop: 'your wish is still up there.',
+    desk: 'P.S. still love you.',
+    empty: 'plenty of room for more.',
+  },
+  // lifting the doormat tonight (the door scene's mat had no key)
+  key: "oh — there's the key. we won't need it.",
 }

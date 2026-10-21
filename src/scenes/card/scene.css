@@ -95,6 +95,26 @@
 }
 .env-to__for { font: 500 10px/1 var(--card-caps); letter-spacing: 0.4em; text-transform: uppercase; color: var(--gold-deep); padding-left: 0.4em; }
 .env-to__name { font: 400 54px/1.1 var(--card-script); padding: 0 0.3em; }
+.env-to { cursor: pointer; }
+/* a pencilled nickname over her name (tap the name): graphite, a little crooked */
+.env-to__nick {
+  position: absolute;
+  left: 49%;
+  top: -36px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  white-space: nowrap;
+  font: 400 27px/1 var(--hand);
+  color: color-mix(in srgb, var(--card-ink) 70%, var(--card-ivory));
+  pointer-events: none;
+  visibility: hidden;
+  transform-origin: 0% 100%;
+}
+.lang-bn .env-to__nick { font: 500 19px/1.2 var(--bn); }
+.env-to__nick--last { color: var(--berry); }
+.env-pocket .env-to__caret { order: -1; flex: none; width: 26px; height: 19px; margin-bottom: -10px; overflow: visible; }
+.env-to__caret path { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 
 .seal {
   left: 136px;
