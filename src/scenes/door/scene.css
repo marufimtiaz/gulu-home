@@ -1,1 +1,396 @@
-.scene--door .stub { display: grid; gap: 1rem; justify-items: center; color: var(--paper); }
+/* Door — a cut-paper front porch at night. Colours are token mixes only. */
+.scene--door {
+  /* paper, dimmed by the night */
+  --wall: color-mix(in srgb, var(--paper-2) 36%, var(--night));
+  --wall-hi: color-mix(in srgb, var(--paper-2) 47%, var(--night));
+  --wall-lo: color-mix(in srgb, var(--paper-2) 30%, var(--night));
+  --trim: color-mix(in srgb, var(--paper) 58%, var(--night));
+  --trim-hi: color-mix(in srgb, var(--paper) 72%, var(--night));
+  --roof: color-mix(in srgb, var(--indigo) 78%, var(--night-deep));
+  --roof-hi: color-mix(in srgb, var(--indigo) 70%, var(--sky));
+  --floor: color-mix(in srgb, var(--paper-2) 24%, var(--night-deep));
+  --floor-line: color-mix(in srgb, var(--night-deep) 70%, transparent);
+  --stone: color-mix(in srgb, var(--paper-2) 38%, var(--indigo));
+  --stone-lo: color-mix(in srgb, var(--paper-2) 26%, var(--indigo));
+  --door: var(--berry-deep);
+  --door-hi: color-mix(in srgb, var(--berry) 62%, var(--berry-deep));
+  --door-lo: color-mix(in srgb, var(--berry-deep) 72%, var(--night-deep));
+  --glass: color-mix(in srgb, var(--indigo) 55%, var(--night-deep));
+  --brass-lo: color-mix(in srgb, var(--mustard) 62%, var(--ink));
+  --leafc: color-mix(in srgb, var(--sage) 52%, var(--night));
+  --leafc-lo: color-mix(in srgb, var(--sage) 36%, var(--night-deep));
+  --pot: color-mix(in srgb, var(--tomato) 58%, var(--night));
+  --pot-hi: color-mix(in srgb, var(--tomato) 70%, var(--night));
+  --mat: color-mix(in srgb, var(--mustard) 52%, var(--night));
+  --shade: color-mix(in srgb, var(--night-deep) 62%, transparent);
+
+  --sky-h: clamp(52px, 9svh, 100px);
+  --ctrl-h: 150px;
+  display: block;
+  background: var(--night-deep);
+  color: var(--paper);
+}
+.scene--door svg { overflow: visible; }
+.door-defs { position: absolute; width: 0; height: 0; }
+
+/* svg paint classes */
+.scene--door .lift { flood-color: var(--night-deep); flood-opacity: 0.62; }
+.scene--door .st-lamp { stop-color: var(--lamp); }
+.scene--door .st-moon { stop-color: var(--moon); }
+.scene--door .st-mustard { stop-color: var(--mustard); }
+.scene--door .st-butter { stop-color: var(--butter); }
+.scene--door .st-brass-lo { stop-color: var(--brass-lo); }
+
+/* ── the world: sky, eave, wall, floor. Bleeds far past the edges for the pull-back. ── */
+.dw {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  isolation: isolate;
+  transform-origin: 50% 62%;
+}
+.dw::before { /* the house wall */
+  content: "";
+  position: absolute;
+  inset: -100vh -100vw;
+  z-index: -2;
+  background:
+    var(--grain, none),
+    radial-gradient(ellipse 70% 55% at 50% 52%, transparent 35%, var(--shade) 100%),
+    radial-gradient(ellipse 40% 30% at 18% 0%, color-mix(in srgb, var(--moon) 10%, transparent), transparent),
+    repeating-linear-gradient(to bottom, transparent 0 31px, color-mix(in srgb, var(--ink) 30%, transparent) 31px 33px, color-mix(in srgb, var(--paper) 7%, transparent) 33px 35px),
+    var(--wall);
+}
+
+.dw__sky {
+  position: relative;
+  flex: 1 0 auto;
+  width: 100%;
+  min-height: var(--sky-h);
+  z-index: 0;
+}
+.dw__sky::before {
+  content: "";
+  position: absolute;
+  inset: -100vh -100vw 0;
+  z-index: -1;
+  background: linear-gradient(to bottom, var(--night-deep) 82%, var(--night) 96%, var(--dusk));
+}
+.pstar { position: absolute; margin: -6px; }
+.pstar path { fill: var(--star); stroke: var(--ink); stroke-width: 1; opacity: 0.9; }
+.moon {
+  position: absolute;
+  left: 9%;
+  top: 50%;
+  width: calc(var(--sky-h) * 0.82);
+  height: calc(var(--sky-h) * 0.82);
+  max-width: 84px;
+  max-height: 84px;
+  transform: translateY(-50%) rotate(-12deg);
+}
+.moon__halo { fill: var(--moon); opacity: 0.08; }
+.moon__body { fill: var(--moon); stroke: var(--ink); stroke-width: 2.2; stroke-linejoin: round; }
+.moon__pit { fill: color-mix(in srgb, var(--moon) 80%, var(--mustard)); }
+
+.dw__facade {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* the main roof's edge: one shingle row with scallops, casting a shadow on the wall */
+.dw__eave {
+  position: relative;
+  flex: 0 0 auto;
+  width: calc(100% + 200vw); /* bleeds past the edges for the pull-back */
+  height: 20px;
+  background: var(--roof);
+  border-bottom: var(--line);
+  filter: drop-shadow(0 5px 0 var(--shade));
+  z-index: 2;
+}
+.dw__eave::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 46px, color-mix(in srgb, var(--ink) 35%, transparent) 46px 48px);
+}
+.dw__eave::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 2px);
+  height: 16px;
+  background: radial-gradient(circle at 50% 0, var(--roof) 0 13px, var(--ink) 13.5px 15.5px, transparent 16px) 50% 0 / 32px 16px repeat-x;
+}
+
+/* ── the porch: an aspect-locked box, everything inside positioned in its 440×640 grid ── */
+.porch {
+  --ph: min(calc(100svh - var(--sky-h) - 40px - var(--ctrl-h)), calc(98vw * 640 / 440), 760px);
+  position: relative;
+  flex: 0 0 auto;
+  height: var(--ph);
+  width: calc(var(--ph) * 440 / 640);
+  margin-top: 14px;
+}
+.porch::before { /* the porch floor, full bleed below the sill */
+  content: "";
+  position: absolute;
+  top: 88.125%;
+  left: -100vw;
+  right: -100vw;
+  bottom: -100vh;
+  z-index: -1;
+  background:
+    var(--grain, none),
+    linear-gradient(to bottom, var(--shade), transparent 18px),
+    repeating-linear-gradient(to bottom, transparent 0 22px, var(--floor-line) 22px 24px),
+    var(--floor);
+  border-top: var(--line);
+}
+.porch-art { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+.porch-art .roof { fill: var(--roof); stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
+.porch-art .roof-line { fill: none; stroke: var(--roof-hi); stroke-width: 1.6; stroke-dasharray: 9 7; opacity: 0.6; }
+.porch-art .wall-hi { fill: var(--wall-hi); stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
+.porch-art .vent { fill: var(--night-deep); stroke: var(--ink); stroke-width: 2; }
+.porch-art .trim { fill: var(--trim); stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
+.porch-art .trim-hi { fill: var(--trim-hi); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.porch-art .trim-line { fill: none; stroke: var(--ink); stroke-width: 1.2; opacity: 0.28; }
+.porch-art .stone { fill: var(--stone); stroke: var(--ink); stroke-width: 2.5; }
+.porch-art .stone-lo { fill: var(--stone-lo); stroke: var(--ink); stroke-width: 2.5; }
+.porch-art .mat__base { fill: var(--mat); stroke: var(--ink); stroke-width: 2.5; }
+.porch-art .mat__stripe { fill: none; stroke: var(--door-hi); stroke-width: 3; stroke-dasharray: 2 4; }
+.porch-art .mat__heart { fill: var(--door-hi); stroke: var(--ink); stroke-width: 1.6; }
+.porch-art .mat__fringe { fill: none; stroke: var(--mat); stroke-width: 2; stroke-linecap: round; }
+
+.porch-art .pot { fill: var(--pot); stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
+.porch-art .pot-rim { fill: var(--pot-hi); stroke: var(--ink); stroke-width: 2.5; }
+.porch-art .lf { fill: var(--leafc); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.porch-art .lf-lo { fill: var(--leafc-lo); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.porch-art .rib { fill: none; stroke: var(--ink); stroke-width: 1.2; opacity: 0.45; }
+.porch-art .stem { fill: none; stroke: var(--ink); stroke-width: 2; }
+.porch-art .fl-a { fill: color-mix(in srgb, var(--pink) 70%, var(--night)); stroke: var(--ink); stroke-width: 1.5; }
+.porch-art .fl-b { fill: color-mix(in srgb, var(--butter) 70%, var(--night)); stroke: var(--ink); stroke-width: 1.5; }
+.porch-art .fl-eye { fill: color-mix(in srgb, var(--mustard) 70%, var(--night)); stroke: var(--ink); stroke-width: 1.2; }
+
+/* porch lamp: dark until the door unlocks */
+.porch-art .iron { fill: var(--ink); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.porch-art .iron-arm { fill: none; stroke: var(--ink); stroke-width: 3.2; stroke-linecap: round; }
+.porch-art .lamp__glass { fill: var(--glass); stroke: var(--ink); stroke-width: 1.8; }
+.porch-art .lamp__bulb { fill: color-mix(in srgb, var(--butter) 30%, var(--night)); }
+.porch-art .lamp__bars { fill: none; stroke: var(--ink); stroke-width: 1.2; }
+.porch-art .lamp__light { opacity: 0.25; }
+.is-lit .porch-art .lamp__glass { fill: var(--lamp); }
+.is-lit .porch-art .lamp__bulb { fill: var(--moon); }
+.porch-art .lamp-glow { opacity: 0; mix-blend-mode: screen; }
+.porch-art .spill { opacity: 0; mix-blend-mode: screen; transition: opacity 1.4s ease 0.3s; }
+.door--open ~ .porch-art .spill { opacity: 1; }
+
+/* ── the door: inside light, then the leaf that swings in on its left hinge ── */
+.door {
+  position: absolute;
+  left: 25%;
+  top: 20.3125%;
+  width: 50%;
+  height: 65.3125%;
+  perspective: 1100px;
+  perspective-origin: 60% 50%;
+}
+.door__inside, .door__leaf { position: absolute; inset: 0; }
+.door__inside svg, .leaf-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.door__inside { filter: drop-shadow(0 0 0 transparent); }
+.inside-art .in-wall { fill: var(--lamp); }
+.inside-art .in-floor { fill: color-mix(in srgb, var(--mustard) 70%, var(--berry-deep)); }
+.inside-art .in-board { fill: none; stroke: color-mix(in srgb, var(--ink) 30%, transparent); stroke-width: 1.5; }
+.inside-art .in-rug { fill: color-mix(in srgb, var(--berry) 80%, var(--mustard)); stroke: var(--ink); stroke-width: 2; }
+.inside-art .in-frame { fill: var(--paper); stroke: var(--ink); stroke-width: 2.5; }
+.inside-art .in-heart { fill: var(--berry); }
+.inside-art .in-cord { stroke: var(--ink); stroke-width: 2; }
+.inside-art .in-bulb { fill: var(--moon); stroke: var(--ink); stroke-width: 2; }
+
+.door__leaf {
+  transform-origin: 0 50%;
+  transform: rotateY(0deg);
+  transition: transform 1.7s cubic-bezier(0.45, 0.05, 0.2, 1);
+  will-change: transform;
+}
+.door__leaf::after { /* the leaf darkens as it turns away from the moon */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50% 50% 0 0 / 26% 26% 0 0;
+  background: var(--night-deep);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.7s ease;
+}
+.door__leaf::before, .dw__sky::after, .who::before { /* paper fibres */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--grain, none);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+}
+.door__leaf::before { border-radius: 50% 50% 0 0 / 26% 26% 0 0; }
+.door--open .door__leaf { transform: rotateY(74deg); }
+.door--open .door__leaf::after { opacity: 0.55; }
+
+.leaf-art .leaf__face { fill: var(--door); stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
+.leaf-art .leaf__hi { fill: none; stroke: var(--door-hi); stroke-width: 3; stroke-linecap: round; opacity: 0.8; }
+.leaf-art .leaf__rail { fill: var(--door-hi); stroke: var(--ink); stroke-width: 2.2; }
+.leaf-art .leaf__recess { fill: var(--door-lo); }
+.leaf-art .fan { fill: var(--glass); transition: fill 0.6s ease; }
+.is-lit .leaf-art .fan { fill: var(--lamp); }
+.leaf-art .fan__bars { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+.leaf-art .fan__rim { fill: none; stroke: var(--ink); stroke-width: 3; }
+.leaf-art .panel { fill: var(--door-lo); stroke: var(--ink); stroke-width: 2.4; }
+.leaf-art .panel__bevel { fill: none; stroke: var(--door-hi); stroke-width: 1.6; opacity: 0.75; }
+.leaf-art .brass { fill: var(--mustard); stroke: var(--ink); stroke-width: 2; }
+.leaf-art .brass-lo { fill: var(--brass-lo); stroke: var(--ink); stroke-width: 2; }
+.leaf-art .knob__hi { fill: var(--butter); }
+.leaf-art .twine { fill: none; stroke: color-mix(in srgb, var(--butter) 55%, var(--night)); stroke-width: 1.6; }
+.leaf-art .plate__board { fill: var(--trim); stroke: var(--ink); stroke-width: 2.4; }
+.leaf-art .plate__edge { fill: none; stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 3 3; opacity: 0.35; }
+
+/* ── the brass clock lock ── */
+.lock {
+  position: absolute;
+  left: 12.7273%;
+  top: 45.933%;
+  width: 74.545%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  touch-action: none;
+  cursor: grab;
+  outline: none;
+}
+.lock.is-turning { cursor: grabbing; }
+.lock:focus-visible { box-shadow: 0 0 0 4px var(--butter); }
+.lock svg { width: 100%; height: 100%; filter: drop-shadow(3px 4px 0 var(--ink)); }
+.lock [data-hand] { touch-action: none; }
+.lock__bezel { stroke: var(--ink); stroke-width: 3; }
+.lock .rivet { fill: var(--brass-lo); stroke: var(--ink); stroke-width: 1.2; }
+.lock__face { fill: color-mix(in srgb, var(--moon) 88%, var(--mustard)); stroke: var(--ink); stroke-width: 2.6; }
+.lock__glow { fill: var(--lamp); opacity: 0; transition: opacity 0.5s ease; }
+.is-unlocked .lock__glow { opacity: 0.35; }
+.lock .tick { stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; }
+.lock .tick--big { stroke-width: 4; }
+.lock__num { font-family: var(--display); font-weight: 700; font-size: 17px; text-anchor: middle; fill: var(--ink); }
+.lock__keyhole { fill: var(--ink); }
+.lock .hand {
+  transform-box: view-box;
+  transform-origin: 100px 100px;
+  transition: transform 0.14s var(--bounce);
+  fill: var(--ink);
+}
+.lock .hand__heart { fill: var(--berry); stroke: var(--ink); stroke-width: 1.6; }
+.lock .hand.is-held { filter: drop-shadow(0 0 3px var(--lamp)); }
+.lock .hand--minute.is-held .hand__heart { fill: var(--tomato); }
+.lock__pin { stroke: var(--ink); stroke-width: 2; }
+.lock__pin-dot { fill: var(--ink); }
+
+/* ── "who's there?" — a paper speech bubble from behind the door ── */
+.who {
+  position: absolute;
+  left: -1%;
+  top: 27%;
+  padding: 0.18em 0.7em 0.28em;
+  font-size: clamp(1.35rem, calc(var(--ph) * 0.048), 2.1rem);
+  line-height: 1.1;
+  white-space: nowrap;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--line);
+  border-radius: 18px;
+  box-shadow: var(--pop-sm);
+  transform: rotate(-6deg);
+  transform-origin: 90% 100%;
+  pointer-events: none;
+  animation: door-who 0.6s var(--bounce) 0.5s both, door-bob 4s ease-in-out 1.2s infinite;
+}
+.who::after { /* tail, pointing at the door */
+  content: "";
+  position: absolute;
+  right: 16px;
+  bottom: -9px;
+  width: 14px;
+  height: 14px;
+  background: var(--paper);
+  border-right: var(--line);
+  border-bottom: var(--line);
+  transform: rotate(30deg) skewX(-10deg);
+}
+.is-lit .who { background: var(--butter); }
+.is-lit .who::after { background: var(--butter); }
+@keyframes door-who { from { opacity: 0; transform: rotate(-14deg) scale(0.4); } }
+@keyframes door-bob { 50% { translate: 0 -4px; } }
+
+/* ── controls on the porch floor ── */
+.dw__controls {
+  position: relative;
+  z-index: 4;
+  flex: 0 0 auto;
+  min-height: var(--ctrl-h);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.55rem;
+  padding: 0.5rem 1rem max(0.8rem, env(safe-area-inset-bottom));
+  width: 100%;
+}
+.hint {
+  max-width: 22rem;
+  min-height: 1.5em;
+  padding: 0.05em 0.7em 0.12em;
+  font-size: 1.4rem;
+  line-height: 1.15;
+  text-align: center;
+  color: color-mix(in srgb, var(--moon) 85%, transparent);
+  border: 2.5px solid transparent;
+  border-radius: 10px;
+}
+.hint--wrong {
+  color: var(--berry);
+  background: var(--paper);
+  border-color: var(--ink);
+  box-shadow: var(--pop-sm);
+  transform: rotate(-2deg);
+}
+.dw__controls .btn { font-size: 1.15rem; padding: 0.5em 1.8em 0.55em; }
+.dw__controls .btn:disabled { opacity: 0.7; cursor: default; }
+
+/* wide screens: dark cottage windows either side, so the porch sits in a house, not a void */
+.porch__win { display: none; position: absolute; top: 30%; width: 46%; }
+.porch__win--l { right: calc(100% + 14%); }
+.porch__win--r { left: calc(100% + 14%); }
+.window-art { width: 100%; height: auto; }
+.window-art .shutter { fill: var(--roof); stroke: var(--ink); stroke-width: 2.5; }
+.window-art .shutter-slat { stroke: var(--ink); stroke-width: 1.4; opacity: 0.5; }
+.window-art .trim { fill: var(--trim); stroke: var(--ink); stroke-width: 2.5; }
+.window-art .win-glass { fill: var(--glass); stroke: var(--ink); stroke-width: 2; }
+.window-art .win-curtain { fill: color-mix(in srgb, var(--pink) 30%, var(--night-deep)); stroke: var(--ink); stroke-width: 1.6; }
+.window-art .win-shine { stroke: var(--moon); stroke-width: 2.5; stroke-linecap: round; opacity: 0.25; }
+.window-art .win-bars { stroke: var(--trim); stroke-width: 5; }
+.window-art .pot { fill: var(--pot); stroke: var(--ink); stroke-width: 2.5; }
+.window-art .fl-a { fill: color-mix(in srgb, var(--pink) 70%, var(--night)); stroke: var(--ink); stroke-width: 1.5; }
+.window-art .fl-b { fill: color-mix(in srgb, var(--butter) 70%, var(--night)); stroke: var(--ink); stroke-width: 1.5; }
+.window-art .fl-eye { fill: color-mix(in srgb, var(--mustard) 70%, var(--night)); stroke: var(--ink); stroke-width: 1.2; }
+@media (min-aspect-ratio: 5/4) {
+  .scene--door { --ctrl-h: 118px; --sky-h: 44px; }
+  .porch__win { display: block; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .who { animation: none; }
+  .door__leaf { transition: none; }
+}
