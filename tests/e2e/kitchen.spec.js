@@ -216,10 +216,13 @@ test('rotating mid-drag springs the jar back and keeps working', async ({ page }
   expect(errors).toEqual([])
 })
 
-test('idle for a few seconds nudges the next jar; touching stops it', async ({ page }) => {
+test('idle for a few seconds nudges the next jar (its lid rattles); touching stops it', async ({ page }) => {
   await open(page, 'kitchen')
-  await expect(page.locator('.jar--nudge')).toHaveCount(0)
-  await expect(page.locator('[data-jar="0"]')).toHaveClass(/jar--nudge/, { timeout: 7000 })
+  await expect(page.locator('.jar.nudge')).toHaveCount(0)
+  await expect(page.locator('[data-jar="0"]')).toHaveClass(/\bnudge\b/, { timeout: 7000 })
   await page.locator('[data-pot]').click()
-  await expect(page.locator('.jar--nudge')).toHaveCount(0)
+  await expect(page.locator('.jar.nudge')).toHaveCount(0)
+  // once a jar is in, the nudge moves on to the next one
+  await page.locator('[data-jar="0"]').click()
+  await expect(page.locator('[data-jar="1"]')).toHaveClass(/\bnudge\b/, { timeout: 7000 })
 })

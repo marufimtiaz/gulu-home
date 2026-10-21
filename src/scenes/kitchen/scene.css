@@ -240,15 +240,31 @@
 .face__mouth--o { fill: var(--ink); stroke-width: 0; }
 .face__mouth--grin { fill: var(--ink); stroke-width: 3; }
 .face__eyes--open { transform-box: fill-box; transform-origin: 50% 50%; animation: blink 4.2s infinite; }
-.face__eyes--happy, .face__eyes--squeeze, .face__mouth--o, .face__mouth--grin { display: none; }
-.k-pot[data-mood="happy"] .face__eyes--open,
-.k-pot[data-mood="squeeze"] .face__eyes--open { display: none; }
+.face__eyes--happy, .face__eyes--squeeze, .face__eyes--half, .face__eyes--dizzy, .face__brows, .face__sweat,
+.face__mouth--o, .face__mouth--grin, .face__mouth--flat { display: none; }
+/* moods: '' · o · happy · squeeze · giggle · annoyed · dizzy · hot (index.js sets data-mood) */
+.k-pot:is([data-mood="happy"], [data-mood="squeeze"], [data-mood="giggle"], [data-mood="annoyed"], [data-mood="dizzy"]) .face__eyes--open { display: none; }
 .k-pot[data-mood="happy"] .face__eyes--happy { display: inline; }
-.k-pot[data-mood="squeeze"] .face__eyes--squeeze { display: inline; }
-.k-pot[data-mood="o"] .face__mouth--smile,
-.k-pot[data-mood="happy"] .face__mouth--smile { display: none; }
-.k-pot[data-mood="o"] .face__mouth--o { display: inline; }
-.k-pot[data-mood="happy"] .face__mouth--grin { display: inline; }
+.k-pot:is([data-mood="squeeze"], [data-mood="giggle"]) .face__eyes--squeeze { display: inline; }
+.k-pot[data-mood="annoyed"] :is(.face__eyes--half, .face__brows, .face__mouth--flat) { display: inline; }
+.k-pot[data-mood="dizzy"] .face__eyes--dizzy { display: inline; }
+.k-pot[data-mood="hot"] .face__sweat { display: inline; }
+.k-pot:is([data-mood="o"], [data-mood="happy"], [data-mood="giggle"], [data-mood="annoyed"], [data-mood="hot"]) .face__mouth--smile { display: none; }
+.k-pot:is([data-mood="o"], [data-mood="hot"]) .face__mouth--o { display: inline; }
+.k-pot:is([data-mood="happy"], [data-mood="giggle"]) .face__mouth--grin { display: inline; }
+.k-pot[data-mood="hot"] .face__mouth--o { ry: 6; }
+.k-pot[data-mood="giggle"] .face__blush { opacity: 1; fill: var(--berry); }
+.k-pot[data-mood="annoyed"] .face__blush { fill: var(--tomato); opacity: 0.9; }
+.face__eyes--half path { fill: var(--ink); stroke: var(--ink); stroke-width: 2.5; }
+.face__eyes--dizzy path { stroke-width: 3; }
+.face__eyes--dizzy { transform-box: fill-box; transform-origin: center; }
+.k-pot[data-mood="dizzy"] .face__eyes--dizzy path { transform-box: fill-box; transform-origin: center; animation: kDizzy 0.9s linear infinite; }
+@keyframes kDizzy { to { rotate: 360deg; } }
+.face__brows path { fill: none; stroke: var(--ink); stroke-width: 5; stroke-linecap: round; }
+.face__sweat { fill: var(--sky); stroke: var(--ink); stroke-width: 2; animation: kSweat 1.2s ease-in infinite; }
+@keyframes kSweat { 0% { translate: 0 0; opacity: 1; } 80% { opacity: 1; } 100% { translate: 0 12px; opacity: 0; } }
+.puff { fill: color-mix(in srgb, var(--paper) 80%, transparent); stroke: var(--ink); stroke-width: 2; }
+.jar__lidg { transform-box: fill-box; }
 .k-pot[data-mood="o"] .face__eyes--open ellipse { scale: 1.15; transform-box: fill-box; transform-origin: center; }
 @keyframes blink { 0%, 94%, 100% { scale: 1 1; } 97% { scale: 1 0.1; } }
 
@@ -415,21 +431,13 @@
 .k-plate__name { font-size: 2.4rem; font-weight: 900; line-height: 1; color: var(--berry); }
 .k-plate__note { font-size: 1.5rem; line-height: 1.1; margin: 0.15rem 0 0.8rem; }
 
-/* nudges: the next thing to touch, after a few idle seconds */
-.jar--nudge .jar__body { animation: jarHop 0.9s ease-in-out infinite; }
-.jar--nudge .jar__label { background: var(--butter); }
-@keyframes jarHop {
-  0%, 100% { translate: 0 0; rotate: 0deg; }
-  30% { translate: 0 -12px; rotate: -6deg; }
-  55% { translate: 0 0; rotate: 4deg; }
-}
+/* nudges (ui/feel nudge): the next jar's label warms while its lid rattles */
+.jar.nudge .jar__label { background: var(--butter); }
 .stir-hint { opacity: 0; transition: opacity var(--t-med) ease; pointer-events: none; }
 .stir-hint__arc, .stir-hint__head { fill: none; stroke: var(--butter); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
 .stir-hint__arc { stroke-dasharray: 10 12; animation: dashFlow 0.8s linear infinite; }
 @keyframes dashFlow { to { stroke-dashoffset: -22; } }
 .kitchen--nudge.kitchen--stir .stir-hint { opacity: 1; }
-.kitchen--nudge .k-plate .btn { animation: btnPulse 1s ease-in-out infinite; }
-@keyframes btnPulse { 50% { scale: 1.08; } }
 
 /* once served the (empty) shelves step aside for the plate */
 .k-shelves { transition: opacity var(--t-slow) ease; }
@@ -476,7 +484,8 @@ html[lang="bn"] .jar__label { font-size: 0.85rem; line-height: 1.2; }
   .k-plate { top: calc(max(0.7rem, env(safe-area-inset-top)) + 8.4rem); }
 }
 
-.kitchen--still .jar__body, .kitchen--still .flame, .kitchen--still .face__eyes--open { animation: none; }
+.kitchen--still .jar__body, .kitchen--still .flame, .kitchen--still .face__eyes--open,
+.kitchen--still .face__sweat, .kitchen--still .face__eyes--dizzy path { animation: none; }
 
 /* landscape phones: everything has to fit in ~360–430px of height */
 @media (orientation: landscape) and (min-width: 600px) and (max-height: 520px) {
@@ -505,4 +514,92 @@ html[lang="bn"] .jar__label { font-size: 0.85rem; line-height: 1.2; }
   .k-plate { width: 26rem; top: 22%; }
   .k-plate__name { font-size: 3.2rem; }
   .k-plate__note { font-size: 1.8rem; }
+}
+
+/* ── scenery (scenery.js) ── */
+[data-react] { cursor: pointer; }
+.knob { touch-action: manipulation; }
+.shelf__plank[data-react] { cursor: pointer; }
+.k-tool {
+  position: absolute;
+  top: calc(100% - 4px);
+  z-index: -1;
+  width: clamp(18px, 6vw, 30px);
+  transform-origin: 50% 0%;
+}
+.k-tool--ladle { left: 9%; }
+.k-tool--belon { right: 9%; }
+.tool__svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tool__hook, .tool__string { fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-linecap: round; }
+.tool__metal { fill: none; stroke: var(--ink); stroke-width: 9; stroke-linecap: round; }
+.tool__shadow { fill: none; stroke: color-mix(in srgb, var(--ink) 35%, transparent); stroke-width: 7; stroke-linecap: round; }
+.k-tool--ladle .tool__metal { stroke: var(--ink); }
+.tool__hole { fill: var(--tile); stroke: var(--paper-2); stroke-width: 1.5; }
+.tool__bowl { fill: color-mix(in srgb, var(--paper-2) 70%, var(--sky)); stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
+.tool__shine { fill: none; stroke: var(--paper); stroke-width: 2.5; stroke-linecap: round; }
+.tool__wood { fill: var(--wood); stroke: var(--ink); stroke-width: 2.5; }
+.tool__wood--dark { fill: var(--wood-dark); }
+.tool__grain { fill: none; stroke: color-mix(in srgb, var(--ink) 30%, transparent); stroke-width: 1.5; stroke-linecap: round; }
+
+.k-tap { display: none; }
+@media (orientation: landscape) and (min-width: 600px) {
+  .k-tap {
+    display: block;
+    position: absolute;
+    z-index: 1;
+    right: max(3vw, calc((100vw - 1500px) / 2));
+    bottom: calc(var(--counter) - 6px);
+    width: clamp(78px, 8.5vw, 130px);
+    cursor: pointer;
+  }
+}
+.tap__svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tap__plate { fill: var(--paper-2); stroke: var(--ink); stroke-width: 2.5; }
+.tap__pipe { fill: none; stroke: var(--ink); stroke-width: 12; stroke-linecap: round; }
+.tap__mouth { stroke: var(--ink); stroke-width: 6; stroke-linecap: round; }
+.tap__pipe + .tap__mouth { stroke: var(--ink); }
+.tap__stem { fill: var(--mustard); stroke: var(--ink); stroke-width: 2; }
+.tap__wheel { stroke: var(--ink); stroke-width: 6; stroke-linecap: round; }
+.tap__cap { fill: var(--berry); stroke: var(--ink); stroke-width: 2; }
+.tap__drop, .tap__stream { fill: var(--sky); stroke: var(--ink); stroke-width: 1.4; }
+.tap__basin { fill: color-mix(in srgb, var(--ink) 25%, transparent); }
+
+/* a paper speech-tag beside the thing she tapped (quip.js) */
+.quip {
+  position: absolute;
+  z-index: 30;
+  margin: 0;
+  width: max-content;
+  max-width: min(72vw, 15rem);
+  padding: 0.3rem 0.85rem 0.4rem;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  text-align: center;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--line);
+  border-radius: 12px;
+  box-shadow: var(--pop-sm);
+  pointer-events: none;
+}
+.quip[hidden] { display: none; }
+.quip::after {
+  content: "";
+  position: absolute;
+  left: var(--tail, 50%);
+  top: 100%;
+  width: 12px;
+  height: 12px;
+  translate: -50% -50%;
+  rotate: 45deg;
+  background: var(--paper);
+  border-right: var(--line);
+  border-bottom: var(--line);
+}
+.quip--below::after { top: 0; rotate: 225deg; }
+html[lang="bn"] .quip { font-size: 1.1rem; line-height: 1.35; }
+
+/* landscape phones: no room under the shelves — the tools would hang into the counter */
+@media (orientation: landscape) and (max-height: 520px) {
+  .k-tool { display: none; }
 }

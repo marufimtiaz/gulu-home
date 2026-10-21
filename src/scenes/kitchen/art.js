@@ -59,10 +59,18 @@ export function potSVG() {
     <g class="face">
       <ellipse class="face__blush" cx="78" cy="146" rx="13" ry="7"/>
       <ellipse class="face__blush" cx="182" cy="146" rx="13" ry="7"/>
-      <g class="face__eyes face__eyes--open">
+      <g class="face__look" data-look><g class="face__eyes face__eyes--open">
         <ellipse cx="98" cy="126" rx="7" ry="9.5"/><ellipse cx="162" cy="126" rx="7" ry="9.5"/>
         <circle class="face__glint" cx="100.5" cy="122" r="2.4"/><circle class="face__glint" cx="164.5" cy="122" r="2.4"/>
+      </g></g>
+      <g class="face__eyes face__eyes--half">
+        <path d="M89 125 Q98 137 107 125 Z"/><path d="M153 125 Q162 137 171 125 Z"/>
       </g>
+      <g class="face__eyes face__eyes--dizzy">
+        <path d="M98 126 m-8 0 a8 8 0 1 1 8 8 a5 5 0 1 1 -5 -5 a2.4 2.4 0 1 1 2.4 2.4"/>
+        <path d="M162 126 m8 0 a8 8 0 1 0 -8 8 a5 5 0 1 0 5 -5 a2.4 2.4 0 1 0 -2.4 2.4"/>
+      </g>
+      <g class="face__brows"><path d="M84 108 L108 117"/><path d="M176 108 L152 117"/></g>
       <g class="face__eyes face__eyes--happy">
         <path d="M89 129 Q98 116 107 129"/><path d="M153 129 Q162 116 171 129"/>
       </g>
@@ -72,6 +80,8 @@ export function potSVG() {
       <path class="face__mouth face__mouth--smile" d="M116 146 Q130 160 144 146"/>
       <ellipse class="face__mouth face__mouth--o" cx="130" cy="152" rx="9" ry="11"/>
       <path class="face__mouth face__mouth--grin" d="M112 144 Q130 172 148 144 Z"/>
+      <path class="face__mouth face__mouth--flat" d="M116 154 q7 -5 14 0 t14 0"/>
+      <path class="face__sweat" d="M206 96 q8 12 0 17 q-8 -5 0 -17 z"/>
     </g>
   </g>
 
@@ -102,6 +112,8 @@ export function potSVG() {
 
   <!-- splash droplets live here (above the rim) -->
   <g class="pot__splash" data-splash></g>
+  <!-- little huffs of steam when the pot is annoyed -->
+  <g class="pot__puffs" data-puffs></g>
 
   <!-- the lid: arrives at the end, rattles, pops -->
   <g class="lid" data-lid>
@@ -158,8 +170,10 @@ export function jarSVG(i) {
   </g>
   <path class="jar__outline" d="${j.glass}"/>
   <path class="jar__shine" d="M${i % 3 === 1 ? '20 78 q2 -14 12 -22' : '22 74 q0 -14 10 -22'}"/>
-  <rect class="jar__lid jar__lid--${lidTone}" x="${j.lid.x}" y="${j.lid.y}" width="${j.lid.w}" height="${j.lid.h}" rx="${j.lid.r}"/>
-  <path class="jar__lidline" d="M${j.lid.x + 6} ${j.lid.y + j.lid.h / 2} h${j.lid.w - 12}"/>
+  <g class="jar__lidg" data-lid-of="${i}">
+    <rect class="jar__lid jar__lid--${lidTone}" x="${j.lid.x}" y="${j.lid.y}" width="${j.lid.w}" height="${j.lid.h}" rx="${j.lid.r}"/>
+    <path class="jar__lidline" d="M${j.lid.x + 6} ${j.lid.y + j.lid.h / 2} h${j.lid.w - 12}"/>
+  </g>
 </svg>`
 }
 
@@ -174,3 +188,39 @@ export function plateSVG() {
   <g class="plate__herb"><path d="M120 48 q8 -10 16 -6 q-6 8 -16 6z"/><path d="M118 48 q-2 -10 6 -14"/></g>
 </svg>`
 }
+
+/** Things hanging under the bottom shelf: a ladle and a belon (rolling pin). viewBox 0 0 40 120 */
+export const ladleSVG = () => `
+<svg class="tool__svg" viewBox="0 0 40 120" aria-hidden="true">
+  <path class="tool__hook" d="M20 0 V8 q0 6 -5 6 q-5 0 -5 -5"/>
+  <path class="tool__shadow" d="M23 16 V84" />
+  <path class="tool__metal" d="M20 13 V82"/>
+  <circle class="tool__hole" cx="20" cy="20" r="3"/>
+  <path class="tool__bowl" d="M4 86 q16 -10 32 0 q0 24 -16 24 q-16 0 -16 -24 z"/>
+  <path class="tool__shine" d="M10 92 q2 8 8 11"/>
+</svg>`
+
+export const belonSVG = () => `
+<svg class="tool__svg" viewBox="0 0 40 120" aria-hidden="true">
+  <path class="tool__string" d="M20 0 L13 14 M20 0 L27 14"/>
+  <rect class="tool__wood tool__wood--dark" x="14" y="12" width="12" height="14" rx="5"/>
+  <rect class="tool__wood" x="8" y="24" width="24" height="72" rx="10"/>
+  <path class="tool__grain" d="M14 38 v40 M22 34 v20 M24 64 v24"/>
+  <rect class="tool__wood tool__wood--dark" x="14" y="94" width="12" height="16" rx="5"/>
+</svg>`
+
+/** A wall tap over the counter (wide screens). viewBox 0 0 100 130; the spout's mouth is at SPOUT. */
+export const SPOUT = { x: 22, y: 64 }
+export const tapSVG = () => `
+<svg class="tap__svg" viewBox="0 0 100 130" aria-hidden="true">
+  <rect class="tap__plate" x="64" y="20" width="30" height="40" rx="8"/>
+  <path class="tap__pipe" d="M70 40 H36 q-14 0 -14 14 V62"/>
+  <path class="tap__mouth" d="M15 62 H29"/>
+  <g class="tap__handle" data-tap-handle>
+    <rect class="tap__stem" x="44" y="22" width="8" height="16" rx="2"/>
+    <path class="tap__wheel" d="M34 20 H62"/>
+    <circle class="tap__cap" cx="48" cy="20" r="5"/>
+  </g>
+  <g class="tap__water" data-water></g>
+  <ellipse class="tap__basin" cx="22" cy="126" rx="20" ry="4"/>
+</svg>`
