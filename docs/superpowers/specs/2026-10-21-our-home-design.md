@@ -179,11 +179,11 @@ Flow:
    - top: optional invocation line (`card.invocation`, default none); a gold alpana medallion
      that draws itself (SVG stroke reveal, ~2 s);
    - headline: Bangla calligraphy (`card.titleBn`, `--card-bn-display`) and English caps
-     beneath (`card.titleEn`, `--card-caps`);
+     beneath (`card.titleEn` "Bou-bhat", with `card.subtitleEn` "Wedding Reception" small, `--card-caps`);
    - host line (`card.hosts`), invitation line (`card.invite`), "to meet & bless the newlyweds";
    - names: **Maruf** ❀ **Sneha** large in `--card-script`, inside an arch of rose vines and
-     lotus; the families' lines beneath (`card.groomOf`, `card.brideOf`);
-   - details block: date, time, venue (`card.date`, `card.time`, `card.venue`, `card.address`)
+     lotus; the families' lines beneath (`card.groomOf` — may be null when the host line already names his parents — and `card.brideFull` + `card.brideOf`);
+   - details block: date, time, venue (`card.date`, `card.time`, `card.venue`, `card.address`; any field still `——` renders as a dotted blank line, like an unfilled form, never as dashes)
      in `--card-serif` with small-caps labels;
    - footer: "with best compliments from" + names (`card.compliments[]`).
    Bangla and English are both on the card regardless of the site language (traditional cards
@@ -192,6 +192,7 @@ Flow:
    position, and `deviceorientation` tilt on phones (with the iOS permission prompt only after
    a tap, and silently skipped if denied). Reduced motion: static gold gradient.
 5. **Optional note** — if `card.note` is set, it appears under the card in `--hand`. Default: none.
+   Bangla `*Bn` fields mirror the English ones and appear on the card together.
    The card is presented simply as the reception card — no framing about it not being printed.
 6. **Save the card** — button renders the card face to a 1080×1512 PNG (SVG
    `foreignObject` → canvas, with local fonts inlined as data URLs) and triggers download /

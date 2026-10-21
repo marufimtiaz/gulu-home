@@ -162,25 +162,30 @@ export default {
   // Traditional cards are bilingual, so both languages are on the card itself.
   card: {
     invocation: null, // ← optional top line, e.g. 'বিসমিল্লাহির রাহমানির রাহিম' — null for none
-    titleBn: 'শুভ বৌভাত', // ← or 'ওয়ালিমা' / 'বিবাহোত্তর সংবর্ধনা'
-    titleEn: 'Wedding Reception',
-    hosts: 'Mr. & Mrs. ——', // ← fill in: who is inviting (usually the groom's parents)
-    hostsBn: 'জনাব ও জনাবা ——', // ← fill in
-    invite: 'request the pleasure of your company at the wedding reception of their son',
-    inviteBn: 'তাঁদের পুত্রের বিবাহোত্তর সংবর্ধনা অনুষ্ঠানে আপনার উপস্থিতি একান্ত কাম্য',
+    titleBn: 'শুভ বৌভাত',
+    titleEn: 'Bou-bhat',
+    subtitleEn: 'Wedding Reception',
+    // the hosts: the groom's parents
+    hosts: 'Md. Moniruzzaman & Most. Fenshi Banu',
+    hostsBn: 'মোঃ মনিরুজ্জামান ও মোসাঃ ফেন্সি বানু', // ← check spelling
+    invite: 'request the pleasure of your company at the Bou-bhat of their son',
+    inviteBn: 'তাঁদের পুত্রের শুভ বৌভাত অনুষ্ঠানে আপনার সপরিবারে উপস্থিতি একান্ত কাম্য',
     bless: 'to meet & bless the newlyweds',
-    groom: 'Maruf',
+    groom: 'Maruf', // ← full name for the card, e.g. 'Md. ____ Maruf'
     groomBn: 'মারুফ',
-    bride: 'Sneha',
+    bride: 'Sneha', // the big script name
     brideBn: 'স্নেহা',
-    groomOf: 'son of Mr. & Mrs. ——', // ← fill in
-    brideOf: 'daughter of Mr. & Mrs. ——', // ← fill in
-    date: '2026-10-24', // ← fill in (YYYY-MM-DD)
-    time: '7:00 PM onwards', // ← fill in
+    brideFull: 'Jannatul Atika Rahman Sneha',
+    brideFullBn: 'জান্নাতুল আতিকা রহমান স্নেহা',
+    groomOf: null, // the host line already names his parents
+    brideOf: 'daughter of Md. Aminur Rahman & Mrs. Monju Manara Begum',
+    brideOfBn: 'মোঃ আমিনুর রহমান ও মিসেস মঞ্জু মানারা বেগম-এর কন্যা', // ← check spelling
+    date: '2026-10-23',
+    time: '——', // ← fill in, e.g. '7:00 PM onwards'
     venue: '——', // ← fill in: venue name
-    address: '——, Dhaka', // ← fill in
+    address: '——', // ← fill in
     mapUrl: null, // ← optional Google Maps link, shown on the back of the card
-    compliments: ['——', '——'], // ← "with best compliments from" — family names
+    compliments: ['——'], // ← "with best compliments from" — family names
     note: null, // ← optional handwritten line under the card
   },
 
