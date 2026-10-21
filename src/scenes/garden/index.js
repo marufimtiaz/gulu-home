@@ -40,8 +40,9 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '
 const place = (b) => `left:${(b.x / W) * 100}%;top:${(b.y / H) * 100}%;width:${(b.w / W) * 100}%;height:${(b.h / H) * 100}%`
 const easeOut = (x) => 1 - Math.pow(1 - x, 2.2)
 
-/** Translation (in % of the can box) that puts the spout tip on TIP when tilted by TILT. */
-function liftPose() {
+/** Translation (in % of the can box) that puts the spout tip on TIP when tilted by TILT.
+ *  shift: how far (stage units) CSS has shifted the can's resting box (--can-dx, tall phones). */
+function liftPose(shift = 0) {
   const k = BOX.can.w / 100 // stage units per can-SVG unit
   const dx = (SPOUT.x - 50) * k
   const dy = (SPOUT.y - 42) * k
@@ -51,7 +52,7 @@ function liftPose() {
   const cx = BOX.can.x + BOX.can.w / 2
   const cy = BOX.can.y + BOX.can.h / 2
   return {
-    xPercent: ((TIP.x - rx - cx) / BOX.can.w) * 100,
+    xPercent: ((TIP.x - rx - cx - shift) / BOX.can.w) * 100,
     yPercent: ((TIP.y - ry - cy) / BOX.can.h) * 100,
     rotation: TILT,
   }
@@ -221,7 +222,7 @@ export default {
       el.remove()
       bits.delete(el)
     }
-    const say = sayer(garden, { reduced, keep: track })
+    const say = sayer(garden, { reduced, keep: track, avoid: $('.g-head') })
 
     // ── idle guidance, in the garden's own language ──
     // soil: it sparkles. can: a drop dribbles from the spout and it leans in, wanting to pour.
@@ -276,9 +277,10 @@ export default {
     }
 
     // ── pouring (the can lifts, tilts, water runs while held) ──
-    const lift = liftPose()
+    const stage = $('.g-stage')
     function startPour() {
       if (pouring) return
+      const lift = liftPose(parseFloat(getComputedStyle(stage).getPropertyValue('--can-dx')) || 0)
       pouring = true
       pourClock = 0
       garden.classList.add('g--pouring')
@@ -399,7 +401,12 @@ export default {
     const chairs = $('.tree .chairs')
     const treeLanterns = $('.tree .tree-lanterns')
     const CROWNS = $$('.tree .cr circle').map((cEl) => ({ x: +cEl.getAttribute('cx'), y: +cEl.getAttribute('cy'), st: +cEl.parentNode.dataset.st }))
-    const toWorld = (p, s) => ({ x: BASE.x + (p.x - BASE.x) * s, y: BASE.y + (p.y - BASE.y) * s })
+    // --treefit: tall phones draw the whole tree a little smaller (scene.css), so its crown stays out of the header
+    const treeFit = () => parseFloat(getComputedStyle(tree).getPropertyValue('--treefit')) || 1
+    const toWorld = (p, s) => {
+      const k = s * treeFit()
+      return { x: BASE.x + (p.x - BASE.x) * k, y: BASE.y + (p.y - BASE.y) * k }
+    }
 
     function future() {
       if (phase !== 'grown' && phase !== 'after') return

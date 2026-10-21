@@ -270,6 +270,8 @@
   position: relative;
   min-height: 100%;
   padding: calc(var(--lh) * 1em) clamp(1.15rem, 5.5vw, 2.6rem) 6.2rem;
+  /* the right edge is the stamp's column: its ink lands there, never on the words */
+  padding-right: max(clamp(1.15rem, 5.5vw, 2.6rem), 70px);
   font-size: clamp(1.4rem, 1.15rem + 0.9vw, 1.75rem);
   line-height: var(--lh);
   color: var(--ink);

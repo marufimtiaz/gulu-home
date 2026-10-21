@@ -649,10 +649,12 @@ export default {
       mark.className = `l-imprint${faint ? ' l-imprint--faint' : ''}`
       mark.setAttribute('aria-hidden', 'true')
       mark.innerHTML = `<svg viewBox="0 0 24 24"><path d="${HEART}"/></svg>`
-      const pr = parseFloat(getComputedStyle(body).paddingRight) || 20
+      // the ink stays in the stamp's column (.sheet__body's right padding), clear of the words
+      const pr = parseFloat(getComputedStyle(body).paddingRight) || 70
       const size = 24
       const top = nearLine ? nearLine.offsetTop - 2 : sig.offsetTop + Math.random() * Math.max(10, psList.offsetTop + psList.offsetHeight - sig.offsetTop - size)
-      const left = nearLine ? body.clientWidth - pr - size * 0.4 : body.clientWidth * (0.45 + Math.random() * 0.4)
+      const col = body.clientWidth - pr + (pr - size) / 2
+      const left = nearLine ? col : col + (Math.random() - 0.5) * Math.max(0, pr - size - 12)
       mark.style.top = `${top.toFixed(1)}px`
       mark.style.left = `${Math.min(body.clientWidth - size - 2, left).toFixed(1)}px`
       mark.style.rotate = `${((Math.random() - 0.5) * 40).toFixed(1)}deg`
@@ -713,7 +715,7 @@ export default {
         const extra = presses - psLines.length
         tl.call(() => imprint(null, extra > 5), null, 0.04)
         tl.fromTo(lastPs, { rotation: -2.5 }, { rotation: 0, duration: T.reveal, ease: EASE.wobble, transformOrigin: '0% 50%', overwrite: 'auto' }, 0.05)
-        if (extra === 2 || extra === 6 || (extra > 6 && extra % 5 === 1)) tl.call(() => quip.say(lineOf('stampMore', moreN++), lastPs), null, 0.1)
+        if (extra === 2 || extra === 6 || (extra > 6 && extra % 5 === 1)) tl.call(() => quip.say(lineOf('stampMore', moreN++), heart), null, 0.1) // above the stamp, not over the words
       }
     }
     on(heart, 'click', pressHeart)

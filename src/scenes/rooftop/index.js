@@ -30,7 +30,7 @@ import { sayer } from './say.js'
 const HOLD_MS = 2000 // the wish
 const TAP_R = 34 // px: a tap this close to a star's centre counts
 const SLIDE_R = 26 // px: a finger sliding this close to a star lights it
-const CATCH_R = 72 // px: the shooting star's (generous) hitbox
+const CATCH_R = 90 // px: the shooting star's (generous) hitbox
 const GAP = 2.4 // s between shooting stars (≈ 4.2 s from one to the next)
 const SIDE = 24 // px kept clear at the screen edges (half a tap target)
 
@@ -160,7 +160,7 @@ export default {
     }
 
     // ── ambient: the starfield behind everything, the wind ──
-    offs.push(fx.starfield(sky, { count: reduced ? 50 : 80, shooting: false }))
+    offs.push(fx.starfield(sky, { count: reduced ? 40 : Math.min(innerWidth, innerHeight) < 600 ? 44 : 80, shooting: false }))
     // The wind starts right away when we arrive from another room (audio is already awake).
     // On a cold load the first touch also wakes the audio engine; starting the layer then
     // would make that first star answer late, so it waits a beat after the first touch.
@@ -744,7 +744,7 @@ export default {
       // races in, drifts slowly across the middle (catchable), races out
       tl.to(shoot, { ...at(0.34), opacity: 1, duration: 0.5, ease: 'power2.out' })
       tl.to(tail, { scaleX: 0.55, duration: 0.5, ease: 'sine.out' }, '<')
-      tl.to(shoot, { ...at(0.66), duration: 0.95, ease: 'none' })
+      tl.to(shoot, { ...at(0.66), duration: 1.6, ease: 'none' })
       tl.to(shoot, { ...at(1), opacity: 0, duration: 0.45, ease: 'power2.in' })
       tl.to(tail, { scaleX: 1.25, duration: 0.35, ease: 'sine.in' }, '<')
       // the cat on the railing follows it across the sky with her head
@@ -752,7 +752,7 @@ export default {
       if (catHead) {
         keep(gsap.timeline()
           .to(catHead, { rotation: -14 * dir, y: -2, transformOrigin: '50% 90%', duration: 0.4, ease: 'sine.out' })
-          .to(catHead, { rotation: 14 * dir, duration: 1.5, ease: 'sine.inOut' })
+          .to(catHead, { rotation: 14 * dir, duration: 2.1, ease: 'sine.inOut' })
           .to(catHead, { rotation: 0, y: 0, duration: 0.6, ease: 'sine.out' }))
       }
       passTl = keep(tl)

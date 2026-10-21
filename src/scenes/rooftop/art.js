@@ -168,16 +168,18 @@ export function terraceSVG({ w, k = 1, tea = false }) {
   let wires = ''
   let hits = ''
   let bulbs = ''
+  let glows = '' // a static soft disc behind each bulb (a filter glow repainted every frame)
   let n = 0
   for (const s of strings) {
     wires += `<polyline points="${s.map((p) => p.map(r1).join(',')).join(' ')}"/>`
     hits += `<polyline points="${s.map((p) => p.map(r1).join(',')).join(' ')}"/>`
     for (const [x, y] of s.slice(1, -1)) {
+      glows += `<circle class="rt-fairyglow rt-fairy--${n % 5}" cx="${r1(x)}" cy="${r1(y + 3 * k)}" r="${r1(6 * k)}"/>`
       bulbs += `<circle class="rt-fairy rt-fairy--${n % 5}" style="--i:${n}" cx="${r1(x)}" cy="${r1(y + 3 * k)}" r="${r1(2.8 * k)}"/>`
       n++
     }
   }
-  const fairy = `<g class="rt-lights" data-poke="lights"><g class="rt-lights__hit">${hits}</g><g class="rt-wire">${wires}</g><g class="rt-bulbs">${bulbs}</g></g>`
+  const fairy = `<g class="rt-lights" data-poke="lights"><g class="rt-lights__hit">${hits}</g><g class="rt-wire">${wires}</g><g class="rt-fairyglows">${glows}</g><g class="rt-bulbs">${bulbs}</g></g>`
 
   const svg = `
     <svg class="rt-terrace" width="${r1(w)}" height="${r1(H)}" viewBox="0 0 ${r1(w)} ${r1(H)}" aria-hidden="true" focusable="false">

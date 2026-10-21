@@ -185,6 +185,16 @@
   -webkit-tap-highlight-color: transparent;
 }
 .e-note[data-who="her"] { color: var(--berry); }
+/* a single-line note is ~21px tall: pad its tap area to 44px without moving the words */
+.e-note::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  top: 50%;
+  height: max(100%, 44px);
+  translate: 0 -50%;
+}
 .e-note__text {
   display: -webkit-box;
   -webkit-box-orient: vertical;
