@@ -1,1 +1,501 @@
-.scene--empty .stub { display: grid; gap: 1rem; justify-items: center; color: var(--paper); }
+/* Empty room — a bare paper room at night, lit by one bulb. Colours are token mixes only
+   (the paint colours come from config via --c / --roll). */
+.scene--empty {
+  --plaster: color-mix(in srgb, var(--paper-2) 60%, var(--night));
+  --plaster-lo: color-mix(in srgb, var(--paper-2) 46%, var(--night));
+  --plaster-hi: color-mix(in srgb, var(--paper) 70%, var(--night));
+  --trim: color-mix(in srgb, var(--paper) 52%, var(--night));
+  --wood: color-mix(in srgb, var(--mustard) 45%, var(--berry-deep));
+  --wood-lo: color-mix(in srgb, var(--wood) 70%, var(--ink));
+  --floor: color-mix(in srgb, var(--wood) 58%, var(--night-deep));
+  --board-line: color-mix(in srgb, var(--ink) 45%, transparent);
+  --card: color-mix(in srgb, var(--mustard) 52%, var(--ink));
+  --card-hi: color-mix(in srgb, var(--mustard) 64%, var(--ink));
+  --card-lo: color-mix(in srgb, var(--mustard) 40%, var(--ink));
+  --tin: color-mix(in srgb, var(--sky) 22%, var(--paper-2));
+  --tin-lo: color-mix(in srgb, var(--sky) 20%, var(--ink-soft));
+  --dim: color-mix(in srgb, var(--night-deep) 60%, transparent);
+
+  /* sized to the visible screen while the phone keyboard is up (index.js sets the vars) */
+  inset: auto 0 auto 0;
+  top: var(--vvt, 0px);
+  height: var(--vvh, 100%);
+  display: block;
+  container: room / size;
+  color: var(--paper);
+  background: var(--night-deep);
+}
+.scene--empty svg { overflow: visible; }
+
+.empty {
+  --pad-top: calc(max(0.7rem, env(safe-area-inset-top)) + 2.95rem);
+  --floor-h: clamp(78px, 13cqh, 120px);
+  --side: clamp(10px, 3.2cqw, 48px);
+  --bulb-w: clamp(38px, 8.4cqmin, 62px);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) var(--floor-h);
+  grid-template-areas: "head" "wall" "floor";
+  padding-top: var(--pad-top);
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 30%, color-mix(in srgb, var(--lamp) 10%, transparent), transparent 70%),
+    linear-gradient(to bottom, var(--night-deep), var(--night) 70%);
+}
+
+/* ── header ── */
+.e-head {
+  grid-area: head;
+  position: relative;
+  z-index: 5;
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  padding: 0 1rem 0.55rem;
+}
+.e-kicker { font-size: 1.25rem; line-height: 1; color: var(--mustard); rotate: -3deg; }
+.e-title {
+  font-size: clamp(1.7rem, 7.4cqw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.05;
+  color: var(--paper);
+  text-shadow: 3px 3px 0 var(--ink);
+}
+.e-prompt {
+  margin-top: 0.3rem;
+  min-height: 1.3em;
+  max-width: 24rem;
+  font-size: 1.3rem;
+  line-height: 1.12;
+  color: var(--butter);
+}
+
+/* ── the wall ── */
+.e-room {
+  grid-area: wall;
+  position: relative;
+  margin: 0 var(--side);
+  min-height: 0;
+}
+.e-wall {
+  --pad: clamp(12px, 3.4cqw, 34px);
+  --board-top: calc(var(--bulb-w) * 1.8);
+  --form-h: 48px;
+  --board-bottom: calc(var(--form-h) + 34px);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: var(--plaster);
+  background-image:
+    /* old patches, a nail hole, a pale rectangle where a frame once hung */
+    radial-gradient(circle at 18% 64%, color-mix(in srgb, var(--ink) 55%, transparent) 0 1.6px, transparent 2.4px),
+    linear-gradient(var(--plaster-hi), var(--plaster-hi)),
+    radial-gradient(ellipse 22% 14% at 74% 30%, var(--plaster-lo), transparent 70%),
+    radial-gradient(ellipse 30% 18% at 22% 82%, var(--plaster-lo), transparent 70%),
+    repeating-linear-gradient(97deg, transparent 0 22px, color-mix(in srgb, var(--paper) 5%, transparent) 22px 25px);
+  background-size: auto, 17% 13%, auto, auto, auto;
+  background-position: 0 0, 70% 58%, 0 0, 0 0, 0 0;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+  border: var(--line);
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+  box-shadow: var(--pop);
+  transition: background-color 0.01s;
+}
+.e-wall--painted {
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0 calc(25% - 3px), color-mix(in srgb, var(--ink) 4%, transparent) calc(25% - 3px) 25%),
+    repeating-linear-gradient(0deg, transparent 0 3px, color-mix(in srgb, var(--paper) 7%, transparent) 3px 5px);
+  background-size: auto;
+  background-position: 0 0;
+  background-repeat: repeat;
+}
+.e-wall::after { /* skirting board */
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 12px;
+  background: var(--trim);
+  border-top: var(--line-thin);
+  z-index: 2;
+}
+.e-strips { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.e-strip {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  background-image: repeating-linear-gradient(0deg, transparent 0 3px, color-mix(in srgb, var(--paper) 9%, transparent) 3px 5px) !important;
+  background-blend-mode: normal;
+}
+.e-shade { /* the bulb is the only light: warm at the centre, night creeping in from the corners */
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 46% 40% at 50% calc(var(--bulb-w) * 1.6), color-mix(in srgb, var(--lamp) 26%, transparent), transparent 75%),
+    radial-gradient(ellipse 85% 80% at 50% 24%, transparent 40%, color-mix(in srgb, var(--night-deep) 42%, transparent) 100%);
+}
+
+.e-heading {
+  position: absolute;
+  z-index: 3;
+  left: var(--pad);
+  top: calc(var(--bulb-w) * 0.38);
+  max-width: calc(50% - var(--bulb-w) * 0.8 - var(--pad));
+  font-size: clamp(1.25rem, 5cqw, 2.1rem);
+  line-height: 1;
+  color: var(--ink);
+  rotate: -3deg;
+  text-decoration: underline wavy color-mix(in srgb, var(--ink) 55%, transparent) 1.5px;
+  text-underline-offset: 6px;
+  white-space: nowrap;
+}
+.e-board {
+  position: absolute;
+  z-index: 3;
+  left: var(--pad);
+  right: var(--pad);
+  top: var(--board-top);
+  bottom: var(--board-bottom);
+}
+.e-note {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  line-height: 1.04;
+  color: var(--ink);
+  transform-origin: 0 40%;
+  cursor: zoom-in;
+  -webkit-tap-highlight-color: transparent;
+}
+.e-note[data-who="her"] { color: var(--berry); }
+.e-note__text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--lines, 3);
+  line-clamp: var(--lines, 3);
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+.e-note:focus-visible { outline: 2px dashed currentColor; outline-offset: 3px; }
+[data-phase="bare"] .e-board { pointer-events: none; }
+
+.e-full {
+  position: absolute;
+  z-index: 4;
+  left: var(--pad);
+  right: var(--pad);
+  bottom: calc(var(--form-h) + 18px);
+  text-align: center;
+  font-size: 1.2rem;
+  line-height: 1.1;
+  color: var(--berry);
+}
+.e-full[hidden] { display: none; }
+
+/* the marker line: write here */
+.e-write {
+  position: absolute;
+  z-index: 5;
+  left: var(--pad);
+  right: var(--pad);
+  bottom: 22px;
+  height: var(--form-h);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.e-write[hidden] { display: none; }
+.e-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  padding: 0 0.3rem 0.1rem;
+  font-size: 1.45rem;
+  color: var(--berry);
+  caret-color: var(--berry);
+  background:
+    linear-gradient(to right, var(--ink), var(--ink)) 0 calc(100% - 4px) / 100% 2.5px no-repeat,
+    color-mix(in srgb, var(--paper) 28%, transparent);
+  border: 0;
+  border-radius: 10px 10px 2px 2px;
+  outline: none;
+  transition: background-color var(--t-fast) ease;
+}
+html[lang="bn"] .e-input { font-family: var(--bn-hand); font-size: 1.25rem; }
+.e-input::placeholder { color: color-mix(in srgb, var(--ink) 52%, transparent); opacity: 1; }
+.e-input:focus { background-color: color-mix(in srgb, var(--paper) 50%, transparent); }
+.e-input:disabled { opacity: 0.5; }
+.e-count {
+  position: absolute;
+  right: calc(var(--form-h) + 0.9rem);
+  top: -1.1rem;
+  font: 600 0.78rem/1 var(--body);
+  color: var(--ink);
+  opacity: 0.75;
+  pointer-events: none;
+}
+.e-add {
+  flex: 0 0 auto;
+  width: var(--form-h);
+  height: var(--form-h);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: var(--butter);
+  border: var(--line);
+  border-radius: 50%;
+  box-shadow: var(--pop-sm);
+  touch-action: manipulation;
+}
+.e-add svg { width: 62%; height: 62%; }
+.e-add:disabled { opacity: 0.45; cursor: default; }
+.e-add:focus-visible { outline: 3px dashed var(--mustard); outline-offset: 3px; }
+.m-body { fill: var(--berry); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.m-cap { fill: var(--ink); }
+.m-tip { fill: var(--berry-deep); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.e-write--shake .e-input { background-color: color-mix(in srgb, var(--berry) 22%, transparent); }
+
+/* the roller that paints */
+.e-roller {
+  position: absolute;
+  z-index: 6;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  pointer-events: none;
+  filter: drop-shadow(4px 4px 0 var(--dim));
+}
+.e-roller svg { width: 100%; height: auto; }
+.r-frame { stroke: var(--ink); stroke-width: 4.5; stroke-linejoin: round; stroke-linecap: round; }
+.r-grip { fill: var(--berry-deep); stroke: var(--ink); stroke-width: 2.5; }
+.r-roll { fill: var(--roll, var(--paper)); stroke: var(--ink); stroke-width: 2.5; }
+.r-nap { stroke: color-mix(in srgb, var(--ink) 22%, transparent); stroke-width: 2; stroke-linecap: round; }
+
+/* ── the bulb ── */
+.e-bulb {
+  position: absolute;
+  z-index: 7;
+  top: 2px;
+  left: 50%;
+  width: var(--bulb-w);
+  translate: -50% 0;
+  cursor: pointer;
+}
+.e-bulb::before { /* a bigger, invisible thing to tap */
+  content: "";
+  position: absolute;
+  inset: 20% -40% -10%;
+}
+.e-bulb__swing { transform-origin: 50% 0; }
+.e-bulb svg { width: 100%; height: auto; }
+.b-cord { fill: none; stroke: var(--ink); stroke-width: 2.6; stroke-linecap: round; }
+.b-cord--twist { stroke-width: 1.4; stroke: color-mix(in srgb, var(--paper) 30%, var(--ink)); }
+.b-socket { fill: color-mix(in srgb, var(--ink) 70%, var(--paper)); stroke: var(--ink); stroke-width: 2; }
+.b-ink { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+.b-glass { fill: var(--lamp); stroke: var(--ink); stroke-width: 2.2; stroke-linejoin: round; filter: drop-shadow(0 0 10px var(--lamp-glow)) drop-shadow(0 0 22px var(--lamp-glow)); }
+.b-filament { fill: none; stroke: color-mix(in srgb, var(--tomato) 60%, var(--lamp)); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.b-shine { fill: none; stroke: var(--paper); stroke-width: 2.4; stroke-linecap: round; opacity: 0.8; }
+.b-halo { fill: var(--lamp-glow); opacity: 0.75; filter: blur(10px); }
+
+/* ── the floor and what's on it ── */
+.e-floor {
+  grid-area: floor;
+  position: relative;
+  z-index: 2;
+  background:
+    radial-gradient(ellipse 55% 90% at 50% 0, color-mix(in srgb, var(--lamp) 22%, transparent), transparent 75%),
+    linear-gradient(to bottom, var(--dim), transparent 16px),
+    repeating-linear-gradient(to bottom, transparent 0 calc(var(--floor-h) / 4 - 2px), var(--board-line) calc(var(--floor-h) / 4 - 2px) calc(var(--floor-h) / 4)),
+    var(--floor);
+  border-top: var(--line);
+}
+.e-ink-shadow { fill: var(--night-deep); opacity: 0.55; }
+.e-ladder {
+  position: absolute;
+  z-index: 3;
+  left: clamp(2px, calc(var(--side) - 22px), 40px);
+  bottom: 8%;
+  height: calc(var(--floor-h) * 1.22);
+  aspect-ratio: 80 / 232;
+}
+.e-ladder svg { width: 100%; height: 100%; }
+.l-wood { fill: var(--wood); stroke: var(--ink); stroke-width: 2.2; stroke-linejoin: round; }
+.l-foot { fill: var(--wood-lo); stroke: var(--ink); stroke-width: 2; }
+.l-drip { fill: none; stroke: var(--sage); stroke-width: 3; stroke-linecap: round; opacity: 0.85; }
+.e-box {
+  position: absolute;
+  z-index: 3;
+  right: clamp(-22px, calc(var(--side) - 28px), 40px);
+  bottom: 18%;
+  width: clamp(76px, 21cqw, 150px);
+}
+.e-box svg { width: 100%; height: auto; }
+.x-side { fill: var(--card); stroke: var(--ink); stroke-width: 2.4; stroke-linejoin: round; }
+.x-flap { fill: var(--card-hi); stroke: var(--ink); stroke-width: 2.4; stroke-linejoin: round; }
+.x-flap--back { fill: var(--card-lo); }
+.x-tape { fill: color-mix(in srgb, var(--butter) 55%, transparent); }
+.x-scribble { fill: none; stroke: var(--berry); stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
+.x-arrow { fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.7; }
+.e-tray {
+  display: none;
+  position: absolute;
+  z-index: 3;
+  left: calc(clamp(-16px, calc(var(--side) - 22px), 40px) + var(--floor-h) * 0.7);
+  bottom: 12%;
+  width: clamp(100px, 13cqw, 160px);
+}
+.e-tray svg { width: 100%; height: auto; }
+.t-tray { fill: color-mix(in srgb, var(--paper) 55%, var(--night)); stroke: var(--ink); stroke-width: 2.2; stroke-linejoin: round; }
+.t-paint { fill: var(--roll, var(--sky)); opacity: 0.9; }
+.t-ridges { stroke: color-mix(in srgb, var(--ink) 35%, transparent); stroke-width: 2; stroke-linecap: round; }
+.pokeable, .e-ladder, .e-box, .e-tray { cursor: pointer; }
+
+/* ── paint cans (the five swatches) ── */
+.e-cans {
+  grid-area: floor;
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(4px, 1.8cqw, 18px);
+  padding-bottom: 4px;
+  pointer-events: none;
+}
+.e-can {
+  pointer-events: auto;
+  width: clamp(46px, 12.4cqw, 68px);
+  aspect-ratio: 64 / 70;
+  padding: 0;
+  border: 0;
+  background: none;
+  rotate: var(--tilt, 0deg);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.e-can svg { width: 100%; height: 100%; }
+.e-can:focus-visible { outline: 3px dashed var(--mustard); outline-offset: 3px; border-radius: 12px; }
+.e-can[aria-pressed="true"] .c-rim { stroke: var(--lamp); stroke-width: 3.4; }
+.e-can--picked { filter: drop-shadow(0 0 10px var(--lamp-glow)); }
+[data-phase="painting"] .e-can { pointer-events: none; }
+.c-handle { stroke: var(--ink); stroke-width: 2.6; stroke-linecap: round; }
+.c-body { fill: var(--tin); stroke: var(--ink); stroke-width: 2.4; stroke-linejoin: round; }
+.c-band { fill: var(--c); stroke: var(--ink); stroke-width: 1.6; }
+.c-rim { fill: var(--tin-lo); stroke: var(--ink); stroke-width: 2.4; }
+.c-paint { fill: var(--c); }
+.c-drip { fill: var(--c); stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; }
+.c-shine { stroke: var(--paper); stroke-width: 3; stroke-linecap: round; opacity: 0.55; }
+@media (hover: hover) {
+  .e-can:hover svg { translate: 0 -4px; transition: translate var(--t-fast) var(--bounce); }
+}
+
+/* ── reading a note up close ── */
+.e-read {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 1.2rem;
+  background: color-mix(in srgb, var(--night-deep) 62%, transparent);
+  cursor: zoom-out;
+}
+.e-read[hidden] { display: none; }
+.e-read__card {
+  max-width: min(88cqw, 30rem);
+  padding: 1.2rem 1.4rem 0.9rem;
+  background: var(--paper);
+  border: var(--line);
+  border-radius: 14px;
+  box-shadow: var(--pop);
+  text-align: center;
+}
+.e-read__text {
+  font-size: clamp(1.6rem, 6.4cqw, 2.3rem);
+  line-height: 1.12;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.e-read__text[data-who="her"] { color: var(--berry); }
+.e-read__close { margin-top: 0.7rem; font: 600 0.8rem/1 var(--body); color: var(--ink-soft); }
+
+/* ── sizes ── */
+@container room (min-width: 560px) {
+  .e-tray { display: block; }
+}
+@container room (min-width: 900px) {
+  .empty { --side: max(48px, calc((100cqw - 1180px) / 2)); }
+}
+/* shorter portrait screens (and the phone keyboard): the header gives way to the wall */
+@container room (max-height: 700px) {
+  .e-kicker { display: none; }
+}
+@container room (max-height: 560px) and (max-aspect-ratio: 13/10) {
+  .e-title { display: none; }
+  .e-prompt { margin-top: 0; font-size: 1.15rem; }
+  .empty[data-phase="painted"] { grid-template-rows: auto minmax(0, 1fr) 22px; }
+  .empty[data-phase="painted"] .e-cans,
+  .empty[data-phase="painted"] .e-ladder,
+  .empty[data-phase="painted"] .e-box,
+  .empty[data-phase="painted"] .e-tray { display: none; }
+}
+/* landscape phones: wall on the left, title + paint cans on the right */
+@container room (min-aspect-ratio: 13/10) and (max-height: 620px) {
+  .empty {
+    --floor-h: clamp(64px, 19cqh, 92px);
+    --bulb-w: clamp(32px, 9cqh, 48px);
+    grid-template-columns: minmax(0, 1.6fr) minmax(14rem, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto var(--floor-h);
+    grid-template-areas: "wall head" "wall cans" "floor cans";
+    padding-top: max(0.6rem, env(safe-area-inset-top));
+  }
+  .e-room { margin: 0 0 0 calc(max(0.7rem, env(safe-area-inset-left)) + 3.4rem); }
+  .e-head { align-self: end; padding: var(--pad-top) 1rem 0.4rem; }
+  .e-kicker { display: block; }
+  .e-title { display: block; font-size: clamp(1.5rem, 4.4cqw, 2.2rem); }
+  .e-cans {
+    grid-area: cans;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    gap: 6px;
+    padding: 0.5rem 0.5rem calc(var(--floor-h) * 0.22);
+    background:
+      linear-gradient(to bottom, transparent calc(100% - var(--floor-h)), var(--floor) calc(100% - var(--floor-h)));
+    border-top: 0;
+  }
+  .e-cans::before { /* the floor line continues under the cans */
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: var(--floor-h);
+    border-top: var(--line);
+  }
+  .e-can { width: clamp(46px, 6.4cqw, 60px); }
+  .e-ladder { left: 4px; }
+  .e-box { right: 6px; width: clamp(70px, 12cqw, 110px); }
+  .e-tray { display: block; width: clamp(90px, 11cqw, 130px); }
+}
+/* keyboard up on a phone: the wall takes everything above it */
+.empty--typing { grid-template-rows: auto minmax(0, 1fr) 0 !important; grid-template-areas: "head" "wall" "floor" !important; grid-template-columns: minmax(0, 1fr) !important; }
+.empty--typing .e-kicker,
+.empty--typing .e-title,
+.empty--typing .e-floor,
+.empty--typing .e-cans { display: none !important; }
+.empty--typing .e-room { margin: 0 var(--side) !important; }
+.empty--typing .e-wall { border-bottom: var(--line); border-radius: 14px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .e-can:hover svg { translate: none; }
+}
