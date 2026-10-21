@@ -5,7 +5,7 @@
  *
  * DRAFT — Maruf rewrites. This is a rewrite for feeling, not a literal translation:
  * her own quoted lines ("I love you toooo", "keep talking", "yo yo") stay in English,
- * as on the previous site. The reception card has its own bilingual fields in config.js.
+ * as on the previous site. The reception card (card: below) is the Bengali card, same keys.
  */
 export default {
   partnerName: 'স্নেহা',
@@ -123,5 +123,25 @@ export default {
     title: 'বাড়িতে স্বাগতম।',
     line: 'এই বাড়ির প্রতিটা আলো জ্বলছে তোমার জন্য।',
     after: 'প্রতি বছর গাছটা দেখতে এসো।',
+  },
+
+  // the reception card, in Bengali (same keys as config.js → card; the Bismillah, date and
+  // links are inherited). Numbers and the date are written in Bengali by the card itself.
+  card: {
+    title: 'শুভ বৌভাত',
+    subtitle: '', // empty, not null: null would fall back to the English subtitle
+    groom: 'মারুফ',
+    bride: 'স্নেহা',
+    salutation: 'জনাব/জনাবা,',
+    greeting: 'আসসালামু আলাইকুম।',
+    body: "পরম করুণাময় আল্লাহ তা'আলার অশেষ রহমতে আমাদের পুত্র **মোঃ মারুফ ইমতিয়াজ**-এর সাথে মোঃ আমিনুর রহমান ও মিসেস মঞ্জু মানারা বেগম-এর কন্যা **জান্নাতুল আতিকা রহমান স্নেহা**-এর শুভ বিবাহ সম্পন্ন হয়েছে। এই আনন্দঘন মুহূর্তে আয়োজিত বৌভাত অনুষ্ঠানে আপনার সপরিবারে উপস্থিতি ও নবদম্পতির জন্য দোয়া একান্ত কাম্য।",
+    dateLabel: 'তারিখ',
+    dayLabel: 'বার',
+    timeLabel: 'সময়',
+    venueLabel: 'স্থান',
+    time: 'দুপুর ১টা',
+    venue: 'বুধপাড়া, মতিহার, রাজশাহী',
+    closing: 'শুভেচ্ছান্তে,',
+    hosts: 'মোঃ মনিরুজ্জামান ও মোছাঃ ফেন্সি বানু',
   },
 }

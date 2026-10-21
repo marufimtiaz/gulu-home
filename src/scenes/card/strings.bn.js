@@ -37,12 +37,8 @@ export default {
     'কিং',
     'বউ ♥',
   ],
-  // printed on the card — identical in both languages (the card is bilingual print)
+  // printed on the card (the card's own words are in config.bn.js → card)
   face: {
-    date: 'Date',
-    time: 'Time',
-    venue: 'Venue',
-    compliments: 'with best compliments from',
-    complimentsBn: 'শুভেচ্ছান্তে',
+    compliments: 'শুভেচ্ছাসহ',
   },
 }

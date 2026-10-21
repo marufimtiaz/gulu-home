@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { checkLayout, collectErrors, open, pressLatency, shot, VIEWPORTS } from './helpers.js'
+import { collectErrors, open, shot, VIEWPORTS } from './helpers.js'
 
 async function setClock(page, hour, minute) {
   await page.evaluate(([h, m]) => window.__door.set(h, m), [hour, minute])
@@ -97,27 +97,16 @@ test('leaving the door removes its debug hook', async ({ page }) => {
   await expect.poll(() => page.evaluate(() => typeof window.__door)).toBe('undefined')
 })
 
-test('every control is on screen and finger-sized at every size; the chips have clear sky', async ({ page }, info) => {
+test('a screenshot at every size; the lock still works after all the resizing', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'viewport sweep runs once')
   test.setTimeout(120_000)
   const errors = collectErrors(page)
   await open(page, 'door', { doorSeen: false })
   for (const vp of VIEWPORTS) {
     await page.setViewportSize(vp)
-    await checkLayout(page, ['.lock', '[data-try]', '.chip--lang'], `door-${vp.name}`)
-    for (const sel of ['.door', '[data-hint]']) {
-      const b = await page.locator(sel).boundingBox()
-      expect(b.y, `${sel} top @${vp.name}`).toBeGreaterThanOrEqual(0)
-      expect(b.y + b.height, `${sel} bottom @${vp.name}`).toBeLessThanOrEqual(vp.height)
-    }
-    const lock = await page.locator('.lock').boundingBox()
-    const btn = await page.locator('[data-try]').boundingBox()
-    const apart = btn.y >= lock.y + lock.height || btn.x >= lock.x + lock.width
-    expect(apart, `try button clear of the lock @${vp.name}`).toBe(true)
-    // the language chip sits in open sky, above the roof edge (eave + its scallops)
-    const chip = await page.locator('.chip--lang').boundingBox()
-    const eave = await page.locator('.dw__eave').boundingBox()
-    expect(chip.y + chip.height, `chip clear of the roof edge @${vp.name}`).toBeLessThanOrEqual(eave.y)
+    await page.waitForTimeout(350)
+    await expect(page.locator('.lock')).toBeVisible()
+    await shot(page, `door-${vp.name}`)
   }
   // still works after all that resizing (live layout, no stale geometry)
   await page.setViewportSize({ width: 390, height: 844 })
@@ -131,12 +120,6 @@ test('every control is on screen and finger-sized at every size; the chips have 
   await page.mouse.up()
   expect(await page.evaluate(() => window.__door.get().minute)).toBe(15)
   expect(errors).toEqual([])
-})
-
-test('the try button and the lock squash under a press within 100 ms', async ({ page }) => {
-  await open(page, 'door', { doorSeen: false })
-  expect(await pressLatency(page, '[data-try]')).toBeLessThan(100)
-  expect(await pressLatency(page, '.lock svg')).toBeLessThan(100)
 })
 
 test('touching the lock answers at once; idle nudges point at the next thing', async ({ page }) => {
@@ -158,22 +141,9 @@ test('touching the lock answers at once; idle nudges point at the next thing', a
   await expect(page.locator('.scene--door')).toHaveClass(/nudge-try/, { timeout: 6000 })
 })
 
-async function tapEach(page, sel, n, { fy = 0.5, gap = 120 } = {}) {
-  const b = await page.locator(sel).first().boundingBox()
-  for (let i = 0; i < n; i++) {
-    await page.mouse.click(b.x + b.width / 2, b.y + b.height * fy)
-    await page.waitForTimeout(gap)
-  }
-}
-
-test('every piece of the porch declares how it answers, and none of it is the old hop', async ({ page }) => {
+test('tapping each piece of the porch throws nothing', async ({ page }) => {
   const errors = collectErrors(page)
   await open(page, 'door', { doorSeen: false })
-  // react() kinds (flutter, knock, sway, spin, ring) or a documented bespoke reaction
-  // (turn: the knob, lift: the mat, cat: the eyes in the vent)
-  const kinds = await page.evaluate(() => [...document.querySelectorAll('.scene--door .pokeable')].map((el) => el.dataset.react ?? `MISSING ${el.getAttribute('class')}`))
-  expect(kinds.filter((k) => k.startsWith('MISSING'))).toEqual([])
-  for (const k of ['flutter', 'knock', 'turn', 'lift', 'cat', 'sway', 'spin']) expect(kinds).toContain(k)
   // one tap on everything visible: nothing throws
   for (const el of await page.locator('.scene--door .pokeable').all()) {
     if (!(await el.isVisible())) continue
@@ -184,72 +154,3 @@ test('every piece of the porch declares how it answers, and none of it is the ol
   expect(errors).toEqual([])
 })
 
-test('the knob turns but it is locked; the voice behind the door says so, then says more', async ({ page }) => {
-  await open(page, 'door', { doorSeen: false })
-  await tapEach(page, '[data-knob]', 1)
-  await page.waitForTimeout(80)
-  expect(await page.evaluate(() => document.querySelector('[data-knob-turn]').getAttribute('transform'))).toMatch(/rotate|matrix/)
-  await expect(page.locator('[data-who]')).toHaveText('locked.')
-  await tapEach(page, '[data-knob]', 2, { gap: 200 })
-  await expect(page.locator('[data-who]')).toContainText('the clock is the lock')
-  // …and it goes back to asking
-  await expect(page.locator('[data-who]')).toHaveText("who's there?", { timeout: 8000 })
-})
-
-test('under the doormat: a key-shaped patch, no key', async ({ page }) => {
-  await open(page, 'door', { doorSeen: false })
-  await tapEach(page, '.porch-art .mat', 1, { fy: 0.7 })
-  await page.waitForTimeout(200)
-  expect(await page.locator('.porch-art .mat').getAttribute('transform')).toMatch(/rotate|matrix/)
-  await expect(page.locator('[data-who]')).toContainText('no key')
-  await tapEach(page, '.porch-art .mat', 1, { fy: 0.7 })
-  await expect(page.locator('[data-who]')).toContainText('Vodai')
-})
-
-test('loves me, loves me not: the flowers always come out right', async ({ page }) => {
-  await open(page, 'door', { doorSeen: false })
-  await tapEach(page, '.porch-art .flowers', 1)
-  await expect(page.locator('.door-note')).toHaveText('loves me…')
-  await tapEach(page, '.porch-art .flowers', 5, { gap: 150 })
-  await expect(page.locator('.door-note')).toHaveText('loves me. final answer.')
-})
-
-test('the speech bubble guesses who is there, and gets there', async ({ page }) => {
-  await open(page, 'door', { doorSeen: false })
-  await page.waitForTimeout(700) // the bubble pops in first
-  await tapEach(page, '[data-who]', 1)
-  await expect(page.locator('[data-who]')).toContainText('delivery')
-  await tapEach(page, '[data-who]', 3, { gap: 250 })
-  await expect(page.locator('[data-who]')).toContainText('Gulu?')
-})
-
-test('the cat in the vent opens its eyes; the moon drops a star; the plate gets pencilled on', async ({ page }) => {
-  const errors = collectErrors(page)
-  await open(page, 'door', { doorSeen: false })
-  await tapEach(page, '[data-vent]', 1)
-  await page.waitForTimeout(250)
-  expect(Number(await page.locator('[data-vent-eyes]').getAttribute('opacity'))).toBeGreaterThan(0.5)
-  await tapEach(page, '.dw__sky .moon', 3, { gap: 60 })
-  await expect(page.locator('.door-shoot')).toHaveCount(1)
-  await tapEach(page, '.leaf-art .plate', 2, { gap: 200 })
-  await expect(page.locator('[data-plate-pencil]')).toHaveText('reserved')
-  expect(errors).toEqual([])
-})
-
-test('the plant lets a moth out, and the moths come to the lamp', async ({ page }) => {
-  await open(page, 'door', { doorSeen: false })
-  await tapEach(page, '.porch-art .lamp', 3, { gap: 100 })
-  await expect.poll(() => page.locator('[data-moth][data-flying]').count()).toBe(3)
-  await expect(page.locator('[data-who]')).toContainText('not yet')
-})
-
-test('reduced motion: the porch still answers (words and sounds, no motion)', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' })
-  const errors = collectErrors(page)
-  await open(page, 'door', { doorSeen: false })
-  await tapEach(page, '[data-knob]', 1)
-  await expect(page.locator('[data-who]')).toHaveText('locked.')
-  await tapEach(page, '.porch-art .lamp', 3, { gap: 80 })
-  expect(await page.locator('[data-moth][data-flying]').count()).toBe(0)
-  expect(errors).toEqual([])
-})

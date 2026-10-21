@@ -46,21 +46,19 @@ function parseDay(s) {
   return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null
 }
 
-/** The date in both languages, regardless of the site language (the card is bilingual). */
-function dateLines(iso) {
+/** The date in the card's language (the site's): weekday, long date, and a short dotted one. */
+function dateLines(iso, lang) {
   if (isBlank(iso)) return { blank: true }
   const d = parseDay(iso)
   if (!d) return null
-  const parts = (loc) => {
-    const p = Object.fromEntries(new Intl.DateTimeFormat(loc, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).formatToParts(d).map((x) => [x.type, x.value]))
-    return { weekday: p.weekday, date: `${p.day} ${p.month} ${p.year}` }
-  }
-  const num = (loc) => new Intl.NumberFormat(loc, { useGrouping: false })
-  const dd = (loc, v, w = 2) => num(loc).format(v).padStart(w, loc === 'bn-BD' ? '০' : '0')
+  const loc = lang === 'bn' ? 'bn-BD' : 'en-GB'
+  const p = Object.fromEntries(new Intl.DateTimeFormat(loc, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).formatToParts(d).map((x) => [x.type, x.value]))
+  const num = new Intl.NumberFormat(loc, { useGrouping: false })
+  const dd = (v, w = 2) => num.format(v).padStart(w, lang === 'bn' ? '০' : '0')
   return {
-    en: parts('en-GB'),
-    bn: parts('bn-BD'),
-    short: `${dd('en-GB', d.getDate())} · ${dd('en-GB', d.getMonth() + 1)} · ${d.getFullYear()}`,
+    weekday: p.weekday,
+    date: `${p.day} ${p.month} ${p.year}`,
+    short: `${dd(d.getDate())} · ${dd(d.getMonth() + 1)} · ${num.format(d.getFullYear())}`,
   }
 }
 
@@ -88,18 +86,20 @@ function grain() {
 }
 
 /** Wait for the card's faces (Bismillah, Bangla, script) — but never hold the scene for long. */
-function fontsReady(card) {
+function fontsReady(card, lang) {
   if (!document.fonts?.load) return Promise.resolve()
-  const want = [
-    ['15px Amiri', card.invocation || 'بسم'],
-    ['31px Galada', card.titleBn || 'বৌভাত'],
-    ['12px "Tiro Bangla"', card.hostsBn || 'বাংলা'],
-    ['44px "Pinyon Script"', 'Maruf'],
-    ['600 13px Cinzel', 'BOU'],
-    ['13px "Cormorant Garamond"', 'the'],
-    ['italic 13px "Cormorant Garamond"', 'the'],
-    ['600 13px "Cormorant Garamond"', 'the'],
-  ]
+  const want = [['15px Amiri', card.invocation || 'بسم']]
+  if (lang === 'bn') {
+    want.push(['31px Galada', card.title || 'বৌভাত'], ['12px "Tiro Bangla"', card.hosts || 'বাংলা'], ['600 12px "Tiro Bangla"', 'বাংলা'])
+  } else {
+    want.push(
+      ['44px "Pinyon Script"', 'Maruf'],
+      ['600 13px Cinzel', 'BOU'],
+      ['13px "Cormorant Garamond"', 'the'],
+      ['italic 13px "Cormorant Garamond"', 'the'],
+      ['600 13px "Cormorant Garamond"', 'the'],
+    )
+  }
   const all = Promise.all(want.map(([f, s]) => document.fonts.load(f, s).catch(() => {})))
   return Promise.race([all, new Promise((r) => setTimeout(r, 1500))])
 }
@@ -112,8 +112,9 @@ export default {
   async mount(root, ctx) {
     const { t, c, sound, fx } = ctx
     const card = c('card') ?? {}
-    const face = (k) => t(`card.face.${k}`)
-    const when = dateLines(card.date)
+    const lang = ctx.lang?.() === 'bn' ? 'bn' : 'en' // the card is printed in the site's language
+    const bn = lang === 'bn'
+    const when = dateLines(card.date, lang)
     const offs = []
     const on = (el, type, fn, opts) => {
       el.addEventListener(type, fn, opts)
@@ -123,38 +124,37 @@ export default {
     const track = (a) => (live.add(a), a)
 
     const initials = [String(card.groom ?? '').trim()[0] ?? '', String(card.bride ?? '').trim()[0] ?? '']
-    const lines = (en, bn, cls) =>
-      `${has(bn) ? `<p class="${cls}-bn" lang="bn">${field(bn)}</p>` : ''}${has(en) ? `<p class="${cls}">${field(en)}</p>` : ''}`
+    /** Body text: **…** turns bold; a suffix glued to a bold name ("**X**-এর") never breaks off. */
+    const rich = (v) =>
+      !has(v) ? '' : keepWords(esc(v).replace(/\*\*(.+?)\*\*(-[^\s,.।]+)?/g, (_, b, tail) => `<strong>${b}</strong>${tail ? `⁠${tail.replace('-', '-⁠')}` : ''}`))
 
-    const detail = (label, en, bn, extra = '') => `
+    const detail = (label, value, extra = '') => `
       <div class="cf-when__item">
-        <dt class="cf-when__label">${esc(label)}</dt>
-        <dd class="cf-when__value">${en}</dd>
-        ${bn ? `<dd class="cf-when__bn" lang="bn">${bn}</dd>` : ''}
+        ${has(label) ? `<dt class="cf-when__label">${esc(label)}</dt>` : ''}
+        <dd class="cf-when__value">${value}</dd>
         ${extra}
       </div>`
-    const dateEn = !when ? '' : when.blank ? field('——') : `<span class="cf-when__day">${esc(when.en.weekday)}</span> ${esc(when.en.date)}`
-    const dateBn = !when || when.blank ? '' : `${esc(when.bn.weekday)}, ${esc(when.bn.date)}`
     const venueExtra = has(card.address) ? `<dd class="cf-when__addr">${field(card.address)}</dd>` : ''
+    const details = []
+    if (when) {
+      if (when.blank) details.push(detail(card.dateLabel, field('——')))
+      else if (has(card.dayLabel)) details.push(detail(card.dateLabel, esc(when.date)), detail(card.dayLabel, esc(when.weekday)))
+      else details.push(detail(card.dateLabel, `<span class="cf-when__day">${esc(when.weekday)},</span> ${esc(when.date)}`))
+    }
+    if (has(card.time)) details.push(detail(card.timeLabel, field(card.time)))
+    if (has(card.venue)) details.push(detail(card.venueLabel, field(card.venue), venueExtra))
     const compliments = Array.isArray(card.compliments) ? card.compliments.filter(has) : has(card.compliments) ? [card.compliments] : []
 
     const faceHTML = `
-      <article class="cf" data-card-face aria-label="${esc(t('card.title'))}" style="--grain:${grain()}">
+      <article class="cf cf--${lang}" data-card-face lang="${lang}" aria-label="${esc(t('card.title'))}" style="--grain:${grain()}">
         ${frameSVG(DW, DH)}
         <div class="cf-body">
           <header class="cf-head">
             ${has(card.invocation) ? `<p class="cf-bism foil" lang="ar" dir="rtl" aria-label="${esc(card.invocationLabel ?? '')}">${esc(card.invocation)}</p>` : ''}
             <div class="cf-alpana" data-alpana>${alpanaSVG()}</div>
-            ${has(card.titleBn) ? `<h1 class="cf-title-bn" lang="bn">${field(card.titleBn)}</h1>` : ''}
-            ${has(card.titleEn) ? `<p class="cf-title-en foil">${field(card.titleEn)}</p>` : ''}
-            ${has(card.subtitleEn) ? `<p class="cf-sub">${field(card.subtitleEn)}</p>` : ''}
+            ${has(card.title) ? `<h1 class="cf-title${bn ? '' : ' foil'}">${field(card.title)}</h1>` : ''}
+            ${has(card.subtitle) ? `<p class="cf-sub">${field(card.subtitle)}</p>` : ''}
           </header>
-          <section class="cf-invite">
-            ${dividerSVG()}
-            ${lines(card.hosts, card.hostsBn, 'cf-hosts')}
-            ${has(card.inviteBn) ? `<p class="cf-invite__bn" lang="bn">${field(card.inviteBn)}</p>` : ''}
-            ${has(card.invite) || has(card.bless) ? `<p class="cf-invite__en">${field(card.invite)}${has(card.bless) ? ` <span class="cf-invite__bless">${field(card.bless)}</span>` : ''}</p>` : ''}
-          </section>
           <section class="cf-couple" data-names>
             ${archSVG()}
             <p class="cf-couple__names">
@@ -162,39 +162,29 @@ export default {
               ${knotSVG()}
               <span class="cf-name foil">${field(card.bride)}</span>
             </p>
-            <div class="cf-couple__full">
-              <div>
-                ${has(card.groomFull) ? `<p class="cf-full">${field(card.groomFull)}</p>` : ''}
-                ${has(card.groomFullBn) ? `<p class="cf-full-bn" lang="bn">${field(card.groomFullBn)}</p>` : ''}
-              </div>
-              <div>
-                ${has(card.brideFull) ? `<p class="cf-full">${field(card.brideFull)}</p>` : ''}
-                ${has(card.brideFullBn) ? `<p class="cf-full-bn" lang="bn">${field(card.brideFullBn)}</p>` : ''}
-              </div>
-            </div>
           </section>
-          ${has(card.groomOf) || has(card.brideOf) ? `<section class="cf-family">
-            ${lines(card.groomOf, card.groomOfBn, 'cf-of')}
-            ${lines(card.brideOf, card.brideOfBn, 'cf-of')}
-          </section>` : ''}
-          <dl class="cf-when" data-details>
-            ${when ? detail(face('date'), dateEn, dateBn) : ''}
-            ${has(card.time) ? detail(face('time'), field(card.time), has(card.timeBn) ? field(card.timeBn) : '') : ''}
-            ${has(card.venue) ? detail(face('venue'), field(card.venue), has(card.venueBn) ? field(card.venueBn) : '', venueExtra) : ''}
+          <section class="cf-letter" data-letter>
+            ${has(card.salutation) ? `<p class="cf-salute">${field(card.salutation)}</p>` : ''}
+            ${has(card.greeting) ? `<p class="cf-greet">${field(card.greeting)}</p>` : ''}
+            ${has(card.body) ? `<p class="cf-text">${rich(card.body)}</p>` : ''}
+          </section>
+          <dl class="cf-when" data-details style="grid-template-columns:${details.map((_, i) => (has(card.venue) && i === details.length - 1 ? 'minmax(0,1.45fr)' : 'minmax(0,1fr)')).join(' ')}">
+            ${details.join('')}
           </dl>
-          ${compliments.length ? `<footer class="cf-compl">
-            <p class="cf-compl__label">${esc(face('compliments'))} <span lang="bn">· ${esc(face('complimentsBn'))}</span></p>
-            <p class="cf-compl__names">${compliments.map(field).join(' · ')}</p>
-          </footer>` : ''}
+          <footer class="cf-sign" data-hosts>
+            ${has(card.closing) ? `<p class="cf-closing">${field(card.closing)}</p>` : ''}
+            ${has(card.hosts) ? `<p class="cf-hosts">${field(card.hosts)}</p>` : ''}
+            ${compliments.length ? `<p class="cf-compl">${esc(t('card.face.compliments'))} ${compliments.map(field).join(' · ')}</p>` : ''}
+          </footer>
         </div>
       </article>`
 
     const backHTML = `
-      <div class="cb" data-card-back aria-hidden="true" style="--grain:${grain()}">
+      <div class="cb cb--${lang}" data-card-back lang="${lang}" aria-hidden="true" style="--grain:${grain()}">
         ${frameSVG(DW, DH)}
         <div class="cb-body">
           <div class="cb-alpana" data-back-alpana>${alpanaSVG({ fine: true })}</div>
-          ${has(card.titleBn) ? `<p class="cb-title" lang="bn">${field(card.titleBn)}</p>` : ''}
+          ${has(card.title) ? `<p class="cb-title${bn ? '' : ' foil'}">${field(card.title)}</p>` : ''}
           ${dividerSVG()}
           <p class="cb-names"><span class="foil">${field(card.groom)}</span>${knotSVG()}<span class="foil">${field(card.bride)}</span></p>
           ${when && !when.blank ? `<p class="cb-date">${esc(when.short)}</p>` : ''}
@@ -677,7 +667,8 @@ export default {
             for (const a of clone.querySelectorAll('[data-alpana]')) a.style.transform = '' // printed upright, however far she spun it
           },
         })
-        const name = `${slug(card.groom)}-${slug(card.bride)}-reception.png`
+        const en = ctx.raw().card ?? card // file names stay latin in both languages
+        const name = `${slug(en.groom)}-${slug(en.bride)}-reception.png`
         const file = typeof File === 'function' ? new File([blob], name, { type: 'image/png' }) : null
         let shared = false
         if (file && navigator.canShare?.({ files: [file] })) {
@@ -747,7 +738,7 @@ export default {
     ctx.onCleanup(teardown)
 
     /* ── intro ──────────────────────────────────────────────────────────────────────── */
-    await fontsReady(card)
+    await fontsReady(card, lang)
     if (!root.isConnected) return
     const intro = track(moment())
     intro.fromTo(rig, { y: 40, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: T.reveal, ease: EASE.out })

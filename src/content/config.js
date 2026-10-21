@@ -159,36 +159,30 @@ export default {
   },
 
   // ── The reception card (in the letterbox, after the finale) ──
-  // Traditional cards are bilingual, so both languages are on the card itself.
+  // The card is in ONE language — the site's (config.bn.js has the Bengali card, same keys).
+  // Order on the card: Bismillah → alpana → title → names → salutation → body → details →
+  // closing + the hosts (the groom's parents) at the bottom, as the senders.
   card: {
-    // top line, in Arabic calligraphy (set to null to remove)
+    // top line, in Arabic calligraphy, in both languages (set to null to remove)
     invocation: 'بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
     invocationLabel: 'Bismillahir Rahmanir Rahim', // read aloud by screen readers
-    titleBn: 'শুভ বৌভাত',
-    titleEn: 'Bou-bhat',
-    subtitleEn: 'Wedding Reception',
-    // the hosts: the groom's parents
-    hosts: 'Md. Moniruzzaman & Most. Fenshi Banu',
-    hostsBn: 'মোঃ মনিরুজ্জামান ও মোসাঃ ফেন্সি বানু', // ← check spelling
-    invite: 'request the pleasure of your company at the Bou-bhat of their son',
-    inviteBn: 'তাঁদের পুত্রের শুভ বৌভাত অনুষ্ঠানে আপনার সপরিবারে উপস্থিতি একান্ত কাম্য',
-    bless: 'to meet & bless the newlyweds',
-    groom: 'Maruf', // the big script name
-    groomBn: 'মারুফ',
-    groomFull: 'Md. Maruf Imtiaz',
-    groomFullBn: 'মোঃ মারুফ ইমতিয়াজ',
-    bride: 'Sneha', // the big script name
-    brideBn: 'স্নেহা',
-    brideFull: 'Jannatul Atika Rahman Sneha',
-    brideFullBn: 'জান্নাতুল আতিকা রহমান স্নেহা',
-    groomOf: null, // the host line already names his parents
-    brideOf: 'daughter of Md. Aminur Rahman & Mrs. Monju Manara Begum',
-    brideOfBn: 'মোঃ আমিনুর রহমান ও মিসেস মঞ্জু মানারা বেগম-এর কন্যা', // ← check spelling
+    title: 'Bou-bhat',
+    subtitle: 'Wedding Reception',
+    groom: 'Maruf', // the big script names
+    bride: 'Sneha',
+    salutation: 'Dear Sir/Madam,',
+    greeting: 'Assalamu Alaikum.',
+    // **…** = bold (the two full names)
+    body: 'By the grace of Almighty Allah, our son **Md. Maruf Imtiaz** has been married to **Jannatul Atika Rahman Sneha**, daughter of Md. Aminur Rahman & Mrs. Monju Manara Begum. On this joyous occasion, we cordially invite you and your family to the Bou-bhat reception, and request your prayers for the newlyweds.',
+    dateLabel: 'Date',
+    dayLabel: null, // English puts the weekday in the date
+    timeLabel: 'Time',
+    venueLabel: 'Venue',
     date: '2026-10-23',
     time: '1:00 PM',
-    timeBn: 'দুপুর ১টা',
     venue: 'Budhpara, Motihar, Rajshahi',
-    venueBn: 'বুধপাড়া, মতিহার, রাজশাহী',
+    closing: 'With best regards,',
+    hosts: 'Md. Moniruzzaman & Most. Fenshi Banu',
     address: null, // optional second line under the venue
     mapUrl: null, // ← optional Google Maps link, shown on the back of the card
     compliments: null, // optional "with best compliments from" names — null hides the line
