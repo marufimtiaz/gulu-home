@@ -44,9 +44,10 @@ function routeFromHash() {
   return location.hash.replace(/^#\/?/, '').split(/[?/]/)[0] || ''
 }
 
-function makeCtx(id, el, cleanups) {
+function makeCtx(id, el, cleanups, from) {
   return {
     id,
+    from,
     root: el,
     t: i18n.t,
     c: i18n.c,
@@ -98,7 +99,7 @@ async function show(requested) {
 
   stage.append(el)
   try {
-    await scene.mount(el, makeCtx(id, el, cleanups))
+    await scene.mount(el, makeCtx(id, el, cleanups, prev?.id ?? null))
   } catch (err) {
     console.error(`[router] mount failed: ${id}`, err)
   }

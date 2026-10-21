@@ -30,6 +30,7 @@ export default {
 
   // ── Living room: the clock ──
   living: {
+    firstPhoto: 'IMG_20220420_043028770.jpg', // the screenshot of the text — shown on the phone
     firstText: 'I love you toooo',
     firstTextFrom: '{nickname}',
     // cards that pop while she rewinds past them (any order — sorted by date)

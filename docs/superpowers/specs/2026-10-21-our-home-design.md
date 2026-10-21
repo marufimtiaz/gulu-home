@@ -83,13 +83,16 @@ behind. Out: reverse. Reduced motion: crossfade only.
 ### Living room — the clock (verb: scrub)
 Sofa, wall of three frames, a plant, a window, a big wall clock showing live time + a date
 plate. She drags the minute hand anticlockwise (pointer angle tracking, with fling momentum);
-each full turn rewinds a step in time from now back to `togetherSince` (20 Apr 2022, 04:30).
-Total ≈ 12–16 turns, mapped non-linearly so it feels fast.
+each full anticlockwise turn rewinds 1/14 of the span from now back to `togetherSince`
+(20 Apr 2022, 04:30) — linear, ≈ 4 months per turn; clockwise winds forward again. Fling
+momentum decays over ~1.5 s so a few flicks cross years. Time is clamped to [togetherSince, now].
 While rewinding: the date plate shows the current scrubbed date; frames swap to photos whose
 filename date ≤ the scrubbed date (latest three); the plant shrinks; the window sky shifts
 season tint; event cards from `content.living.events[]` (date + line) pop as she passes them.
-At the start: room dims, frames empty, a phone glows on the sofa. Tap → message bubble
-*"I love you toooo"* (`content.living.firstText`). Then the clock spins forward to now
+At the start (within the first 1% of the span): room dims, frames empty (photos dated at or
+before `togetherSince` are excluded from the frames), a phone glows on the sofa. Tap → the
+phone shows the very first photo (`content.living.firstPhoto`, the screenshot of the text) and
+a message bubble *"I love you toooo"* (`content.living.firstText`). Then the clock spins forward to now
 (GSAP), room relights, counter shows *"{days} days. and tonight."* → complete.
 
 ### Kitchen — recipe for us (verb: drag & stir)
@@ -120,7 +123,9 @@ constellations from `content.rooftop.memories[]` (`{shape, photo, date, title, t
 Shapes are predefined star layouts: `flowers` (bouquet), `rickshaw`, `teacup`, `phone`,
 `ring`, `cake`, `heart`, `house`. Each group's stars are brighter. Tap the group's stars in any
 order; lines connect them in sequence; when a group completes, its outline drawing fades in
-and a polaroid drifts up with photo, date, title, text (dismiss to continue). All complete →
+and a polaroid drifts up with photo, date, title, text (dismiss to continue). A memory with
+`photo: null` shows the constellation's outline drawn on the polaroid's paper instead of a
+photo; `date: null` omits the date line. All complete →
 a shooting star crosses (repeats every ~4 s until caught; generous hitbox). Tap → *"make a
 wish"*; hold while it glows (~2 s) → sparkle burst, *"it's yours. I won't ask."* → complete.
 
@@ -139,8 +144,8 @@ Pick a wall colour from 5 swatches → roller paints the wall (wipe animation). 
 input: prompt *"things we'll do"* (`content.empty.prompt`). Each submitted note lands as a
 tilted handwritten line at a free spot on the wall (simple non-overlapping placement grid).
 Two or three starter notes from `content.empty.starters[]` in Maruf's ink colour; hers in
-berry. Notes (≤ 140 chars, ≤ 30 notes) and wall colour persist in state. Completes on
-entering after painting (writing optional).
+berry. Notes (≤ 140 chars, ≤ 30 notes) and wall colour persist in state. Completes the
+moment the wall is painted (writing is optional).
 
 ### Finale — the nameplate
 Reachable when all six are complete. Camera on the front door at night with the whole house
@@ -157,7 +162,9 @@ hub then stays fully lit with the nameplate showing.
 
 - `src/content/config.js` — everything personal, English. `src/content/config.bn.js` — Bengali
   mirror (lists matched by position, missing keys fall back to English).
-- `src/content/strings.js` / `strings.bn.js` — UI strings.
+- `src/content/strings.js` / `strings.bn.js` — shared UI strings. Each scene keeps its own
+  under `src/scenes/<id>/strings.js` + `strings.bn.js`, auto-collected under the scene id, so
+  `t('kitchen.stir')` reads the kitchen's file. Scenes never edit the shared files.
 - Tokens in text: `{nickname}`, `{partnerName}`, `{myName}`, `{days}`, `{weddingDate}`,
   `{sinceDate}`.
 - Bengali numerals and month names for dates/numbers in `bn`.
@@ -171,15 +178,18 @@ hub then stays fully lit with the nameplate showing.
 ## Photos
 
 `public/photos/` (+ `thumbs/`), copied from site two. `scripts/add-photos.sh` and
-`scripts/make-thumbs.py` ported. A build-time Vite plugin (or a generated
-`photos.json` manifest via script) lists files so scenes can query by date. Dates parse from
+`scripts/make-thumbs.py` ported. A Vite virtual module (`virtual:photos`, in
+`vite.config.js`) lists the folder at build/dev time; `src/photos.js` wraps it. Adding photos
+means a dev-server reload locally and a rebuild (git push) in production. Dates parse from
 camera-style filenames (`IMG_YYYYMMDD_…`).
 
 ## Sound
 
 Port site two's synthesized engine (Web Audio, no files) as an ES module. House theme: a slow
-music-box arrangement of *A Thousand Years* verse from the hub onward; chorus reserved for the
-finale. Per-scene layers: clock tick that speeds with scrub velocity (living), bubbles/plops
+music-box arrangement of the theme in `sound/theme.js` (a note table — the verse plays from the
+hub onward; the chorus is reserved for the finale). Default theme: *A Thousand Years*. Note
+this is a copyrighted melody; site two deliberately used Pachelbel's Canon (public domain).
+Swapping the melody is editing one table — decision left to Maruf. Per-scene layers: clock tick that speeds with scrub velocity (living), bubbles/plops
 (kitchen), crickets + water (garden), wind pad + a pitched ting per connected star (rooftop),
 pen scratch + lamp click (desk), marker squeak + roller (empty), bells + fireworks (finale),
 door lock click + creak (door). Mode button 🎶 → 🔊 → 🔇, remembered. Audio unlocks on first
@@ -201,7 +211,7 @@ src/
   scenes/<name>/     index.js (+ art.js, scene.css) for door, house, living, kitchen, garden,
                      rooftop, desk, empty, finale
   fx/                fireflies.js · stars.js · fireworks.js (from bday) · confetti.js · toast.js
-  sound/             engine.js · theme.js (A Thousand Years) · layers.js
+  sound/             index.js (API + EFFECTS/LAYERS names) · engine.js · theme.js · layers.js
   ui/                drag.js (pointer drag/rotate/hold helpers) · polaroid.js
   styles/            tokens.css · base.css · chrome.css
 public/photos/, public/icons, manifest.webmanifest, og.jpg
@@ -214,10 +224,30 @@ tests/               Playwright specs
 ```js
 export default {
   id: 'kitchen',
-  mount(root, ctx) {},   // build DOM into root, start animations; ctx = { t, c, state, sound, router, complete, photos }
+  mount(root, ctx) {},   // build DOM into root, start animations (may be async)
   unmount() {},          // kill timelines, listeners, rAF; must leave no globals behind
 }
 ```
+
+`ctx` (built in `src/router.js`, the source of truth):
+
+| field | meaning |
+|---|---|
+| `id`, `root` | scene id, its `<section class="scene">` |
+| `t(key, vars)`, `c(path, vars)` | UI string / content, tokens filled, language applied |
+| `raw()`, `lang()`, `num()`, `date(d, style)`, `days()`, `fill()` | i18n helpers |
+| `state` | the state module (read `get()`, `isDone()`, `suggested()`…; write via `update`, `setWall`, `addNote`) |
+| `sound`, `fx`, `photos` | the APIs in `src/sound/index.js`, `src/fx/index.js`, `src/photos.js` |
+| `reduced` | `prefers-reduced-motion` boolean, sampled at mount |
+| `params` | `URLSearchParams` of the page |
+| `from` | id of the scene we came from, or `null` (house uses it to zoom out of the right window) |
+| `go(id)`, `back()` | navigate; `back()` = house |
+| `complete(roomId = id)` | mark done (idempotent); first time toasts + chimes; sets `data-done` on root |
+| `onCleanup(fn)` | run after `unmount()` |
+
+The router owns a plain crossfade between scenes. The *zoom-through-window* lives in the house
+scene: on tap it zooms its own art toward the window (~0.6 s) then calls `go(room)`; when
+mounted with `from` = a room, it starts zoomed on that window and zooms out.
 
 `ctx.complete()` marks the room done in state (idempotent) and plays the shared "window lit"
 reward toast; the scene decides when to offer "back to the house". Scenes never call
