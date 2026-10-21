@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
+import { VitePWA } from 'vite-plugin-pwa'
 
 const PHOTO_DIR = resolve(import.meta.dirname, 'public/photos')
 const EXT = /\.(jpe?g|png|webp|avif|gif)$/i
@@ -35,7 +36,19 @@ function photosPlugin() {
 }
 
 export default defineConfig({
-  plugins: [photosPlugin()],
+  plugins: [
+    photosPlugin(),
+    // precache everything (app, fonts, photos) so the site works offline after one visit
+    VitePWA({
+      registerType: 'autoUpdate',
+      manifest: false, // public/manifest.webmanifest is the manifest
+      workbox: {
+        // the glob already covers public/ (photos, thumbs, fonts, og.jpg) — no includeAssets, or entries double up
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,webmanifest,woff2}'],
+        maximumFileSizeToCacheInBytes: 3e6,
+      },
+    }),
+  ],
   server: { port: 4180, strictPort: true },
   test: {
     environment: 'happy-dom',

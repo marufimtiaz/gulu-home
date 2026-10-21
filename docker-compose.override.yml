@@ -1,0 +1,28 @@
+# Local development only. `docker compose up` merges this over docker-compose.yml
+# automatically; Dokploy/Coolify deploy docker-compose.yml alone and never read this file.
+#
+# Swaps nginx for the Vite dev server (hot reload): edit anything, save, it updates.
+# `exec` makes Vite PID 1, so Ctrl+C / `docker compose down` stops it instantly.
+services:
+  web:
+    build: !reset null
+    image: node:24-alpine
+    working_dir: /app
+    command: sh -c "corepack enable && CI=true pnpm install && exec node node_modules/vite/bin/vite.js --host 0.0.0.0 --port 4180"
+    environment: !override
+      - COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+    restart: "no"
+    read_only: false
+    tmpfs: !reset []
+    healthcheck:
+      disable: true
+    expose: !reset []
+    ports:
+      - "${PORT:-4180}:4180"
+    volumes:
+      - .:/app
+      # Linux-container modules live in a volume, never mixed with the host's node_modules
+      - node_modules:/app/node_modules
+
+volumes:
+  node_modules:

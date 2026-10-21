@@ -1,0 +1,14 @@
+.git
+.claude
+.tmp
+node_modules
+dist
+docs
+tests
+test-results
+playwright-report
+README.md
+Dockerfile
+docker-compose*.yml
+.env
+*.log

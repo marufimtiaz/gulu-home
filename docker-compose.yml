@@ -1,0 +1,35 @@
+# Production compose — deploy this file on Dokploy or Coolify (as a "Docker Compose" service).
+#
+#  • The site is built into the image by the Dockerfile, so a deploy is self-contained:
+#    push to git → the platform rebuilds → new version is live.
+#  • No `ports:` and no `container_name:` — the platform's proxy (Traefik) routes your domain
+#    to the container's port 80 and handles HTTPS; fixed names/ports would clash with
+#    rolling deploys.
+#  • SERVICE_FQDN_WEB_80 is Coolify "magic" (attaches a domain to `web`, port 80).
+#    Dokploy ignores it — there you add the domain to service `web`, port 80, in the UI.
+#
+# Local development uses docker-compose.override.yml on top of this (auto-loaded by
+# `docker compose up`), which swaps in the Vite dev server instead.
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - SERVICE_FQDN_WEB_80
+    expose:
+      - "80"
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
