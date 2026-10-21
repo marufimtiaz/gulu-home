@@ -247,8 +247,11 @@ export default {
     let wobbleSticker = () => {}
     add(() => wobblePlate())
     add(() => wobbleSticker())
-    add(press(plate, { sound: 'tap', scale: 0.95 }))
-    add(press(sticker, { sound: 'tap', scale: 0.95 }))
+    // press feedback while they're draggable; dropped once they're up (it would fight the snap)
+    let unpressPlate = press(plate, { sound: 'tap', scale: 0.95 })
+    let unpressSticker = press(sticker, { sound: 'tap', scale: 0.95 })
+    add(() => unpressPlate())
+    add(() => unpressSticker())
     add(press(homeBtn))
     add(press(mailBtn, { sound: 'paper' }))
 
@@ -278,15 +281,19 @@ export default {
       gsap.to(el, { x: 0, y: 0, duration: T.move * 1.6, ease: EASE.wobble, overwrite: 'auto' })
     }
     // a tap without a drag: the thing hops toward where it wants to go (teaches the drag)
+    let hop = null
     function hint(el, dy) {
-      gsap.timeline()
-        .to(el, { y: dy, duration: T.quick, ease: EASE.out })
-        .to(el, { y: 0, duration: T.move * 1.4, ease: EASE.land })
+      hop?.kill()
+      hop = gsap.timeline()
+      hop.to(el, { y: dy, duration: T.quick, ease: EASE.out })
+      hop.to(el, { y: 0, duration: T.move * 1.4, ease: EASE.land })
       if (el === plate) {
+        // the hook glows for as long as the hop lasts: that's where it goes
         fin.classList.add('is-carrying')
-        gsap.delayedCall(T.reveal, () => stage === 'plate' && !held && fin.classList.remove('is-carrying'))
+        hop.call(() => stage === 'plate' && !held && fin.classList.remove('is-carrying'))
       }
     }
+    add(() => hop?.kill())
 
     add(
       onDrag(plate, {
@@ -377,6 +384,8 @@ export default {
       guide.set([])
       wobblePlate()
       wobblePlate = () => {}
+      unpressPlate()
+      unpressPlate = () => {}
       // rebase the plate onto the hook, keeping it where it visually is right now
       const a = apexNow()
       placePlate(HOOK)
@@ -451,6 +460,8 @@ export default {
       guide.set([])
       wobbleSticker()
       wobbleSticker = () => {}
+      unpressSticker()
+      unpressSticker = () => {}
       sticker.classList.add('sticker--stuck')
       sticker.setAttribute('tabindex', '-1')
       gsap.killTweensOf(sticker)

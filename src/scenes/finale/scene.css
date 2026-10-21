@@ -382,6 +382,7 @@ html[lang="bn"] .fin-sticker .sticker__name { font-family: var(--bn-hand); }
   width: min(25rem, calc(var(--panel) - 2rem));
 }
 @media (max-height: 560px) {
+  .fin-prompt { font-size: 1.3rem; }
   .fin-card { gap: 0.25rem; padding: 0.8rem 1rem 0.9rem; }
   .fin-card__title { font-size: 1.9rem; }
   .fin-card__line { font-size: 0.95rem; line-height: 1.3; }
