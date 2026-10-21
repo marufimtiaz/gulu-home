@@ -1,0 +1,155 @@
+/* Effects — fireflies, stars, bursts, confetti, fireworks. Paper craft, lit at night. */
+
+/* ── fireflies ─────────────────────────────────────────── */
+.firefly {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--firefly) 0 40%, var(--lamp) 100%);
+  box-shadow:
+    0 0 8px 2px var(--lamp-glow),
+    0 0 26px 9px color-mix(in srgb, var(--lamp) 30%, transparent);
+  pointer-events: none;
+  will-change: transform, opacity;
+  opacity: 0.2;
+  animation: ff-pulse var(--pulse, 3s) ease-in-out var(--delay, 0s) infinite alternate;
+}
+.firefly--still {
+  animation: none;
+  opacity: 0.35;
+}
+@keyframes ff-pulse {
+  0%, 18% { opacity: 0.2; scale: 0.55; }
+  70%, 100% { opacity: 1; scale: 1; }
+}
+
+/* ── starfield ─────────────────────────────────────────── */
+.stars {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.stars circle { fill: var(--star); }
+.stars .star--glow { filter: drop-shadow(0 0 2.5px var(--lamp-glow)); }
+.stars .star--twinkle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: star-twinkle var(--tw, 3s) ease-in-out var(--delay, 0s) infinite;
+}
+@keyframes star-twinkle {
+  0%, 100% { opacity: var(--o, 0.8); transform: scale(1); }
+  50% { opacity: 0.15; transform: scale(0.6); }
+}
+.stars .shooting { pointer-events: none; }
+
+/* ── bursts (sparkles + hearts) ────────────────────────── */
+.burst {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.burst > i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  pointer-events: none;
+  opacity: 0;
+}
+.sparkle {
+  width: var(--s, 10px);
+  height: var(--s, 10px);
+  margin: calc(var(--s, 10px) / -2) 0 0 calc(var(--s, 10px) / -2);
+  background: var(--c, var(--butter));
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+  filter: drop-shadow(0 0 4px var(--lamp-glow));
+  animation: sparkle-fly 0.95s var(--ease-out) var(--delay, 0s) forwards;
+}
+.sparkle--dot {
+  border-radius: 50%;
+  clip-path: none;
+  box-shadow: 0 0 6px 1px var(--lamp-glow);
+}
+@keyframes sparkle-fly {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(0.3); }
+  25% { opacity: 1; transform: translate(calc(var(--dx) * 0.55), calc(var(--dy) * 0.55)) rotate(calc(var(--rot) * 0.4)) scale(1.15); }
+  100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 18px)) rotate(var(--rot)) scale(0.4); }
+}
+.heart {
+  width: var(--s, 18px);
+  height: var(--s, 18px);
+  margin: calc(var(--s, 18px) / -2) 0 0 calc(var(--s, 18px) / -2);
+  animation: heart-float 0.95s var(--ease-out) var(--delay, 0s) forwards;
+}
+.heart svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(1.5px 1.5px 0 var(--ink)) drop-shadow(0 0 6px var(--lamp-glow));
+}
+@keyframes heart-float {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(0.2); }
+  18% { opacity: 1; transform: translate(calc(var(--dx) * 0.3), -14px) rotate(calc(var(--rot) * -0.5)) scale(1.1); }
+  60% { opacity: 1; transform: translate(calc(var(--dx) * 0.8), calc(var(--dy) * 0.65)) rotate(var(--rot)) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(calc(var(--rot) * -0.3)) scale(0.85); }
+}
+.burst--still > i { animation: none; opacity: 1; transform: translate(calc(var(--dx) * 0.5), calc(var(--dy) * 0.5)); }
+
+/* ── confetti ──────────────────────────────────────────── */
+.confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  perspective: 600px;
+}
+.confetti > b {
+  position: absolute;
+  top: -24px;
+  left: var(--x, 50%);
+  display: block;
+  animation: confetti-fall var(--fall, 2s) cubic-bezier(0.35, 0.1, 0.6, 1) var(--delay, 0s) both;
+}
+.confetti > b > i {
+  display: block;
+  width: var(--w, 10px);
+  height: var(--h, 6px);
+  background: var(--c, var(--berry));
+  border: 1px solid color-mix(in srgb, var(--ink) 55%, transparent);
+  border-radius: 1.5px;
+  box-shadow: inset -2px -2px 0 color-mix(in srgb, var(--ink) 14%, transparent);
+  animation: confetti-flutter var(--flip, 0.9s) linear infinite;
+}
+.confetti > b > i.round { border-radius: 50%; }
+@keyframes confetti-fall {
+  0% { opacity: 1; transform: translate3d(0, 0, 0) rotate(var(--r0, 0deg)); }
+  25% { transform: translate3d(calc(var(--drift) * 0.6), 28vh, 0) rotate(calc(var(--r0, 0deg) + 90deg)); }
+  55% { transform: translate3d(calc(var(--drift) * -0.2), 60vh, 0) rotate(calc(var(--r0, 0deg) + 200deg)); }
+  88% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(var(--drift), 108vh, 0) rotate(calc(var(--r0, 0deg) + 320deg)); }
+}
+@keyframes confetti-flutter {
+  0% { transform: rotate3d(1, var(--ax, 0.4), 0, 0deg); }
+  100% { transform: rotate3d(1, var(--ax, 0.4), 0, 360deg); }
+}
+
+/* ── fireworks ─────────────────────────────────────────── */
+.fireworks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+.fireworks--out { opacity: 0; }
