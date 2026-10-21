@@ -61,7 +61,8 @@ em { font-style: italic; color: var(--berry); }
   border: var(--line);
   border-radius: 999px;
   box-shadow: var(--pop-sm);
-  transition: transform var(--t-fast) ease, box-shadow var(--t-fast) ease;
+  /* no transform transition: press() drives transform with GSAP and must land instantly */
+  transition: box-shadow var(--t-fast) ease;
 }
 .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
 .btn--berry { background: var(--berry); color: var(--paper); }
