@@ -129,6 +129,16 @@ export function skyArt() {
       <circle class="moon-crater" cx="10" cy="6" r="4.2"/>
       <circle class="moon-crater" cx="-4" cy="13" r="2.8"/>
       <path class="moon-shine" d="M-21 -12 A24 24 0 0 1 -6 -24"/>
+      <!-- a face for when she pokes it (hidden until then) -->
+      <g class="moon-face" data-moon-face opacity="0">
+        <circle class="moon-blush" cx="-14" cy="8" r="4.5" opacity="0"/>
+        <circle class="moon-blush" cx="14" cy="8" r="4.5" opacity="0"/>
+        <g class="moon-eye" data-eye="l"><ellipse cx="-8" cy="-1" rx="2.4" ry="3.2"/></g>
+        <g class="moon-eye" data-eye="r"><ellipse cx="8" cy="-1" rx="2.4" ry="3.2"/></g>
+        <path class="moon-happy" d="M-11 -1 q3 -4 6 0 M5 -1 q3 -4 6 0" opacity="0"/>
+        <path class="moon-smile" d="M-5 9 q5 5 10 0"/>
+      </g>
+      <circle class="moon-hit" r="44"/>
     </svg>`
   return { stars, dots, constellations, moon }
 }
@@ -175,7 +185,15 @@ function fairyLights() {
       k++
     }
   }
-  return `<g class="h-fairy"><g class="h-fairy-wire">${wires}</g><g class="h-fairy-bulbs">${bulbs}</g></g>`
+  // finger-sized hit spots on every bulb that isn't over something else she can tap
+  // (the stair-hut window and the cat sit under the roof strings)
+  const busy = [WINDOWS.rooftop.hit, { x: 117, y: 210, w: 56, h: 56 }]
+  const free = (x, y) => !busy.some((b) => x > b.x - 4 && x < b.x + b.w + 4 && y > b.y - 4 && y < b.y + b.h + 4)
+  let hits = ''
+  for (const m of bulbs.matchAll(/cx="([\d.]+)" cy="([\d.]+)"/g)) {
+    if (free(+m[1], +m[2])) hits += `<circle cx="${m[1]}" cy="${m[2]}" r="6"/>`
+  }
+  return `<g class="h-fairy"><g class="h-fairy-wire">${wires}</g><g class="h-fairy-bulbs">${bulbs}</g><g class="h-fairy-hit" data-fairy-hit>${hits}</g></g>`
 }
 
 // warm silhouettes seen through a lit window
@@ -457,17 +475,39 @@ export function houseSVG({ labels, plate, est, letter = '' }) {
         <rect class="ink-shadow" x="248" y="230" width="18" height="62"/>
         <rect class="p-brick" x="244" y="226" width="18" height="64"/>
         <path class="ink-faint" d="M244 238 H262 M244 250 H262 M244 262 H262 M244 274 H262 M253 226 V238 M249 238 V250 M257 250 V262 M251 262 V274"/>
-        <rect class="p-trim" x="240" y="220" width="26" height="8" rx="1.5"/>
+        <rect class="p-trim chimney-cap" data-cap x="240" y="220" width="26" height="8" rx="1.5"/>
+        <rect class="w-hit" x="234" y="204" width="38" height="88"/>
       </g>
       <g class="h-smoke smoke" data-smoke aria-hidden="true">
         <circle cx="253" cy="208" r="7"/><circle cx="257" cy="196" r="9"/><circle cx="251" cy="180" r="11"/>
       </g>
-      <g class="h-tank">
+      <!-- a cat on the terrace, watching the moon (a paper puppet: body, head, tail, eyes).
+           It sits before the tank in paint order, so when it walks off it goes behind it. -->
+      <g class="h-cat" data-cat>
+        <g class="cat-walk" data-cat-walk transform="translate(4 -30)">
+          <path class="cat-tail" data-cat-tail d="M148 288 q12 2 10 -10"/>
+          <path class="cat-body" d="M128 290 q-2 -12 5 -18 h14 q7 6 5 18 Z"/>
+          <g class="cat-head" data-cat-head>
+            <path class="cat-skull" d="M132 274 q-2 -6 1 -9 l-1 -8 l5 5 q3 -1.2 6 0 l5 -5 l-1 8 q3 3 1 9 q-8 4 -16 0 Z"/>
+            <g class="cat-eyes" data-cat-eyes opacity="0">
+              <ellipse class="cat-eye" cx="137" cy="268.6" rx="1.9" ry="2.3"/>
+              <ellipse class="cat-eye" cx="143.4" cy="268.6" rx="1.9" ry="2.3"/>
+              <ellipse class="cat-pupil" cx="137" cy="268.6" rx="0.6" ry="1.8"/>
+              <ellipse class="cat-pupil" cx="143.4" cy="268.6" rx="0.6" ry="1.8"/>
+            </g>
+          </g>
+          <rect class="w-hit" x="117" y="246" width="50" height="50"/>
+        </g>
+      </g>
+      <g class="h-tank" data-tank>
         <path class="ink-line" d="M182 290 V262 M214 290 V262 M182 276 L214 290 M214 276 L182 290"/>
-        <rect class="ink-shadow" x="180" y="232" width="40" height="32" rx="6"/>
-        <rect class="p-tank" x="176" y="228" width="40" height="32" rx="6"/>
-        <path class="ink-faint" d="M176 240 H216 M176 250 H216"/>
-        <rect class="p-tank-lid" x="186" y="222" width="20" height="7" rx="2"/>
+        <g class="tank-body" data-tank-body>
+          <rect class="ink-shadow" x="180" y="232" width="40" height="32" rx="6"/>
+          <rect class="p-tank" x="176" y="228" width="40" height="32" rx="6"/>
+          <path class="ink-faint" d="M176 240 H216 M176 250 H216"/>
+        </g>
+        <rect class="p-tank-lid" data-tank-lid x="186" y="222" width="20" height="7" rx="2"/>
+        <rect class="w-hit" x="172" y="214" width="50" height="78"/>
       </g>
       ${rooftopWindow(labels.rooftop)}
       <g class="h-rail">
@@ -475,8 +515,6 @@ export function houseSVG({ labels, plate, est, letter = '' }) {
         <rect class="p-rail" x="20" y="260" width="260" height="6" rx="2"/>
         <rect class="p-rail" x="20" y="284" width="260" height="5" rx="1"/>
       </g>
-      <!-- a cat on the terrace, watching the moon -->
-      <path class="h-cat" transform="translate(4 -30)" d="M128 290 q-2 -14 4 -20 l-1 -8 l5 5 q3 -1 6 0 l5 -5 l-1 8 q6 6 4 20 Z M148 288 q12 2 10 -10"/>
     </g>
 
     ${fairyLights()}
@@ -491,15 +529,18 @@ export function houseSVG({ labels, plate, est, letter = '' }) {
     <g class="h-door">
       <ellipse class="h-porch-glow" cx="150" cy="470" rx="34" ry="30"/>
       <path class="ink-shadow" d="M138 564 V492 a16 16 0 0 1 32 0 V564 Z"/>
-      <path class="p-door" d="M134 560 V488 a16 16 0 0 1 32 0 V560 Z"/>
+      <path class="p-door" data-door-knock d="M134 560 V488 a16 16 0 0 1 32 0 V560 Z"/>
       <path class="ink-faint" d="M140 500 h20 v22 h-20 Z M140 528 h20 v24 h-20 Z"/>
       <circle class="p-brass" cx="160" cy="526" r="2.4"/>
       <!-- letterbox slot (the finale's slip comes out of here) -->
       <rect class="p-brass" x="139" y="537" width="22" height="6" rx="1.5"/>
       <rect class="h-slot" x="141" y="539" width="18" height="2.2" rx="1"/>
       <rect class="p-step" x="126" y="556" width="48" height="7" rx="2"/>
-      <path class="ink-line" d="M150 452 v6"/><path class="p-sconce" d="M144 458 h12 l-2 9 h-8 Z"/>
-      <circle class="h-porch-bulb" cx="150" cy="469" r="2.6"/>
+      <g class="h-sconce" data-sconce>
+        <path class="ink-line" d="M150 452 v6"/><path class="p-sconce" d="M144 458 h12 l-2 9 h-8 Z"/>
+        <circle class="h-porch-bulb" data-porch-bulb cx="150" cy="469" r="2.6"/>
+        <rect class="w-hit" x="136" y="446" width="28" height="28"/>
+      </g>
     </g>
     <g class="h-plate" data-nameplate role="button" tabindex="0" aria-label="${plate}">
       <ellipse class="plate-halo" cx="150" cy="512" rx="34" ry="22"/>

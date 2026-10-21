@@ -44,17 +44,19 @@ export function foil(el, { reduced = prefersReduced(), paused = () => false } = 
   let x = 50, y = 40 // shown
   let tx = 50, ty = 40 // target
   let lastInput = -1e9
-  let tiltOn = false
 
+  // the phone's tilt leads on touch screens — except while her finger is on the glass: then the
+  // light follows the finger (and lingers there a moment after she lets go)
+  let fingerUntil = 0
   const onMove = (e) => {
-    if (tiltOn && e.pointerType === 'touch') return // the phone's tilt leads on touch screens
     tx = clamp((e.clientX / innerWidth) * 100, 0, 100)
     ty = clamp((e.clientY / innerHeight) * 100, 0, 100)
     lastInput = performance.now()
+    if (e.pointerType === 'touch') fingerUntil = lastInput + 1400
   }
   const onTilt = (e) => {
     if (e.gamma == null || e.beta == null) return
-    tiltOn = true
+    if (performance.now() < fingerUntil) return
     // gamma: left/right −90…90; beta: front/back, ~45° when held to read
     tx = clamp(50 + e.gamma * 1.6, 0, 100)
     ty = clamp(50 + (e.beta - 45) * 1.3, 0, 100)

@@ -15,7 +15,8 @@ import './scene.css'
 import { gsap } from 'gsap'
 import { hit, onDrag } from '../../ui/drag.js'
 import { EASE, T, beat, moment } from '../../ui/choreo.js'
-import { haptic, nudge, poke, press, wobble } from '../../ui/feel.js'
+import { haptic, nudge, press, wobble } from '../../ui/feel.js'
+import { react } from '../../ui/react.js'
 import { HOOK, PLATE, SLOT, U, VIEW, cu, finaleSVG, plateSVG, stickerSVG } from './art.js'
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch])
@@ -239,11 +240,31 @@ export default {
     add(press(homeBtn))
     add(press(mailBtn, { sound: 'paper' }))
 
-    const guide = nudge(plate)
+    // idle guidance, each in its own language (and each is its phase's main action → arrow):
+    // the plate leans up toward its hook while the hook catches the light; the sticker's corner
+    // curls up ("peel me"); the envelope rattles in the letterbox and the flap clacks.
+    let held = null // { el, x0, y0 } — the thing under her finger
+    const coax = (el) => {
+      const tl = gsap.timeline()
+      if (held) return tl // never tug at something she's carrying
+      if (el === plate) {
+        tl.call(() => fin.classList.add('is-carrying'))
+          .to(plate, { y: -18, duration: 0.35, ease: 'power2.out' })
+          .to(plate, { y: 0, duration: 0.9, ease: EASE.wobble })
+          .call(() => stage === 'plate' && !held && fin.classList.remove('is-carrying'))
+      } else if (el === sticker) {
+        const curl = sticker.querySelector('.sticker__curl')
+        tl.to(curl, { scale: 2.4, transformOrigin: '100% 100%', duration: 0.3, ease: 'power2.out' }).to(curl, { scale: 1, duration: 0.8, ease: EASE.wobble })
+      } else if (el === mailBtn) {
+        tl.to(mailEnv, { keyframes: { rotation: [3, -3, 2, -1.5, 0] }, transformOrigin: '50% 100%', duration: 0.45, ease: 'none' })
+        tl.to(flap, { scaleY: -0.6, duration: 0.08, yoyo: true, repeat: 3, ease: 'power1.out' }, 0)
+      }
+      return tl
+    }
+    const guide = nudge(plate, { style: coax, arrow: true })
     add(() => guide.stop())
 
     // ── dragging ──
-    let held = null // { el, x0, y0 }
     const s = () => frame.s
     const apexNow = () => ({ x: MAT.x + gsap.getProperty(plate, 'x'), y: MAT.y + gsap.getProperty(plate, 'y') })
     const nearHook = (p) => {
@@ -264,17 +285,23 @@ export default {
       ctx.sound.play('whoosh')
       gsap.to(el, { x: 0, y: 0, duration: T.move * 1.6, ease: EASE.wobble, overwrite: 'auto' })
     }
-    // a tap without a drag: the thing hops toward where it wants to go (teaches the drag)
+    // a tap without a drag teaches the drag: the plate is tugged up on its twine toward the
+    // hook (which lights up) and swings back down; the sticker peels up off the mat and settles
     let hop = null
-    function hint(el, dy) {
+    function hint(el) {
       hop?.kill()
       hop = gsap.timeline()
-      hop.to(el, { y: dy, duration: T.quick, ease: EASE.out })
-      hop.to(el, { y: 0, duration: T.move * 1.4, ease: EASE.land })
       if (el === plate) {
-        // the hook glows for as long as the hop lasts: that's where it goes
         fin.classList.add('is-carrying')
-        hop.call(() => stage === 'plate' && !held && fin.classList.remove('is-carrying'))
+        hop.to(el, { y: -40, duration: T.quick, ease: EASE.out })
+        hop.to(el, { y: 0, duration: T.move * 1.8, ease: EASE.wobble })
+        hop.call(() => stage === 'plate' && !held && fin.classList.remove('is-carrying'), null, `-=${T.move}`)
+      } else {
+        const curl = el.querySelector('.sticker__curl')
+        hop.to(curl, { scale: 2.4, transformOrigin: '100% 100%', duration: T.tap, ease: EASE.out }, 0)
+        hop.to(el, { y: -34, duration: T.quick, ease: EASE.out }, 0)
+        hop.to(el, { y: 0, duration: T.move * 1.4, ease: EASE.spring })
+        hop.to(curl, { scale: 1, duration: T.move, ease: EASE.wobble }, '<')
       }
     }
     add(() => hop?.kill())
@@ -304,7 +331,7 @@ export default {
           if (nearHook(p)) return hang()
           fin.classList.remove('is-carrying')
           if (moved) springBack(plate)
-          else hint(plate, -40)
+          else hint(plate)
         },
       }),
     )
@@ -337,7 +364,7 @@ export default {
           plate.classList.remove('nudge')
           if (overPlate(p)) return stick()
           if (moved) springBack(sticker)
-          else hint(sticker, -40)
+          else hint(sticker)
         },
       }),
     )
@@ -588,8 +615,274 @@ export default {
       mailBtn.removeEventListener('click', onMail)
     })
 
-    // ── tapping around: the little things answer back ──
-    for (const el of $$('.fin-svg .pokeable')) add(poke(el))
+    // ── tapping around: everything answers like what it is ──
+    //   windows  flicker (someone moves inside) with their room's own sound; 2nd tap: a remark
+    //   moon     winks; blushes; smiles while a star shoots past
+    //   cat      (puppet) looks at her; meows; slow-blinks a heart
+    //   chimney  knock: the cap hops and puffs a heart (three from the 3rd tap)
+    //   tank     ripple; from the 3rd tap the lid hops and splashes
+    //   lamp     flicker + buzz
+    //   mat      squish; once the plate is up, lifting it finds the key (we won't need it)
+    //   tree     flutter: blossom drifts down · bush: flutter, every 3rd tap a firefly
+    //   sky      after the crescendo, her taps send up fireworks (every 5th is all hearts)
+    const live = new Set()
+    const keep = (a) => (live.add(a), a)
+    add(() => live.forEach((a) => a.kill()))
+    const d = (v) => (ctx.reduced ? 0.01 : v)
+    const svg = $('.fin-svg')
+    const SVGNS = 'http://www.w3.org/2000/svg'
+    const dot = (parent, cls, x, y, r) => {
+      const el = document.createElementNS(SVGNS, 'circle')
+      el.setAttribute('class', cls)
+      el.setAttribute('cx', x)
+      el.setAttribute('cy', y)
+      el.setAttribute('r', r)
+      parent.append(el)
+      return el
+    }
+    const on = (el, fn) => {
+      el.addEventListener('pointerdown', fn)
+      add(() => el.removeEventListener('pointerdown', fn))
+    }
+
+    let sayTl = null
+    function say(el, text, lift = 4) {
+      if (!text) return
+      sayTl?.progress(1).kill()
+      const r = el.getBoundingClientRect()
+      const f = fin.getBoundingClientRect()
+      const n = document.createElement('p')
+      n.className = 'fin-say'
+      n.textContent = text
+      fin.append(n)
+      const w = n.offsetWidth
+      const cx = Math.min(f.width - 8 - w / 2, Math.max(8 + w / 2, r.left + r.width / 2 - f.left))
+      n.style.left = `${cx}px`
+      n.style.top = `${Math.max(TOP + n.offsetHeight, r.top - f.top - lift)}px`
+      sayTl = keep(
+        gsap
+          .timeline({ onComplete: () => n.remove(), onInterrupt: () => n.remove() })
+          .fromTo(n, { scale: 0.6, rotation: -8, autoAlpha: 0, y: 6 }, { scale: 1, rotation: -3, autoAlpha: 1, y: 0, duration: d(0.4), ease: 'back.out(2.4)' })
+          .to(n, { autoAlpha: 0, y: -8, duration: d(0.3) }, `+=${Math.max(T.linger, text.length * 0.06)}`),
+      )
+    }
+
+    // windows: each remembers its room
+    const ROOM_SOUND = { living: 'tick', kitchen: 'bubble', garden: 'chain', rooftop: 'ting', desk: 'scratch', empty: 'marker' }
+    for (const w of $$('[data-win]')) {
+      const id = w.dataset.win
+      add(react(w, 'flicker', { target: w.querySelector('.w-inside') ?? w.querySelector('.w-flame'), sound: ROOM_SOUND[id], steps: [() => {}, () => say(w, t(`finale.rooms.${id}`))] }))
+    }
+
+    // the moon
+    const moon = $('.fin-svg .moon')
+    const face = $('[data-moon-face]')
+    const eyeL = $('.moon-eye[data-eye="l"]')
+    const eyeR = $('.moon-eye[data-eye="r"]')
+    const blush = $$('.moon-blush')
+    const happy = $('.moon-happy')
+    gsap.set([eyeL, eyeR], { transformOrigin: '50% 50%' })
+    moon.dataset.react = 'wink'
+    let moonN = 0
+    let moonTl = null
+    const shoot = () => {
+      if (ctx.reduced) return
+      const r = moon.getBoundingClientRect()
+      const f = fin.getBoundingClientRect()
+      const st = document.createElement('i')
+      st.className = 'fin-rocket'
+      Object.assign(st.style, { left: `${r.left - f.left}px`, top: `${r.top - f.top + r.height * 0.7}px`, height: '2px', width: '70px', background: 'linear-gradient(90deg, transparent, var(--star))', opacity: 0 })
+      fin.append(st)
+      sound.play('sparkle')
+      keep(gsap.timeline({ onComplete: () => st.remove(), onInterrupt: () => st.remove() }).set(st, { rotation: 158 }).to(st, { x: -220, y: 88, duration: 0.9, ease: 'power1.in' }).to(st, { opacity: 1, duration: 0.2, ease: 'none' }, 0).to(st, { opacity: 0, duration: 0.3 }, 0.6))
+    }
+    on(moon, () => {
+      moonN++
+      haptic(4)
+      sound.play('ting', { i: moonN + 2 })
+      const k = ((moonN - 1) % 3) + 1
+      moonTl?.kill()
+      const mt = (moonTl = keep(gsap.timeline()))
+      mt.set([eyeL, eyeR], { scaleY: 1, opacity: 1 }).set(happy, { opacity: 0 }).set(blush, { opacity: 0 })
+      mt.to(face, { opacity: 1, duration: d(0.25) })
+      if (k === 1) mt.to(eyeR, { scaleY: 0.12, duration: d(0.1) }, '+=0.3').to(eyeR, { scaleY: 1, duration: d(0.15) }, '+=0.4')
+      else if (k === 2) {
+        mt.to(blush, { opacity: 0.75, duration: d(0.3) }, '<')
+        mt.to(eyeL, { scaleY: 0.12, duration: d(0.1) }, '+=0.3').to(eyeL, { scaleY: 1, duration: d(0.15) }, '+=0.4')
+      } else {
+        mt.to([eyeL, eyeR], { opacity: 0, duration: d(0.1) }, '+=0.15').to(happy, { opacity: 1, duration: d(0.1) }, '<')
+        mt.to(blush, { opacity: 0.75, duration: d(0.3) }, '<')
+        mt.call(shoot, null, '<')
+        mt.to({}, { duration: 0.6 })
+      }
+      mt.to(face, { opacity: 0, duration: d(0.5) }, '+=0.8')
+    })
+
+    // the cat: looks at her, meows, then gives her the slow blink (and a heart)
+    const cat = $('.fin-svg .h-cat')
+    const catHead = $('[data-cat-head]')
+    const catEyes = $('[data-cat-eyes]')
+    const eyeBits = [...catEyes.children]
+    const tail = $('[data-cat-tail]')
+    cat.dataset.react = 'cat'
+    gsap.set(eyeBits, { transformOrigin: '50% 50%' })
+    gsap.set(catHead, { transformOrigin: '50% 100%' })
+    gsap.set(tail, { transformOrigin: '0% 100%' })
+    let catN = 0
+    let catTl = null
+    on(cat, () => {
+      catN++
+      haptic(4)
+      catTl?.kill()
+      const ct = (catTl = keep(gsap.timeline()))
+      ct.to(catHead, { rotation: -9, duration: d(0.3), ease: 'power2.out' })
+        .set(eyeBits, { scaleY: 0.1 }, '<')
+        .to(catEyes, { opacity: 1, duration: d(0.08) }, '<0.12')
+        .to(eyeBits, { scaleY: 1, duration: d(0.18), ease: 'back.out(2)' })
+      if (catN === 1) {
+        sound.play('tap')
+        ct.to(eyeBits, { scaleY: 0.12, duration: d(0.07), yoyo: true, repeat: 1 }, '+=0.7')
+      } else if (catN === 2) {
+        ct.call(() => sound.play('meow'), null, '<')
+        ct.to(tail, { rotation: -20, duration: d(0.25), yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')
+      } else {
+        ct.to(eyeBits, { scaleY: 0.12, duration: d(0.35), yoyo: true, repeat: 1, ease: 'sine.inOut' }, '+=0.4')
+        ct.call(() => {
+          const r = catHead.getBoundingClientRect()
+          fx.hearts(r.left + r.width / 2, r.top, { count: 1 })
+        }, null, '<0.3')
+      }
+      ct.to(eyeBits, { scaleY: 0.1, duration: d(0.1) }, '+=0.9').to(catEyes, { opacity: 0, duration: d(0.08) }).to(catHead, { rotation: 0, duration: d(0.45), ease: 'sine.inOut' })
+    })
+
+    // chimney: the cap hops and puffs a heart
+    add(
+      react(chimney, 'knock', {
+        sound: 'pop',
+        steps: [
+          (n) => {
+            if (!ctx.reduced) keep(gsap.timeline().to(cap, { y: -5, duration: 0.1, ease: 'power2.out' }).to(cap, { y: 0, duration: 0.5, ease: 'bounce.out' }))
+            const r = cap.getBoundingClientRect()
+            fx.hearts(r.left + r.width / 2, r.top, { count: n >= 3 ? 3 : 1 })
+          },
+        ],
+      }),
+    )
+
+    // the water tank
+    const tank = $('.fin-svg .h-tank')
+    const lid = $('[data-tank-lid]')
+    const splash = () => {
+      sound.play('drip')
+      if (ctx.reduced) return
+      keep(gsap.timeline().to(lid, { y: -6, rotation: -8, transformOrigin: '50% 100%', duration: 0.12, ease: 'power2.out' }).to(lid, { y: 0, rotation: 0, duration: 0.5, ease: 'bounce.out' }))
+      for (let k = 0; k < 4; k++) {
+        const c = dot(tank, 'h-drop', 190 + k * 4, 222, 1.6)
+        keep(gsap.timeline({ onComplete: () => c.remove() }).to(c, { x: (k < 2 ? -1 : 1) * (6 + k * 3), y: -12 - (k % 2) * 5, duration: 0.25, ease: 'power2.out' }).to(c, { y: 26, opacity: 0, duration: 0.45, ease: 'power2.in' }))
+      }
+    }
+    add(react(tank, 'ripple', { target: $('[data-tank-body]'), origin: '50% 100%', steps: [() => {}, () => {}, () => splash()] }))
+
+    // the porch lamp
+    add(react($('.fin-svg .sconce'), 'flicker', { target: $('.fin-svg .sconce .h-porch-bulb') }))
+
+    // the doormat: soft; once the plate's up, lifting a corner finds the key after all
+    const mat = $('.fin-svg .mat')
+    let matN = 0
+    let matTl = null
+    mat.dataset.react = 'lift'
+    on(mat, () => {
+      matN++
+      haptic(6)
+      matTl?.kill()
+      const free = stage !== 'plate'
+      sound.play(free && matN >= 2 ? 'paper' : 'squish')
+      if (!free || matN < 2) {
+        if (!ctx.reduced) matTl = keep(gsap.timeline().to(mat, { scaleY: 0.75, scaleX: 1.06, svgOrigin: '150 576', duration: 0.1, ease: 'power2.out' }).to(mat, { scaleY: 1, scaleX: 1, duration: 0.6, ease: 'elastic.out(1.1, 0.35)' }))
+        return
+      }
+      say(mat, t('finale.key'), 26) // placed before the lift, clear of the corner that comes up
+      matTl = keep(gsap.timeline().to(mat, { rotation: -18, svgOrigin: '127 576', duration: d(0.3), ease: 'power2.out' }).to(mat, { rotation: 0, duration: d(0.45), ease: 'power2.in' }, `+=${ctx.reduced ? 0.6 : 1.4}`).call(() => sound.play('squish')))
+    })
+
+    // the garden: blossom drifts from the tree; a firefly hides in the bush
+    const garden = $('.fin-svg .h-garden')
+    const blossom = $$('.g-blossom circle')
+    add(
+      react($('.fin-svg .g-tree'), 'flutter', {
+        origin: '50% 100%',
+        strength: 0.6,
+        steps: [
+          () => {
+            if (ctx.reduced) return
+            for (let k = 0; k < 2; k++) {
+              const b = blossom[Math.floor(Math.random() * blossom.length)]
+              const c = dot(garden, 'h-petal', b.getAttribute('cx'), b.getAttribute('cy'), 1.8)
+              keep(gsap.timeline({ onComplete: () => c.remove() }).to(c, { x: (Math.random() < 0.5 ? -1 : 1) * (8 + Math.random() * 10), y: 556 - +b.getAttribute('cy'), duration: 1.6 + Math.random() * 0.6, ease: 'sine.in' }).to(c, { opacity: 0, duration: 0.4 }))
+            }
+          },
+        ],
+      }),
+    )
+    const firefly = () => {
+      if (ctx.reduced) return
+      const c = dot(svg, 'h-firefly', 4, 540, 2.2)
+      const p = { u: 0 }
+      keep(
+        gsap.to(p, {
+          u: 1,
+          duration: 3.2,
+          ease: 'sine.out',
+          onUpdate() {
+            const u = p.u
+            c.setAttribute('cx', (4 + u * 60 + Math.sin(u * 9) * 14).toFixed(1))
+            c.setAttribute('cy', (540 - u * 130 + Math.cos(u * 7) * 8).toFixed(1))
+            c.setAttribute('opacity', Math.min(1, u * 8, (1 - u) * 3).toFixed(2))
+          },
+          onComplete: () => c.remove(),
+        }),
+      )
+    }
+    add(react($('.fin-svg .g-bush--l'), 'flutter', { origin: '50% 100%', strength: 1.2, steps: [(n) => n % 3 === 0 && firefly()] }))
+
+    // the sky: once the house has celebrated, her taps send up fireworks of their own
+    let fwN = 0
+    fw.dataset.react = 'firework'
+    const onSky = (e) => {
+      if (fin.dataset.phase !== 'home') return
+      if (e.target.closest?.('button, [data-card], [data-plate], [data-sticker], .pokeable')) return
+      const f = fin.getBoundingClientRect()
+      const sky = fw.getBoundingClientRect()
+      if (e.clientY > sky.bottom - 8) return
+      fwN++
+      const n = fwN
+      const bx = e.clientX
+      const by = e.clientY
+      const burst = () => {
+        sound.play('firework')
+        haptic(10)
+        if (n % 5 === 0) fx.hearts(bx, by, { count: 8 })
+        else fx.sparkles(bx, by, { count: 30 })
+      }
+      if (ctx.reduced) return burst()
+      const rk = document.createElement('i')
+      rk.className = 'fin-rocket'
+      const x0 = bx - f.left + (Math.random() - 0.5) * 40
+      const y0 = sky.bottom - f.top
+      Object.assign(rk.style, { left: `${x0}px`, top: `${y0}px` })
+      fin.append(rk)
+      sound.play('whoosh')
+      keep(
+        gsap
+          .timeline({ onComplete: () => rk.remove(), onInterrupt: () => rk.remove() })
+          .set(rk, { rotation: (Math.atan2(bx - f.left - x0, y0 - (by - f.top)) * 180) / Math.PI })
+          .to(rk, { x: bx - f.left - x0, y: by - f.top - y0, duration: 0.42, ease: 'power2.out' })
+          .call(burst)
+          .to(rk, { opacity: 0, duration: 0.08 }, '<'),
+      )
+    }
+    fin.addEventListener('pointerdown', onSky)
+    add(() => fin.removeEventListener('pointerdown', onSky))
 
     // ── ambient ──
     const unlock = () => sound.unlock()
