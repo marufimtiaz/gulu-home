@@ -141,7 +141,7 @@ test('idle on the hub nudges the suggested window', async ({ page }) => {
 test('scenery answers a tap without navigating', async ({ page }) => {
   const errors = collectErrors(page)
   await open(page, 'house')
-  for (const sel of ['[data-cat]', '.h-chimney', '.h-tank', '.sky-moon', '[data-door-knock]', '[data-sconce]', '.g-shroom', '.g-bush--l', '[data-tree]']) {
+  for (const sel of ['[data-cat]', '.h-chimney', '.h-tank', '.sky-moon', '[data-door-knock]', '[data-sconce]', '.g-shroom .g-cap', '.g-bush--l', '[data-tree]']) {
     const el = page.locator(sel).first()
     if (await el.isVisible()) await el.click({ force: true })
   }
