@@ -99,7 +99,7 @@ export default {
         photo: 'IMG_20261006_154204.jpg',
         date: '2026-10-06',
         title: 'the flower bucket',
-        text: 'The day I showed up with a bucket of flowers and you pretended not to cry. You cried.',
+        text: 'The day I showed up with a bucket of flowers and you cried — right there, openly, not even trying to hide it.',
       },
       {
         shape: 'cake',
