@@ -129,6 +129,8 @@ export default {
     // ── the camera: fit a focus band of the canvas into the free part of the screen ──
     // phase 'door': she's hanging things — the whole lit house edge to edge with clean margins
     // (the fairy-light drops whole), door on the centre line, down to the mat.
+    // 'close': from the plate snapping onto its hook until the sticker is on it — the camera
+    // leans in on the door and the mat, so the names read and the sticker is a fair target.
     // 'party': the crescendo — house + garden fill the width, sat low on a thin strip of lawn,
     // the whole sky above them free for the fireworks.
     // 'home': the card has landed — the same wide framing lifted above the card (portrait) or
@@ -140,12 +142,15 @@ export default {
       door: { x0: 8, x1: 292, y0: 194, y1: 592 },
       party: { x0: 4, x1: 424, y0: 196, y1: 598 },
       home: { x0: 4, x1: 424, y0: 196, y1: 620 },
+      close: { x0: 100, x1: 200, y0: 478, y1: 598 }, // plate + twine, letterbox, mat, the slip on it
     }
     const frameFor = (ph) => {
       const W = fin.clientWidth
       const H = fin.clientHeight
       const side = W / H >= 1.15
       if (side && ph === 'party') ph = 'home' // the card goes beside the house: one framing for both
+      const close = ph === 'close'
+      if (close) ph = 'door' // same free region as the door framing, a tighter band
       let region
       let low = false // sit the band on the region's floor instead of centring it
       if (side) {
@@ -164,9 +169,12 @@ export default {
       } else {
         region = { x: 0, y: TOP, w: W, h: H - TOP - Math.max(48, prompt.offsetHeight) - 26 }
       }
-      const b = BANDS[ph]
+      const b = BANDS[close ? 'close' : ph]
       let k = Math.min(region.w / (b.x1 - b.x0), region.h / (b.y1 - b.y0)) // px per hub unit
       k = Math.max(k, ph === 'door' ? MIN_DOOR : 0.5)
+      // close: lean in until the names read at ≥ 16 px (they're ~5.9 hub units), but no closer
+      // than the band allows — the mat and the slip on it stay on screen above the prompt
+      if (close) k = Math.min(k, Math.max(3.1, 1.45 * frameFor('door').s * U))
       // centre the band (or sit it low); if it can't fit, keep its bottom (door, mat) on screen
       const bandH = (b.y1 - b.y0) * k
       const top = bandH <= region.h && !low ? region.y + (region.h - bandH) / 2 : region.y + region.h - bandH
@@ -181,13 +189,6 @@ export default {
     }
 
     const toScreen = (f, cx, cy) => ({ x: f.x + cx * f.s, y: f.y + (cy - VIEW.y) * f.s })
-
-    /** The door frame, leaning in k× around the nameplate (it stays put on screen). */
-    const leanIn = (k) => {
-      const f = frameFor('door')
-      const p = toScreen(f, HOOK.x, HOOK.y + 14 * U)
-      return { x: p.x - (p.x - f.x) * k, y: p.y - (p.y - f.y) * k, s: f.s * k }
-    }
 
     // the envelope's tap target is centred on the envelope; its tag sits on the strip of lawn
     // below the step, to the right of the stepping stones — under the kitchen window, short of
@@ -444,10 +445,12 @@ export default {
       tl.to(twineSlack, { opacity: 0, duration: T.tap }, 'swing')
       tl.to(twineTaut, { opacity: 1, duration: T.tap }, 'swing')
       tl.fromTo(plate, { rotation: -11 }, { rotation: 0, duration: T.moment, ease: EASE.wobble }, 'swing')
-      // the camera leans in to watch the names engrave, left to right, as the swing settles
-      // …close enough that the names read at ≥ 16 px while they engrave (names are ~5.9 hub units)
-      const lean = () => leanIn(Math.max(1.45, 3.1 / (frameFor('door').s * U)))
-      tl.to(art, { x: () => lean().x, y: () => lean().y, scale: () => lean().s, duration: T.moment, ease: EASE.inOut }, 'swing+=0.15')
+      // the camera leans in to watch the names engrave, left to right, as the swing settles —
+      // and stays there (the slip lands on the mat in frame) until the sticker is on the plate
+      const close = () => frameFor('close')
+      tl.call(() => (phase = 'close'), null, 'swing+=0.15')
+      tl.to(art, { x: () => close().x, y: () => close().y, scale: () => close().s, duration: T.moment, ease: EASE.inOut }, 'swing+=0.15')
+      tl.call(() => (frame = close()), null, '>') // drags divide by the camera's scale
       tl.addLabel('engrave', 'swing+=0.7')
       tl.to(engrave, { attr: { width: 160 }, duration: T.moment, ease: 'power1.inOut' }, 'engrave')
       tl.to(engraved, { strokeDashoffset: 0, duration: T.moment, ease: 'none' }, 'engrave')
@@ -460,8 +463,6 @@ export default {
       beat(tl, 'sparkle', '<')
       // the letterbox flap lifts and a slip pops out onto the mat
       tl.addLabel('post', `+=${T.reveal + 0.3}`)
-      // …and eases back out just before the post arrives
-      tl.to(art, { x: () => frameFor('door').x, y: () => frameFor('door').y, scale: () => frameFor('door').s, duration: T.reveal, ease: EASE.inOut }, `post-=${T.reveal}`)
       beat(tl, 'paper', 'post')
       tl.to(flap, { scaleY: -1.4, duration: T.tap, ease: EASE.out }, 'post')
       tl.set(slip, { visibility: 'visible' }, 'post')
