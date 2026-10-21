@@ -19,12 +19,15 @@ export function seed({ doorSeen = true, done = [], lang = 'en', notes = [], wall
 
 export async function open(page, route, opts = {}) {
   const s = seed(opts)
-  await page.addInitScript((value) => {
+  await page.addInitScript(([value, door]) => {
     if (!sessionStorage.getItem('seeded')) {
       localStorage.setItem('our-home', value)
+      // the door is per visit (sessionStorage) — seed it the same way
+      if (door) sessionStorage.setItem('our-home-door', '1')
+      else sessionStorage.removeItem('our-home-door')
       sessionStorage.setItem('seeded', '1')
     }
-  }, JSON.stringify(s))
+  }, [JSON.stringify(s), s.doorSeen])
   const q = opts.query ? `&${opts.query}` : ''
   await page.goto(`/?debug${q}#/${route}`)
   await expect(page.locator(`.scene[data-scene="${opts.expect ?? route}"]`)).toBeVisible()

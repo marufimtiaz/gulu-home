@@ -19,7 +19,7 @@ test('wrong time shows a hint, right time opens the door', async ({ page }) => {
   await expect(page.locator('.door')).toHaveClass(/door--open/)
   await shot(page, 'door-open')
   await expect(page.locator('.scene[data-scene="house"]')).toBeVisible({ timeout: 5000 })
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('our-home')).doorSeen)
+  const saved = await page.evaluate(() => sessionStorage.getItem('our-home-door') === '1') // per visit
   expect(saved).toBe(true)
   expect(errors).toEqual([])
 })

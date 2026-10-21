@@ -87,3 +87,20 @@ describe('lit order', () => {
     expect(state.litOrder()).toEqual(['garden', 'living', 'kitchen'])
   })
 })
+
+describe('the door is per visit', () => {
+  it('lives in sessionStorage, not with the lasting progress', () => {
+    localStorage.clear()
+    sessionStorage.clear()
+    state._reload()
+    state.update({ doorSeen: true })
+    state.markDone('kitchen')
+    expect(JSON.parse(localStorage.getItem('our-home')).doorSeen).toBeUndefined()
+    expect(sessionStorage.getItem('our-home-door')).toBe('1')
+    // a new visit: progress kept, door shown again
+    sessionStorage.clear()
+    state._reload()
+    expect(state.get().doorSeen).toBe(false)
+    expect(state.isDone('kitchen')).toBe(true)
+  })
+})

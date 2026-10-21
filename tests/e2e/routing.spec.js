@@ -68,3 +68,20 @@ test('language switch works from a plain address, and one-shot switches are not 
   await expect(page.locator('html')).toHaveAttribute('lang', 'bn')
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('our-home')).done.kitchen)).toBe(true)
 })
+
+test('every new visit opens at the door; reloads inside a visit stay put', async ({ browser, page }) => {
+  await page.goto('/?skip#/house')
+  await page.evaluate(() => window.__home.complete('living'))
+  await expect(page.locator('.scene[data-scene="house"]')).toBeVisible()
+  await page.reload()
+  await expect(page.locator('.scene[data-scene="house"]')).toBeVisible() // same visit
+  // a new visit: same saved progress, fresh session
+  const progress = await page.evaluate(() => localStorage.getItem('our-home'))
+  const ctx = await browser.newContext()
+  const fresh = await ctx.newPage()
+  await fresh.addInitScript((p) => localStorage.setItem('our-home', p), progress)
+  await fresh.goto(page.url().replace(/#.*/, '#/kitchen'))
+  await expect(fresh.locator('.scene[data-scene="door"]')).toBeVisible()
+  expect(await fresh.evaluate(() => JSON.parse(localStorage.getItem('our-home')).done.living)).toBe(true)
+  await ctx.close()
+})

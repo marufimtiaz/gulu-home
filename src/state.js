@@ -20,6 +20,26 @@ const fresh = () => ({
 let memory = null
 const listeners = new Set()
 
+// The door is per visit: `doorSeen` lives in sessionStorage, so every new visit (opening the
+// link, a new tab, launching from the home screen) starts at the clock lock, while reloads
+// inside a visit (switching language, refreshing a room) stay where she is.
+const DOOR_KEY = 'our-home-door'
+function sessionDoor() {
+  try {
+    return sessionStorage.getItem(DOOR_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+function saveSessionDoor(seen) {
+  try {
+    if (seen) sessionStorage.setItem(DOOR_KEY, '1')
+    else sessionStorage.removeItem(DOOR_KEY)
+  } catch {
+    /* private mode: in memory only */
+  }
+}
+
 function read() {
   if (memory) return memory
   let saved = null
@@ -40,13 +60,16 @@ function read() {
   } else {
     memory = base
   }
+  memory.doorSeen = sessionDoor()
   return memory
 }
 
 function write(next) {
   memory = next
+  saveSessionDoor(next.doorSeen)
   try {
-    localStorage.setItem(KEY, JSON.stringify(next))
+    const { doorSeen, ...lasting } = next // the door is remembered per visit, not forever
+    localStorage.setItem(KEY, JSON.stringify(lasting))
   } catch {
     /* keep in memory only */
   }
