@@ -406,8 +406,18 @@ export default {
     on(window, 'keydown', (e) => e.key === 'Escape' && closeNote())
 
     // ── paint cans ──
+    // picking one up: the paint sloshes inside and the handle flips up
     cans.forEach((cn, i) => {
-      offs.push(press(cn, { scale: 0.86 }))
+      offs.push(press(cn, { sound: 'slosh', scale: 0.94 }))
+      on(cn, 'pointerdown', () => {
+        if (ctx.reduced || phase === 'painting') return
+        keep(gsap.timeline()
+          .to(cn.querySelector('.c-paint'), { scaleX: 0.82, scaleY: 1.3, x: 3, svgOrigin: '32 22', duration: 0.12, ease: 'power2.out' })
+          .to(cn.querySelector('.c-paint'), { scaleX: 1, scaleY: 1, x: 0, svgOrigin: '32 22', duration: 0.6, ease: 'elastic.out(1, 0.35)' }))
+        keep(gsap.timeline()
+          .to(cn.querySelector('.c-handle'), { scaleY: 1.25, svgOrigin: '32 26', duration: 0.14, ease: 'power2.out' })
+          .to(cn.querySelector('.c-handle'), { scaleY: 1, svgOrigin: '32 26', duration: 0.5, ease: EASE.wobble }))
+      })
       on(cn, 'click', () => paint(i))
     })
 

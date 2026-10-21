@@ -490,6 +490,8 @@
 /* ── scenery that answers (Task 17) ── */
 .pk-hit { fill: transparent; stroke: none; }
 .g-fence .picket { cursor: pointer; }
+.g-fence .picket path { transition: fill 0.35s ease-out; }
+.g-fence .picket.is-struck path { fill: var(--butter); transition: none; }
 .g-rail, .g-vine, .vine-bloom, .g-back > .g-leaf, .g-warm, .g-hill { pointer-events: none; }
 .moon-blush { fill: var(--blush); opacity: 0; pointer-events: none; }
 .moon-cheek { fill: var(--berry); opacity: 0; pointer-events: none; }

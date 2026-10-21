@@ -551,30 +551,52 @@ export default {
       track(gsap.fromTo(byDist, { opacity: 0.85, attr: { r: 13 } }, { opacity: 0.22, attr: { r: 7 }, duration: 0.9, ease: 'power2.out', stagger: 0.045, immediateRender: false }))
     }
 
-    // the fence: a xylophone (see TUNE). Left → right, eight in a row, and the garden sings along.
+    // the fence: a xylophone (see TUNE). The melody starts at the first picket she can see
+    // (phones only show part of the fence), so left → right always plays the opening; eight in
+    // a row and the garden sings along.
+    const pickets = $$('.g-fence .picket')
+    const firstSeen = () => {
+      const left = garden.getBoundingClientRect().left
+      return Math.max(0, pickets.findIndex((p) => p.getBoundingClientRect().left >= left - 2))
+    }
     let runK = -9
     let run = 0
     let runAt = 0
+    let songs = 0
     function sing(pk) {
       sound.play('chime')
       chase(at(pk).x)
-      say(t('garden.song'), at(pk, 0), { small: t('garden.songSmall'), hold: 3.4 }).classList.add('say--song')
-      if (!reduced) track(gsap.fromTo($$('.g-back .lt-glow'), { opacity: 0.18 }, { opacity: 0.6, duration: 0.5, yoyo: true, repeat: 3, ease: 'sine.inOut' }))
+      const again = songs++ > 0
+      say(t(again ? 'garden.songAgain' : 'garden.song'), at(pk, 0), { small: t(again ? 'garden.songAgainSmall' : 'garden.songSmall'), hold: 3.4 }).classList.add('say--song')
+      if (reduced) return
+      track(gsap.fromTo($$('.g-back .lt-glow'), { opacity: 0.18 }, { opacity: 0.6, duration: 0.5, yoyo: true, repeat: 3, ease: 'sine.inOut' }))
+      // the pickets she played take a bow, one after another
+      const end = pickets.indexOf(pk)
+      const row = pickets.slice(Math.max(0, end - SONG_RUN + 1), end + 1)
+      track(gsap.timeline({ delay: 0.3 })
+        .to(row, { rotation: -7, transformOrigin: '50% 100%', duration: 0.2, ease: 'power2.out', stagger: 0.07 })
+        .to(row, { rotation: 0, transformOrigin: '50% 100%', duration: 0.7, ease: EASE.wobble, stagger: 0.07 }, 0.22))
     }
-    for (const pk of $$('.g-fence .picket')) {
+    for (const pk of pickets) {
       const k = +pk.dataset.k
+      // the bar it plays depends on where the fence starts on this screen (set just before react plays it)
+      const note = { i: 0 }
+      on(pk, 'pointerdown', () => (note.i = TUNE[(k - firstSeen()) % TUNE.length]), { capture: true })
       offs.push(
         react(pk, 'ring', {
           origin: '50% 100%',
           strength: 1.8,
           sound: 'xylo',
-          soundOpts: { i: TUNE[k % TUNE.length] },
+          soundOpts: note,
           steps: [
             () => {
               const now = performance.now()
               run = k === runK + 1 && now - runAt < 2200 ? run + 1 : 1
               runK = k
               runAt = now
+              // the struck bar lights up for a moment, like a key on a toy xylophone
+              pk.classList.add('is-struck')
+              track(gsap.delayedCall(0.12, () => pk.classList.remove('is-struck')))
               if (!reduced) {
                 const n = bit('g-note', at(pk, 0.05), k % 3 ? '♪' : '♫')
                 track(gsap.fromTo(n, { scale: 0.4, opacity: 1 }, { scale: 1, y: '-=48', x: `+=${k % 2 ? 9 : -9}`, rotation: k % 2 ? 16 : -16, opacity: 0, duration: 1.2, ease: 'power1.out', onComplete: () => drop(n) }))
@@ -585,6 +607,30 @@ export default {
         }),
       )
     }
+
+    // the fairy lights: a wave of light runs out from her finger; the fourth time they beat
+    // like a heart — "heart beats fast", the song's first line
+    const lightString = $('.g-back .g-lights')
+    let beating = false
+    const wave = (n, e) => e && chase(e.clientX)
+    offs.push(react(lightString, 'flicker', { sound: 'ting', strength: 0.6, steps: [wave, wave, wave, (n, e) => {
+      if (beating) return
+      beating = true
+      sound.play('sparkle')
+      say(t('garden.heart'), e ? { x: e.clientX, y: e.clientY - 14 } : at(lightString, 0), { small: t('garden.heartSmall') })
+      const tl = track(gsap.timeline({ onComplete: () => (beating = false) }))
+      for (let i = 0; i < 3; i++) {
+        const b = i * 0.9
+        tl.call(() => sound.play('knock'), null, b)
+        tl.call(() => sound.play('knock'), null, b + 0.26)
+        if (reduced) continue
+        // ba-dum
+        tl.to(lights, { opacity: 0.95, attr: { r: 12 }, duration: 0.1, ease: 'power2.out' }, b)
+        tl.to(lights, { opacity: 0.4, attr: { r: 8 }, duration: 0.14 }, b + 0.1)
+        tl.to(lights, { opacity: 0.85, attr: { r: 11 }, duration: 0.1, ease: 'power2.out' }, b + 0.26)
+        tl.to(lights, { opacity: 0.22, attr: { r: 7 }, duration: 0.45, ease: 'sine.out' }, b + 0.36)
+      }
+    }] }))
 
     // flowers nod on their stems and wake (the birthday garden: "you woke up every flower in it")
     const awake = new Set()

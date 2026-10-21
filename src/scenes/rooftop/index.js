@@ -317,20 +317,43 @@ export default {
           }
         }
         cat.addEventListener('pointerdown', down)
+        // left alone, she's a cat: every few seconds the tail swishes, or she tips her head up
+        // at the stars she's watching (never while she's busy with you)
+        let idle = null
+        const fidget = () => {
+          idle = keep(gsap.delayedCall(4 + Math.random() * 5, fidget))
+          if (away || catTl?.isActive()) return
+          const tl = keep(gsap.timeline())
+          if (Math.random() < 0.6) {
+            tl.to(tail, { rotation: -22, transformOrigin: '0% 0%', duration: 0.35, ease: 'sine.inOut' })
+              .to(tail, { rotation: 6, duration: 0.45, ease: 'sine.inOut' })
+              .to(tail, { rotation: 0, duration: 0.6, ease: 'sine.out' })
+          } else {
+            tl.to(head, { rotation: 7, y: -1.5, transformOrigin: '50% 90%', duration: 0.6, ease: 'sine.inOut' })
+              .to(head, { rotation: 0, y: 0, duration: 0.8, ease: 'sine.inOut' }, '+=1.2')
+          }
+          catTl = tl
+        }
+        if (!reduced) idle = keep(gsap.delayedCall(2 + Math.random() * 3, fidget))
         offsT.push(() => {
           cat.removeEventListener('pointerdown', down)
           catTl?.kill()
+          idle?.kill()
         })
       }
 
-      // the plant pot on the parapet tips and its leaves shiver; the third time it nearly goes over
+      // the tulsi on the parapet sways on its stem like it's caught the wind; the third time
+      // the whole pot rocks to the very edge and back
       const pot = part('pot')
       if (pot) {
         const leaf = pot.querySelector('[data-leaf]')
-        const shiver = () => !reduced && keep(gsap.fromTo(leaf, { rotation: -6 }, { rotation: 0, transformOrigin: '50% 100%', duration: 0.8, ease: 'elastic.out(1.2, 0.25)' }))
-        offsT.push(react(pot, 'tip', { origin: '50% 100%', strength: 1.3, steps: [shiver, shiver, () => {
-          shiver()
-          if (!reduced) keep(gsap.timeline().to(pot, { rotation: 22, transformOrigin: '100% 100%', duration: 0.22, ease: 'power2.out' }).to(pot, { rotation: 0, duration: 0.9, ease: 'elastic.out(1, 0.3)' }))
+        offsT.push(react(pot, 'sway', { target: leaf, origin: '50% 100%', sound: 'rustle', strength: 1.4, steps: [() => {}, () => {}, () => {
+          sound.play('knock')
+          if (!reduced) keep(gsap.timeline()
+            .to(pot, { rotation: 18, transformOrigin: '100% 100%', duration: 0.2, ease: 'power2.out' })
+            .to(pot, { rotation: 21, duration: 0.35, ease: 'sine.inOut' }) // teeters…
+            .to(pot, { rotation: 0, duration: 0.9, ease: 'elastic.out(1, 0.3)' })
+            .call(() => sound.play('knock')))
           say(t('rooftop.noni'), top(pot), { small: t('rooftop.noniSmall') })
         }] }))
       }
@@ -724,6 +747,14 @@ export default {
       tl.to(shoot, { ...at(0.66), duration: 0.95, ease: 'none' })
       tl.to(shoot, { ...at(1), opacity: 0, duration: 0.45, ease: 'power2.in' })
       tl.to(tail, { scaleX: 1.25, duration: 0.35, ease: 'sine.in' }, '<')
+      // the cat on the railing follows it across the sky with her head
+      const catHead = terraceWrap.querySelector('.rt-cat__head')
+      if (catHead) {
+        keep(gsap.timeline()
+          .to(catHead, { rotation: -14 * dir, y: -2, transformOrigin: '50% 90%', duration: 0.4, ease: 'sine.out' })
+          .to(catHead, { rotation: 14 * dir, duration: 1.5, ease: 'sine.inOut' })
+          .to(catHead, { rotation: 0, y: 0, duration: 0.6, ease: 'sine.out' }))
+      }
       passTl = keep(tl)
     }
 

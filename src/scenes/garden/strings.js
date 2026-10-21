@@ -17,6 +17,10 @@ export default {
   // scenery payoffs (Task 17)
   song: '♪ a thousand yearsss',
   songSmall: 'my favourite singer, {nickname}. on a fence, apparently.',
+  songAgain: '♪ encore!',
+  songAgainSmall: 'the crickets are asking for one more.',
+  heart: 'heart beats fast…',
+  heartSmall: 'colours and promises. every time I see you.',
   awake: 'you woke up every flower.',
   awakeSmall: 'again.',
   moonShy: 'Sensitive.',

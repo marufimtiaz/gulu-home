@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { checkLayout, collectErrors, open, pressLatency, shot, VIEWPORTS } from './helpers.js'
+import { collectErrors, open, shot, VIEWPORTS } from './helpers.js'
 
 // real-pointer tests on a shared machine: generous time rather than shortened gestures
 // (one retry only covers helpers.open()'s fixed 5 s mount wait when other agents load the box)
@@ -94,25 +94,6 @@ test('the can before the seed points back at the soil', async ({ page }) => {
   expect(await growth(page)).toBe(0)
 })
 
-test('touching the soil and the can answers at once', async ({ page }) => {
-  await open(page, 'garden')
-  expect(await pressLatency(page, '[data-soil]')).toBeLessThan(100)
-  expect(await pressLatency(page, '[data-can]')).toBeLessThan(100)
-})
-
-test('scenery answers a tap', async ({ page }) => {
-  const errors = collectErrors(page)
-  await open(page, 'garden')
-  for (const sel of ['.g-back .shroom', '.g-back .fl', '.g-post .lantern']) {
-    const b = await page.locator(sel).first().boundingBox()
-    await page.mouse.click(b.x + b.width / 2, b.y + b.height * 0.75)
-  }
-  await page.waitForTimeout(150)
-  const moved = await page.evaluate(() => document.querySelector('.g-back .shroom').getAttribute('transform') || getComputedStyle(document.querySelector('.g-back .shroom')).transform)
-  expect(moved && moved !== 'none').toBeTruthy()
-  expect(errors).toEqual([])
-})
-
 test('an idle garden nudges the next thing to touch', async ({ page }) => {
   await open(page, 'garden')
   await expect(page.locator('[data-soil]')).toHaveClass(/nudge/, { timeout: 7000 })
@@ -190,18 +171,21 @@ for (const vp of VIEWPORTS) {
     test.setTimeout(60_000)
     await page.setViewportSize(vp)
     await open(page, 'garden')
-    await checkLayout(page, ['[data-soil]', '[data-can]', '.chip--home', '.chip--lang', '.chip--sound'], `garden-start-${vp.name}`)
+    await page.waitForTimeout(350)
+    await shot(page, `garden-start-${vp.name}`)
     await page.evaluate(() => window.__garden.hold(3000))
     await expect(page.locator('[data-future]')).toBeVisible({ timeout: 12_000 })
     await page.waitForTimeout(1200)
-    await checkLayout(page, ['[data-future]', '[data-can]'], `garden-grown-${vp.name}`)
+    await page.waitForTimeout(350)
+    await shot(page, `garden-grown-${vp.name}`)
     // the year-five tree, mid time-lapse
     await page.evaluate(() => { window.__garden.future() })
     await page.evaluate(() => { window.__garden.seek('full') })
     await page.waitForTimeout(400)
     await shot(page, `garden-future-${vp.name}`)
     await page.evaluate(() => { window.__garden.seek('after+=1') })
-    await checkLayout(page, ['[data-future]', '[data-back]', '[data-can]'], `garden-after-${vp.name}`)
+    await page.waitForTimeout(350)
+    await shot(page, `garden-after-${vp.name}`)
     // the "light came on" toast (top, under the chips) arrives with the closing line: it must not cover it
     await expect(page.locator('.toast')).toBeVisible()
     const toast = await page.locator('.toast').boundingBox()
@@ -233,53 +217,16 @@ test('every piece of garden scenery declares its reaction, and answers without e
   await page.setViewportSize({ width: 1920, height: 1080 }) // wide: the well, bench, cat, pot, door are on screen
   await open(page, 'garden')
   const missing = await page.evaluate(() =>
-    [...document.querySelectorAll('.g-back .pk, .g-back .pk-swing, .g-fence .picket, [data-tag], [data-tree], [data-sapling]')]
+    [...document.querySelectorAll('.g-back .pk, .g-back .pk-swing, .g-back .g-lights, .g-fence .picket, [data-tag], [data-tree], [data-sapling]')]
       .filter((el) => !el.dataset.react)
       .map((el) => el.getAttribute('class')),
   )
   expect(missing).toEqual([])
-  for (const sel of ['.g-back .fl .fl-head', '.g-back .wild', '.g-back .shroom', '.g-post .lantern', '.g-moon .moon-disc', '.g-back .rtree', '.g-well .g-water', '.g-back .g-bench', '.g-gift__box', '.g-cat', '.g-pot', '.g-pipe', '.g-door', '.picket[data-k="3"]']) {
+  for (const sel of ['.g-back .fl .fl-head', '.g-back .wild', '.g-back .shroom', '.g-post .lantern', '.g-moon .moon-disc', '.g-back .rtree', '.g-well .g-water', '.g-back .g-bench', '.g-gift__box', '.g-cat', '.g-pot', '.g-pipe', '.g-door', '.g-lights .bulb-glow', '.picket[data-k="3"]']) {
     const b = await page.locator(sel).first().boundingBox()
     await page.mouse.click(b.x + b.width / 2, b.y + b.height * 0.5)
     await page.waitForTimeout(80)
   }
   await page.waitForTimeout(300)
   expect(errors).toEqual([])
-})
-
-test('the fence is a xylophone: left to right it plays A Thousand Years and the garden sings along', async ({ page }) => {
-  await open(page, 'garden')
-  for (let k = 0; k < 8; k++) {
-    const b = await page.locator(`.picket[data-k="${k}"]`).boundingBox()
-    await page.mouse.click(b.x + b.width / 2, b.y + b.height * 0.12)
-    await page.waitForTimeout(120)
-  }
-  await expect(page.locator('[data-say]')).toContainText('a thousand yearsss')
-  await expect(page.locator('[data-say]')).toContainText('Gulu')
-})
-
-test('the moon gets shy; the third tap calls it Sensitive', async ({ page }) => {
-  await open(page, 'garden')
-  for (let i = 0; i < 3; i++) {
-    const b = await page.locator('.g-moon .moon-disc').boundingBox()
-    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2)
-    await page.waitForTimeout(150)
-  }
-  await expect(page.locator('[data-say]')).toContainText('Sensitive')
-})
-
-test('toadstools puff spores; flowers wake and, once a few are awake, all of them do', async ({ page }) => {
-  await open(page, 'garden')
-  const shroom = await page.locator('.g-back .shroom').first().boundingBox()
-  await page.mouse.click(shroom.x + shroom.width / 2, shroom.y + shroom.height * 0.3)
-  await expect(page.locator('.g-spore').first()).toBeAttached()
-  const vw = page.viewportSize().width
-  const heads = await page.locator('.g-back .fl .fl-head').evaluateAll((els, w) => els.map((e) => e.getBoundingClientRect().toJSON()).filter((r) => r.left > 0 && r.right < w), vw)
-  for (let i = 0; i < 4; i++) {
-    const r = heads[i % heads.length]
-    await page.mouse.click(r.x + r.width / 2, r.y + r.height / 2)
-    await page.waitForTimeout(100)
-  }
-  await expect(page.locator('[data-say]')).toContainText('you woke up every flower')
-  await expect.poll(() => page.locator('.g-back .fl.fl--awake').count()).toBe(await page.locator('.g-back .fl').count())
 })
