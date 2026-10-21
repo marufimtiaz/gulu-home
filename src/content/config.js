@@ -158,7 +158,7 @@ export default {
     walls: ['#f6d78b', '#b9d8b4', '#f3b6cf', '#a9d6e5', '#fbf3e4'],
   },
 
-  // ── The reception card we never printed (in the letterbox, after the finale) ──
+  // ── The reception card (in the letterbox, after the finale) ──
   // Traditional cards are bilingual, so both languages are on the card itself.
   card: {
     invocation: null, // ← optional top line, e.g. 'বিসমিল্লাহির রাহমানির রাহিম' — null for none
@@ -181,7 +181,7 @@ export default {
     address: '——, Dhaka', // ← fill in
     mapUrl: null, // ← optional Google Maps link, shown on the back of the card
     compliments: ['——', '——'], // ← "with best compliments from" — family names
-    note: 'we forgot to print this. so I made it instead.',
+    note: null, // ← optional handwritten line under the card
   },
 
   // ── Finale: the nameplate ──

@@ -159,8 +159,8 @@ bday) over the roof, music swells to the chorus. Card: *"welcome home."* + `cont
 + *"come see the tree every year."* Button: *"back to our house"*. Finale completion is stored;
 hub then stays fully lit with the nameplate showing.
 
-### The reception card — "the card we never printed" (`#/card`)
-They never printed a traditional card. This scene is one: a real, formal Bangladeshi reception
+### The reception card (`#/card`)
+A real, formal Bangladeshi reception
 card that lives in the house's letterbox. It deliberately looks *printed*, not paper-craft —
 sharper, gilded, traditional — so it reads as a keepsake object inside the paper house.
 
@@ -191,8 +191,8 @@ Flow:
 4. **Gold** — foil effect: a moving specular highlight across gold elements following pointer
    position, and `deviceorientation` tilt on phones (with the iOS permission prompt only after
    a tap, and silently skipped if denied). Reduced motion: static gold gradient.
-5. **Private touch** — under the card, in `--hand`: `card.note` (default *"we forgot to print
-   this. so I made it instead."*).
+5. **Optional note** — if `card.note` is set, it appears under the card in `--hand`. Default: none.
+   The card is presented simply as the reception card — no framing about it not being printed.
 6. **Save the card** — button renders the card face to a 1080×1512 PNG (SVG
    `foreignObject` → canvas, with local fonts inlined as data URLs) and triggers download /
    `navigator.share({ files })` where supported.
