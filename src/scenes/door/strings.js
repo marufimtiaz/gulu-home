@@ -17,7 +17,7 @@ export default {
     'come in then. the clock knows the way.',
   ],
   // …when she knocks on the door
-  knocks: ["who's there?", "who's THERE?", 'if it\'s {nickname}: you know what time it is.'],
+  knocks: ['…was that a knock?', "who's THERE?", 'if it\'s {nickname}: you know what time it is.'],
   // …when she tries the door knob
   knob: ['locked.', 'still locked.', 'the knob is just for show. the clock is the lock.'],
   // …when she looks under the doormat

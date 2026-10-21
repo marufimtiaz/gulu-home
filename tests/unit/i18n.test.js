@@ -18,7 +18,7 @@ describe('i18n', () => {
   it('overlays Bengali with English fallback', () => {
     i18n.init('?lang=bn')
     expect(i18n.lang()).toBe('bn')
-    expect(i18n.c('finale.plate')).toBe('মারুফ & স্নেহা')
+    expect(i18n.c('finale.plate')).toBe('মারুফ ও স্নেহা')
     // not translated yet → English
     expect(i18n.c('card.invocationLabel')).toBe('Bismillahir Rahmanir Rahim') // no Bengali override → English
     expect(i18n.num(2026)).toBe('২০২৬')

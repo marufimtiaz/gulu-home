@@ -146,6 +146,8 @@ test('dawn: the phone glows, the first text, then back to tonight', async ({ pag
   await expect(page.locator('[data-bubble]')).toHaveText('I love you toooo')
   await page.waitForTimeout(1800)
   await shot(page, 'living-text')
+  await expect(page.locator('.lv-phonecard__on')).toHaveCSS('opacity', '0.9', { timeout: 6_000 })
+  await page.locator('[data-phonecard]').click() // she taps to go on
   await expect(page.locator('[data-counter]')).toBeVisible({ timeout: 12_000 })
   await expect(page.locator('[data-counter]')).toContainText('days')
   await expect(scene).toHaveAttribute('data-done', 'true')
@@ -196,6 +198,8 @@ test('re-entering a completed room starts at now and completes again', async ({ 
   await expect(page.locator('[data-counter]')).toBeHidden()
   await seek(page, 0)
   await page.locator('[data-phone]').click()
+  await expect(page.locator('.lv-phonecard__on')).toHaveCSS('opacity', '0.9', { timeout: 6_000 })
+  await page.locator('[data-phonecard]').click()
   await expect(page.locator('[data-counter]')).toBeVisible({ timeout: 12_000 })
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('our-home')).done.living)
   expect(saved).toBe(true)
@@ -234,7 +238,8 @@ test('every size: screenshots of now, dawn, the text and the counter', async ({ 
     await onScreen(page, '.lv-phonecard__phone', vp)
     await onScreen(page, '[data-bubble]', vp)
     await shot(page, `living-${vp.name}-text`)
-    await page.locator('[data-phonecard]').click() // skip the wait
+    await expect(page.locator('.lv-phonecard__on')).toHaveCSS('opacity', '0.9', { timeout: 6_000 })
+    await page.locator('[data-phonecard]').click() // go on
     await expect(page.locator('[data-counter]')).toBeVisible({ timeout: 12_000 })
     await page.waitForTimeout(900)
     await onScreen(page, '[data-counter]', vp)

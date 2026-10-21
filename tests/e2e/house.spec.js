@@ -130,7 +130,7 @@ test('reduced motion renders the house still', async ({ browser }) => {
 
 test('bengali caption', async ({ page }) => {
   await open(page, 'house', { lang: 'bn', done: ['living'] })
-  await expect(page.locator('[data-caption]')).toHaveText('৬টার মধ্যে ১টা আলো জ্বলছে')
+  await expect(page.locator('[data-caption]')).toHaveText('৬টার ১টা আলো জ্বলছে')
 })
 
 test('idle on the hub nudges the suggested window', async ({ page }) => {

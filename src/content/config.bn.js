@@ -36,7 +36,7 @@ export default {
     ingredients: [
       { label: '২ কাপ লাচ্ছি', note: 'লাচ্ছিকে কেউ এত ভালোবাসেনি কখনো।' },
       { label: '১ প্লেট কাচ্চি', note: 'পুরো প্লেট। ভাগ হবে না। (আচ্ছা, একটু হবে।)' },
-      { label: 'একটা রিকশা ভ্রমণ', note: 'লম্বা রাস্তা ঘুরে বাড়ি, অবশ্যই।' },
+      { label: 'একটা রিকশা রাইড', note: 'লম্বা রাস্তা ঘুরে বাড়ি, অবশ্যই।' },
       { label: '"keep talking"', note: 'আস্তে আস্তে মেশাও। সারা রাত চলে।' },
       { label: 'হাজার বছরররর', note: 'অন্তত তিনটা "র" লাগবে।' },
       { label: 'একটা "yo yo"', note: 'স্বাদের জন্য।' },
@@ -47,6 +47,7 @@ export default {
   },
 
   garden: {
+    tag: '{myName} ও {partnerName}',
     sign: 'কিছু লাগাবে?',
     future: 'কেমন দেখাবে একদিন?',
     after: 'পৌঁছে যাব। এক বছর এক বছর করে।',
@@ -117,7 +118,8 @@ export default {
   },
 
   finale: {
-    est: 'স্থাপিত {weddingDate}',
+    plate: '{myName} ও {partnerName}',
+    est: '{weddingDate} থেকে',
     sticker: 'বউ',
     stickerNote: 'নতুন নাম আনলক হলো। এটাই আমার সবচেয়ে প্রিয়।',
     title: 'বাড়িতে স্বাগতম।',
