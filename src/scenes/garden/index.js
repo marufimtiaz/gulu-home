@@ -21,7 +21,10 @@ import { gsap } from 'gsap'
 import './scene.css'
 import { onHold } from '../../ui/drag.js'
 import { EASE, T, beat, moment } from '../../ui/choreo.js'
-import { nudge, poke, press } from '../../ui/feel.js'
+import { nudge, press } from '../../ui/feel.js'
+import { react } from '../../ui/react.js'
+import { SONG_RUN, TUNE } from './tune.js'
+import { sayer } from './say.js'
 import { treeAge, treeStage } from './tree.js'
 import { BASE, BOX, G, LEAVES, POUR_AT, SPOUT, STAGE_SCALE, W, H, canSVG, frontSVG, gardenSVG, soilSVG } from './art.js'
 
@@ -196,8 +199,59 @@ export default {
     offs.push(press(canBtn, { sound: null, scale: 0.95 }))
     offs.push(press(futureBtn))
     offs.push(press(backBtn))
-    const nd = nudge(wasDone ? [backBtn] : [soilBtn])
-    offs.push(() => nd.stop())
+
+    // little HTML bits over the art (spores, notes, drips) — tracked so unmount removes them
+    const bits = new Set()
+    const at = (el, fy = 0.5, fx0 = 0.5) => {
+      const r = el.getBoundingClientRect()
+      return { x: r.left + r.width * fx0, y: r.top + r.height * fy }
+    }
+    const bit = (cls, p, text = '') => {
+      const el = document.createElement('i')
+      el.className = cls
+      el.setAttribute('aria-hidden', 'true')
+      if (text) el.textContent = text
+      const r = garden.getBoundingClientRect()
+      gsap.set(el, { x: p.x - r.left, y: p.y - r.top })
+      garden.append(el)
+      bits.add(el)
+      return el
+    }
+    const drop = (el) => {
+      el.remove()
+      bits.delete(el)
+    }
+    const say = sayer(garden, { reduced, keep: track })
+
+    // ── idle guidance, in the garden's own language ──
+    // soil: it sparkles. can: a drop dribbles from the spout and it leans in, wanting to pour.
+    // the sign: it turns on its nails, inviting the question. Home: a warm glow, no arrow.
+    const soilHint = (el) => {
+      const p = at(el, 0.45)
+      fx.sparkles(p.x, p.y, { count: 5 })
+    }
+    const canHint = (el) => {
+      const r = el.getBoundingClientRect()
+      const d = bit('g-drip', { x: r.left + (r.width * SPOUT.x) / 100, y: r.top + (r.height * SPOUT.y) / 84 })
+      const tl = track(gsap.timeline())
+      tl.to(canLift, { rotation: -9, duration: 0.35, ease: 'sine.out', transformOrigin: '70% 90%' }, 0)
+      tl.to(canLift, { rotation: 0, duration: 0.7, ease: EASE.wobble }, 0.45)
+      tl.fromTo(d, { scale: 0.3 }, { scale: 1, duration: 0.25, ease: 'power1.out' }, 0.15)
+      tl.to(d, { y: '+=30', opacity: 0, duration: 0.5, ease: 'power2.in', onComplete: () => drop(d) }, 0.4)
+      return tl
+    }
+    const signHint = (el) => track(gsap.timeline()
+      .to(el, { rotationY: 24, duration: 0.3, ease: 'sine.out' })
+      .to(el, { rotationY: -12, duration: 0.4, ease: 'sine.inOut' })
+      .to(el, { rotationY: 0, duration: 0.6, ease: EASE.wobble }))
+    let nd = null
+    const guide = (targets, opts = {}) => {
+      nd?.stop()
+      nd = nudge(targets, opts)
+    }
+    if (wasDone) guide([backBtn])
+    else guide([soilBtn], { style: soilHint, arrow: true })
+    offs.push(() => nd?.stop())
 
     // ── growth ──
     function paintGrowth() {
@@ -263,7 +317,7 @@ export default {
       tl.call(() => {
         setPhase('water')
         setPrompt(t('garden.water'))
-        nd.set([canBtn])
+        guide([canBtn], { style: canHint, arrow: true })
       })
     }
     // pressing the can before there's anything to water
@@ -306,7 +360,7 @@ export default {
       tl.fromTo(futureBtn, { rotationY: -90 }, { rotationY: 0, duration: T.move, ease: EASE.spring })
       tl.call(() => {
         setPrompt(t('garden.ask'))
-        nd.set([futureBtn])
+        guide([futureBtn], { style: signHint, arrow: true })
       })
     }
 
@@ -439,7 +493,7 @@ export default {
       setPhase('after')
       futureBtn.disabled = false
       ctx.complete()
-      nd.set([backBtn])
+      guide([backBtn])
     }
 
     // ── wiring ──
@@ -478,35 +532,351 @@ export default {
     on(futureBtn, 'click', () => future())
     on(backBtn, 'click', () => ctx.back())
 
-    // ── scenery answers a tap ──
-    for (const el of $$('.g-back .pk')) offs.push(poke(el))
+    // ── scenery answers a tap — each thing like what it is, a few with a payoff ──
+    const svgNS = 'http://www.w3.org/2000/svg'
+    const svgEl = (tag, attrs, parent) => {
+      const el = document.createElementNS(svgNS, tag)
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v)
+      parent.append(el)
+      return el
+    }
+    const lights = $$('.g-lights .bulb-glow')
+    /** The fairy lights flash in a wave outward from client x. */
+    function chase(x) {
+      if (reduced) return
+      const byDist = lights
+        .map((b) => ({ b, d: Math.abs(at(b).x - x) }))
+        .sort((a, b) => a.d - b.d)
+        .map((o) => o.b)
+      track(gsap.fromTo(byDist, { opacity: 0.85, attr: { r: 13 } }, { opacity: 0.22, attr: { r: 7 }, duration: 0.9, ease: 'power2.out', stagger: 0.045, immediateRender: false }))
+    }
+
+    // the fence: a xylophone (see TUNE). Left → right, eight in a row, and the garden sings along.
+    let runK = -9
+    let run = 0
+    let runAt = 0
+    function sing(pk) {
+      sound.play('chime')
+      chase(at(pk).x)
+      say(t('garden.song'), at(pk, 0), { small: t('garden.songSmall'), hold: 3.4 }).classList.add('say--song')
+      if (!reduced) track(gsap.fromTo($$('.g-back .lt-glow'), { opacity: 0.18 }, { opacity: 0.6, duration: 0.5, yoyo: true, repeat: 3, ease: 'sine.inOut' }))
+    }
+    for (const pk of $$('.g-fence .picket')) {
+      const k = +pk.dataset.k
+      offs.push(
+        react(pk, 'ring', {
+          origin: '50% 100%',
+          strength: 1.8,
+          sound: 'xylo',
+          soundOpts: { i: TUNE[k % TUNE.length] },
+          steps: [
+            () => {
+              const now = performance.now()
+              run = k === runK + 1 && now - runAt < 2200 ? run + 1 : 1
+              runK = k
+              runAt = now
+              if (!reduced) {
+                const n = bit('g-note', at(pk, 0.05), k % 3 ? '♪' : '♫')
+                track(gsap.fromTo(n, { scale: 0.4, opacity: 1 }, { scale: 1, y: '-=48', x: `+=${k % 2 ? 9 : -9}`, rotation: k % 2 ? 16 : -16, opacity: 0, duration: 1.2, ease: 'power1.out', onComplete: () => drop(n) }))
+              }
+              if (run === SONG_RUN) sing(pk)
+            },
+          ],
+        }),
+      )
+    }
+
+    // flowers nod on their stems and wake (the birthday garden: "you woke up every flower in it")
+    const awake = new Set()
+    let allAwake = false
+    let flowerTaps = 0
+    const flowers = $$('.g-back .fl')
+    function wake(fl, delay = 0) {
+      fl.classList.add('fl--awake')
+      awake.add(fl)
+      if (!reduced) track(gsap.to(fl.querySelector('.fl-head'), { rotation: '+=45', transformOrigin: '50% 50%', duration: 0.8, delay, ease: EASE.spring }))
+    }
+    function wakeAll(from) {
+      allAwake = true
+      const x = at(from).x
+      sound.play('grow')
+      flowers
+        .map((fl) => ({ fl, d: Math.abs(at(fl).x - x) }))
+        .sort((a, b) => a.d - b.d)
+        .forEach(({ fl }, i) => wake(fl, 0.15 + i * 0.07))
+      say(t('garden.awake'), at(from, 0), { small: t('garden.awakeSmall') })
+    }
+    for (const fl of flowers) {
+      offs.push(react(fl, 'sway', { origin: '50% 100%', strength: 0.7, sound: 'rustle', steps: [() => {
+        wake(fl)
+        // phones only see two or three of the bed: four taps on any of them wake the lot
+        if (++flowerTaps >= 4 && !allAwake) wakeAll(fl)
+      }] }))
+    }
+    for (const w of $$('.g-back .wild')) offs.push(react(w, 'flutter', { origin: '50% 100%', strength: 1.5 }))
+
+    // toadstools squish and puff spores; the third puff hangs in the air as a heart
+    function spores(cap, n, heart = false) {
+      sound.play('spores')
+      if (reduced) return
+      const p = at(cap, 0.15)
+      for (let i = 0; i < n; i++) {
+        const el = bit(heart ? 'g-spore g-spore--heart' : 'g-spore', p)
+        const tl = track(gsap.timeline({ onComplete: () => drop(el) }))
+        if (heart) {
+          const a = (i / n) * Math.PI * 2
+          const hx = 16 * Math.sin(a) ** 3
+          const hy = -(13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a))
+          tl.to(el, { x: `+=${(hx * 2.2).toFixed(1)}`, y: `+=${(-70 + hy * 2.2).toFixed(1)}`, duration: 1, ease: 'power3.out' })
+          tl.to(el, { y: '-=24', opacity: 0, duration: 1.1, ease: 'power1.in' }, '+=0.7')
+        } else {
+          tl.to(el, { x: `+=${(Math.random() * 60 - 30).toFixed(1)}`, y: `-=${(40 + Math.random() * 50).toFixed(1)}`, opacity: 0, scale: 0.4, duration: 1.3 + Math.random() * 0.5, ease: 'power1.out' })
+        }
+      }
+    }
+    for (const sh of $$('.g-back .shroom')) {
+      offs.push(react(sh, 'squish', { strength: 1.1, steps: [() => spores(sh, 6), () => spores(sh, 10), () => spores(sh, 18, true)] }))
+    }
+
+    // paper lanterns swing from their hooks and glow brighter; the third tap sends the light
+    // running down the fairy lights
+    let lightsSaid = false
     for (const el of $$('.g-back .pk-swing')) {
-      on(el, 'pointerdown', () => {
-        sound.play('chime')
+      const glow = el.querySelector('.lt-glow')
+      const brighten = (lvl) => !reduced && track(gsap.fromTo(glow, { opacity: 0.18 + 0.16 * lvl, scale: 1 + 0.15 * lvl }, { opacity: 0.18, scale: 1, transformOrigin: '50% 50%', duration: 1.8, ease: 'sine.out' }))
+      offs.push(react(el, 'sway', { origin: el.dataset.hook, svgOrigin: true, strength: 1.1, steps: [() => brighten(1), () => brighten(2), () => {
+        brighten(3)
+        sound.play('sparkle')
+        chase(at(el).x)
+        if (!lightsSaid) {
+          lightsSaid = true
+          say(t('garden.lights'), at(el, 0), { small: t('garden.lightsSmall') })
+        }
+      }] }))
+    }
+
+    // the moon gets shy: blushes, turns away a little; the third time, a nickname
+    let moonN = 0
+    moon.dataset.react = 'bespoke'
+    const blush = moon.querySelector('.moon-blush')
+    const cheeks = [...moon.querySelectorAll('.moon-cheek')]
+    on(moon, 'pointerdown', () => {
+      if (phase === 'future') return
+      const lvl = (moonN++ % 3) + 1
+      sound.play('ting', { i: 8 - lvl })
+      const tl = track(gsap.timeline())
+      tl.to(blush, { opacity: [0.25, 0.42, 0.55][lvl - 1], duration: reduced ? 0.01 : 0.3 }, 0)
+      tl.to(cheeks, { opacity: lvl > 1 ? 0.8 : 0, duration: reduced ? 0.01 : 0.3 }, 0)
+      if (!reduced) {
+        tl.to(moon, { rotation: -10 * lvl, svgOrigin: '350 56', duration: 0.4, ease: 'power2.out' }, 0)
+        tl.to(moon, { rotation: 0, svgOrigin: '350 56', duration: 1, ease: EASE.wobble }, 1.6)
+      }
+      tl.to([blush, ...cheeks], { opacity: 0, duration: 0.8 }, 2.2)
+      if (lvl === 3) say(t('garden.moonShy'), at(moon.querySelector('.moon-disc'), 0), { small: t('garden.moonShySmall') })
+    })
+
+    // the round trees past the fence rustle and drop leaves; the third shake drops a mango
+    for (const rt of $$('.g-back .rtree')) {
+      const leaf = () => {
         if (reduced) return
-        const [x, y] = el.dataset.hook.split(' ')
-        track(gsap.timeline())
-          .to(el, { rotation: 14, duration: 0.14, svgOrigin: `${x} ${y}`, ease: 'power2.out', overwrite: 'auto' })
-          .to(el, { rotation: 0, duration: 1.6, svgOrigin: `${x} ${y}`, ease: 'elastic.out(1.2, 0.2)' })
+        for (let i = 0; i < 2; i++) {
+          const x = Math.random() * 60 - 30
+          const l = svgEl('ellipse', { class: 'g-fallleaf', cx: 0, cy: 0, rx: 5, ry: 2.6 }, rt)
+          track(gsap.fromTo(l, { x, y: -90 - Math.random() * 20, rotation: 0 }, { x: x + (i ? 18 : -14), y: -4, rotation: 220, duration: 1.6 + i * 0.3, ease: 'sine.in', onComplete: () => l.remove() }))
+        }
+      }
+      const mango = () => {
+        const m = svgEl('g', { class: 'g-mango' }, rt)
+        m.innerHTML = '<path class="mango" d="M0 -9 C7 -9 10 -2 8 4 C6 9 -1 10 -5 6 C-9 2 -7 -9 0 -9 Z"/><path class="mango-leaf" d="M1 -9 c4 -6 10 -6 12 -4 c-3 4 -8 5 -12 4 Z"/>'
+        const tl = track(gsap.timeline({ onComplete: () => m.remove() }))
+        if (reduced) tl.set(m, { x: 22, y: -8 })
+        else {
+          tl.fromTo(m, { x: 16, y: -84 }, { y: -8, duration: 0.55, ease: 'power2.in' })
+          tl.call(() => {
+            sound.play('knock')
+            say(t('garden.mango'), at(m, 0), { small: t('garden.mangoSmall') })
+          })
+          tl.to(m, { y: -22, duration: 0.18, ease: 'power1.out' }).to(m, { y: -8, duration: 0.2, ease: 'power1.in' })
+          tl.to(m, { x: 40, rotation: 160, duration: 0.8, ease: 'power2.out' })
+        }
+        if (reduced) tl.call(() => say(t('garden.mango'), at(m, 0), { small: t('garden.mangoSmall') }))
+        tl.to(m, { opacity: 0, duration: 0.6 }, '+=3')
+      }
+      offs.push(react(rt, 'flutter', { origin: '50% 100%', strength: 0.5, sound: 'rustle', steps: [leaf, leaf, mango] }))
+    }
+
+    // the wishing well: the water ripples, the bucket swings, then a coin goes in
+    for (const well of $$('.g-back .g-well')) {
+      const water = well.querySelector('.g-water')
+      const bucket = [well.querySelector('.p-bucket'), ...well.querySelectorAll('path.ink-line')]
+      const swingBucket = () => !reduced && track(gsap.timeline()
+        .to(bucket, { rotation: 12, svgOrigin: '0 -122', duration: 0.2, ease: 'power2.out' })
+        .to(bucket, { rotation: 0, svgOrigin: '0 -122', duration: 1.6, ease: 'elastic.out(1.2, 0.2)' }))
+      const coin = () => {
+        swingBucket()
+        const c0 = svgEl('circle', { class: 'p-brass', cx: 0, cy: 0, r: 4 }, well)
+        const tl = track(gsap.timeline({ onComplete: () => c0.remove() }))
+        tl.fromTo(c0, { x: -20, y: -150, opacity: 1 }, { x: -4, y: -48, duration: reduced ? 0.01 : 0.6, ease: 'power2.in' })
+        tl.call(() => {
+          sound.play('drip')
+          sound.play('ting', { i: 5 })
+          say(t('garden.wish'), at(well, 0.1), { small: t('garden.wishSmall') })
+        })
+        tl.to(c0, { opacity: 0, scaleY: 0.3, duration: 0.15 })
+        if (!reduced) tl.fromTo(water, { scaleX: 1.12, scaleY: 0.8 }, { scaleX: 1, scaleY: 1, transformOrigin: '50% 50%', duration: 0.8, ease: EASE.wobble }, '<')
+      }
+      offs.push(react(well, 'ripple', { target: water, origin: '50% 50%', strength: 1.6, steps: [() => {}, swingBucket, coin] }))
+    }
+
+    // the bench knocks like wood; the gift on it pops its lid on a coupon (site two's, honoured)
+    for (const b of $$('.g-back .g-bench')) offs.push(react(b, 'knock', { strength: 1.4 }))
+    let coupon = 0
+    for (const g of $$('.g-back .g-gift__box')) {
+      const top = g.querySelector('.gift-top')
+      offs.push(react(g, 'tip', { origin: '50% 100%', sound: 'pop', strength: 1.3, steps: [() => {
+        const list = t('garden.coupons')
+        const [title, fine] = list[coupon++ % list.length]
+        if (!reduced) track(gsap.timeline().to(top, { y: -12, rotation: -24, transformOrigin: '0% 100%', duration: 0.18, ease: 'power2.out' }).to(top, { y: 0, rotation: 0, duration: 0.6, ease: 'bounce.out' }, '+=0.5'))
+        sound.play('paper')
+        say(title, at(g, 0), { small: fine })
+      }] }))
+    }
+
+    // the cat on the back sill: tail flick, then a mrrp, then off it goes — and back
+    for (const cat of $$('.g-back .g-cat')) {
+      let n = 0
+      let away = false
+      cat.dataset.react = 'bespoke'
+      const tail = cat.querySelector('.cat-tail')
+      on(cat, 'pointerdown', () => {
+        if (away) return
+        const step = n++ % 3
+        if (step === 0) {
+          sound.play('rustle')
+          if (!reduced) track(gsap.timeline().to(tail, { rotation: -40, svgOrigin: '10 -2', duration: 0.18, ease: 'power2.out' }).to(tail, { rotation: 0, svgOrigin: '10 -2', duration: 0.9, ease: EASE.wobble }))
+        } else if (step === 1) {
+          sound.play('meow')
+          if (!reduced) track(gsap.fromTo(cat, { scaleY: 0.86 }, { scaleY: 1, transformOrigin: '50% 100%', duration: 0.6, ease: EASE.wobble }))
+          say(t('garden.mew'), at(cat, 0))
+        } else {
+          away = true
+          sound.play('whoosh')
+          const tl = track(gsap.timeline({ onComplete: () => (away = false) }))
+          tl.to(cat, { y: -18, x: 14, opacity: 0, duration: reduced ? 0.01 : 0.4, ease: 'power2.out' })
+          tl.to(cat, { y: 0, x: 0, opacity: 1, duration: reduced ? 0.01 : 0.5, ease: EASE.land }, '+=3.5')
+        }
       })
     }
-    // the grown tree / tag rustle when touched
-    on(tree, 'pointerdown', (e) => {
-      if (phase !== 'after' && phase !== 'grown') return
-      sound.play('pop')
-      fx.sparkles(e.clientX, e.clientY, { count: 6 })
-      if (!reduced) track(gsap.fromTo(treeScale, { rotation: 2.5 }, { rotation: 0, svgOrigin: ORIGIN, duration: 1, ease: EASE.wobble }))
-    })
-    on(sapling, 'pointerdown', (e) => {
-      if (phase !== 'after' && phase !== 'grown') return
-      sound.play('pop')
-      fx.sparkles(e.clientX, e.clientY, { count: 6 })
-      settle()
-    })
-    on(tag, 'pointerdown', () => {
-      sound.play('tap')
-      if (!reduced) track(gsap.fromTo(tag, { rotation: 18 }, { rotation: 0, transformOrigin: '4% 0%', duration: 1.4, ease: 'elastic.out(1.2, 0.2)', overwrite: 'auto' }))
-    })
+
+    // the potted plant by the back door tips; the third time, there's the spare key
+    for (const pot of $$('.g-back .g-pot')) {
+      const key = $('.g-back .g-key')
+      offs.push(react(pot, 'tip', { origin: '50% 100%', strength: 1.5, steps: [() => {}, () => {}, () => {
+        sound.play('ting', { i: 6 })
+        const tl = track(gsap.timeline())
+        tl.fromTo(key, { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: reduced ? 0.01 : 0.4, ease: EASE.out })
+        tl.call(() => {
+          const p = at(key)
+          fx.sparkles(p.x, p.y, { count: 6 })
+          say(t('garden.key'), p)
+        })
+        tl.to(key, { opacity: 0, duration: 0.5 }, '+=3')
+      }] }))
+    }
+
+    // the drainpipe rings like tin and lets one drop go; the back door knocks — who's there?
+    for (const pipe of $$('.g-back .g-pipe')) {
+      const dropEl = pipe.querySelector('.pipe-drop')
+      offs.push(react(pipe, 'ring', { origin: '50% 0%', sound: 'drip', strength: 0.6, steps: [() => {
+        if (!reduced) track(gsap.fromTo(dropEl, { opacity: 1, y: 0, scale: 1 }, { opacity: 0, y: 10, scale: 0.5, transformOrigin: '50% 50%', duration: 0.6, ease: 'power2.in' }))
+      }] }))
+    }
+    for (const door of $$('.g-back .g-door')) {
+      offs.push(react(door, 'knock', { strength: 1.6, steps: [() => {}, () => track(gsap.delayedCall(0.16, () => sound.play('knock'))), () => {
+        track(gsap.delayedCall(0.16, () => sound.play('knock')))
+        say(t('garden.knock'), at(door, 0.2), { small: t('garden.knockSmall') })
+      }] }))
+    }
+
+    // the name tag swings on its string; the third swing turns it over
+    const tagCard = tag.querySelector('.g-tag__card')
+    const tagFront = tagCard.textContent
+    let tagFlipped = false
+    offs.push(react(tag, 'sway', { origin: '4% 0%', strength: 1.3, steps: [() => {}, () => {}, () => {
+      if (tagFlipped) return
+      tagFlipped = true
+      sound.play('paper')
+      const d = reduced ? 0.01 : 0.22
+      track(gsap.timeline({ onComplete: () => (tagFlipped = false) })
+        .to(tagCard, { rotationY: 90, duration: d, ease: 'power2.in' })
+        .call(() => {
+          tagCard.textContent = t('garden.tagBack')
+          tagCard.classList.add('g-tag__card--back')
+        })
+        .to(tagCard, { rotationY: 0, duration: d * 1.6, ease: EASE.out })
+        .to(tagCard, { rotationY: 90, duration: d, ease: 'power2.in' }, '+=3')
+        .call(() => {
+          tagCard.textContent = tagFront
+          tagCard.classList.remove('g-tag__card--back')
+        })
+        .to(tagCard, { rotationY: 0, duration: d * 1.6, ease: EASE.out }))
+    }] }))
+
+    // the grown tree rustles and lets a few petals go; the third time it blossoms for a moment
+    const frontSvg = $('.g-front')
+    const toSvg = (x, y) => {
+      const pt = frontSvg.createSVGPoint()
+      pt.x = x
+      pt.y = y
+      return pt.matrixTransform(frontSvg.getScreenCTM().inverse())
+    }
+    let petalI = 0
+    const shed = (n, e) => {
+      if (reduced || !e) return
+      const p = toSvg(e.clientX, e.clientY)
+      for (let i = 0; i < 3; i++) {
+        const el = petals[petalI++ % petals.length]
+        track(gsap.fromTo(el, { x: p.x + i * 8 - 8, y: p.y, opacity: 1, rotation: 0 }, { x: p.x + (i - 1) * 22, y: G - 4, rotation: 200, opacity: 0, duration: 1.3 + i * 0.2, ease: 'power1.in' }))
+      }
+    }
+    offs.push(react(tree, 'flutter', { target: treeScale, origin: ORIGIN, svgOrigin: true, strength: 0.35, steps: [shed, shed, (n, e) => {
+      shed(n, e)
+      sound.play('sparkle')
+      const bls = blossomsUpTo(shownStage)
+      const keepOn = age.anniversaryWeek
+      track(gsap.timeline()
+        .fromTo(bls, { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, transformOrigin: '50% 50%', duration: reduced ? 0.01 : 0.4, ease: EASE.spring, stagger: { each: 0.01, from: 'random' } })
+        .to(bls, { opacity: keepOn ? 1 : 0, duration: 0.8 }, '+=2'))
+    }] }))
+    // the sapling (tonight's tree) shivers its leaves; the third time its bud opens, showing off
+    const bud = $('.sap-bud')
+    offs.push(react(sapling, 'flutter', { target: sapScale, origin: ORIGIN, svgOrigin: true, strength: 0.8, steps: [() => {}, () => {}, () => {
+      sound.play('sparkle')
+      const p = at(bud)
+      fx.sparkles(p.x, p.y, { count: 10 })
+      bud.classList.add('sap-bud--open')
+      track(gsap.timeline()
+        .fromTo(bud, { scale: 0.6 }, { scale: 1.9, transformOrigin: '50% 50%', duration: reduced ? 0.01 : 0.6, ease: EASE.spring })
+        .call(() => say(t('garden.sapling'), at(sapling, 0), { small: t('garden.saplingSmall') }))
+        .to(bud, { scale: 1, duration: 0.6, ease: EASE.out }, '+=2.6')
+        .call(() => bud.classList.remove('sap-bud--open')))
+    }] }))
+
+    // fireflies scatter from a tap — then, curious, drift back to the finger
+    on(garden, 'pointerdown', (e) => {
+      if (reduced) return
+      for (const f of garden.querySelectorAll(':scope > .firefly')) {
+        const p = at(f)
+        const dx = p.x - e.clientX
+        const dy = p.y - e.clientY
+        const d = Math.hypot(dx, dy)
+        if (d > 120) continue
+        const k = (((120 - d) / 120) * 70) / (d || 1)
+        track(gsap.timeline()
+          .to(f, { '--sx': `${(dx * k).toFixed(0)}px`, '--sy': `${(dy * k).toFixed(0)}px`, duration: 0.25, ease: 'power3.out' })
+          .to(f, { '--sx': '0px', '--sy': '0px', duration: 1.6, ease: 'sine.inOut' }, '+=0.3'))
+      }
+    }, { capture: true })
 
     // ── ambient ──
     offs.push(fx.starfield($('.g-sky'), { count: 46 }))
@@ -544,6 +914,9 @@ export default {
       live.forEach((a) => a.kill())
       live.clear()
       gsap.killTweensOf([prompt, tag, canLift, soilBtn, canBtn, futureBtn, backBtn, signboard, end, moon, dawn, yearEl])
+      say.clear()
+      bits.forEach((b) => b.remove())
+      bits.clear()
       if (window.__garden) delete window.__garden
     }
     ctx.onCleanup(teardown)

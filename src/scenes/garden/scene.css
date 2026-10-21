@@ -486,3 +486,51 @@
   .g-prompt { font-size: 1.6rem; max-width: 30rem; }
   .g-after { font-size: 1.6rem; max-width: 30rem; }
 }
+
+/* ── scenery that answers (Task 17) ── */
+.pk-hit { fill: transparent; stroke: none; }
+.g-fence .picket { cursor: pointer; }
+.g-rail, .g-vine, .vine-bloom, .g-back > .g-leaf, .g-warm, .g-hill { pointer-events: none; }
+.moon-blush { fill: var(--blush); opacity: 0; pointer-events: none; }
+.moon-cheek { fill: var(--berry); opacity: 0; pointer-events: none; }
+.key-hole { fill: var(--ink); }
+.pipe-drop { fill: var(--g-water); stroke: var(--ink); stroke-width: 0.8; opacity: 0; pointer-events: none; }
+.g-mango { pointer-events: none; }
+.g-mango .mango { fill: color-mix(in oklab, var(--mustard) 80%, var(--tomato)); stroke: var(--ink); stroke-width: 2; }
+.g-mango .mango-leaf { fill: var(--g-leaf); stroke: var(--ink); stroke-width: 1.4; }
+.g-fallleaf { fill: var(--g-leaf-hi); stroke: var(--ink); stroke-width: 1; pointer-events: none; }
+.fl--awake .fl-glow { opacity: 0.42; }
+.fl--awake .fl-c { fill: var(--lamp); }
+.garden > .firefly { translate: var(--sx, 0px) var(--sy, 0px); }
+
+/* spores, music notes, the coupon: little HTML bits over the art */
+.g-spore {
+  position: absolute; z-index: 6; left: 0; top: 0; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%; pointer-events: none;
+  background: var(--butter); box-shadow: 0 0 6px var(--lamp);
+}
+.g-note {
+  position: absolute; z-index: 6; left: 0; top: 0; margin: -0.6em 0 0 -0.35em; pointer-events: none;
+  font: 700 1.5rem/1 var(--display); color: var(--butter); text-shadow: 2px 2px 0 var(--ink);
+}
+.g-drip {
+  position: absolute; z-index: 6; left: 0; top: 0; width: 7px; height: 9px; margin: -4px 0 0 -3.5px; pointer-events: none;
+  background: var(--g-water); border: 1.5px solid var(--ink); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+}
+
+/* what the scenery says */
+.say {
+  position: absolute; z-index: 8; left: 0; top: 0; margin: 0;
+  max-width: min(17rem, 80vw); padding: 0.32em 0.8em 0.4em;
+  font-size: 1.3rem; line-height: 1.1; text-align: center;
+  color: var(--ink); background: var(--paper);
+  border: var(--line); border-radius: 12px; box-shadow: var(--pop-sm);
+  pointer-events: none; transform-origin: 50% 100%;
+}
+.say small { display: block; margin-top: 0.15rem; font: 600 0.8rem/1.25 var(--body); color: var(--ink-soft); }
+.say--song { background: var(--butter); }
+html[lang="bn"] .say { font-family: var(--bn-hand); font-size: 1.15rem; }
+.sap-bud--open .bud { fill: var(--pink); }
+.g-spore--heart { width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; background: var(--pink); box-shadow: 0 0 8px var(--pink); }
+.fl--awake .fl-head { filter: drop-shadow(0 0 5px var(--lamp)); }
+.g-tag__card--back { font-size: max(12px, 3.9cqw); color: var(--berry); }
