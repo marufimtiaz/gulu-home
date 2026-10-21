@@ -75,8 +75,9 @@ test('effects render on the page without errors', async ({ page }) => {
     window.__stopStars()
     window.__stopFlies()
   })
-  await expect(page.locator('svg.stars')).toHaveCount(0)
-  await expect(page.locator('.firefly')).toHaveCount(0)
+  // (the house scene underneath keeps its own sky — only count what this test added to <body>)
+  await expect(page.locator('body > svg.stars')).toHaveCount(0)
+  await expect(page.locator('body > .firefly')).toHaveCount(0)
   expect(errors).toEqual([])
 })
 
@@ -104,6 +105,37 @@ test('reduced motion: still effects, fireworks resolve fast', async ({ page }) =
   expect(result.fireworksMs).toBeLessThan(1000)
   await shot(page, 'fx-reduced')
   await page.evaluate(() => window.__stop())
-  await expect(page.locator('.firefly')).toHaveCount(0)
+  await expect(page.locator('body > .firefly')).toHaveCount(0)
+  expect(errors).toEqual([])
+})
+
+test('fireworks stop early: .stop() and an AbortSignal both clear the canvas and resolve', async ({ page }) => {
+  const errors = collectErrors(page)
+  await open(page, 'house')
+  await loadFx(page)
+  const viaStop = await page.evaluate(async () => {
+    const show = window.__fx.fireworks(document.body, { duration: 20000 })
+    await new Promise((r) => setTimeout(r, 600))
+    const drawing = document.querySelectorAll('canvas.fireworks').length
+    const t = performance.now()
+    show.stop()
+    await show
+    return { drawing, ms: performance.now() - t, left: document.querySelectorAll('canvas.fireworks').length }
+  })
+  expect(viaStop.drawing).toBe(1)
+  expect(viaStop.ms).toBeLessThan(100)
+  expect(viaStop.left).toBe(0)
+
+  const viaSignal = await page.evaluate(async () => {
+    const ac = new AbortController()
+    const show = window.__fx.fireworks(document.body, { duration: 20000, signal: ac.signal })
+    await new Promise((r) => setTimeout(r, 300))
+    const t = performance.now()
+    ac.abort()
+    await show
+    return { ms: performance.now() - t, left: document.querySelectorAll('canvas.fireworks').length }
+  })
+  expect(viaSignal.ms).toBeLessThan(100)
+  expect(viaSignal.left).toBe(0)
   expect(errors).toEqual([])
 })
