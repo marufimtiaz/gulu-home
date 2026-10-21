@@ -96,8 +96,8 @@ export default {
       },
       {
         shape: 'flowers',
-        photo: null, // ← the flower-bucket day: drop the photo in public/photos and put its filename here
-        date: null, // ← and its date, e.g. '2025-02-14'
+        photo: 'IMG_20261006_154204.jpg',
+        date: '2026-10-06',
         title: 'the flower bucket',
         text: 'The day I showed up with a bucket of flowers and you pretended not to cry. You cried.',
       },

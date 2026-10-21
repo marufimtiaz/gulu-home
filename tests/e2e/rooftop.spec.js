@@ -4,7 +4,7 @@ import config from '../../src/content/config.js'
 import { SHAPES } from '../../src/scenes/rooftop/shapes.js'
 
 const MEMORIES = config.rooftop.memories
-const PAPER = MEMORIES.findIndex((m) => m.photo === null) // the flower-bucket day ships with photo: null
+const PAPER = MEMORIES.findIndex((m) => m.shape === 'flowers') // the flower-bucket day (also used for the paper-fallback test)
 const count = (i) => SHAPES[MEMORIES[i].shape].stars.length
 const scene = (page) => page.locator('.scene[data-scene="rooftop"]')
 
@@ -96,9 +96,10 @@ test('joining a group draws its lines and picture, then its polaroid', async ({ 
   expect(errors).toEqual([])
 })
 
-test('a memory with photo: null gets a paper polaroid, and no date line when date is null', async ({ page }) => {
+test('a memory whose photo is missing gets a paper polaroid instead of a broken image', async ({ page }) => {
   expect(PAPER).toBeGreaterThanOrEqual(0)
-  expect(MEMORIES[PAPER].date).toBeNull()
+  // the photo can't be loaded (a typo in config.js, or a file not added yet) → paper fallback
+  if (MEMORIES[PAPER].photo) await page.route(`**/${MEMORIES[PAPER].photo}`, (r) => r.fulfill({ status: 404 }))
   const errors = collectErrors(page)
   await open(page, 'rooftop')
   await joinGroup(page, PAPER)
@@ -107,11 +108,11 @@ test('a memory with photo: null gets a paper polaroid, and no date line when dat
   await expect(pol).toHaveClass(/polaroid--paper/)
   await expect(pol.locator('img')).toHaveCount(0)
   await expect(pol.locator('.rt-sketch path.rt-sketch__line')).toHaveCount(1)
-  await expect(page.locator('[data-polaroid-date]')).toHaveCount(0)
+  if (!MEMORIES[PAPER].date) await expect(page.locator('[data-polaroid-date]')).toHaveCount(0)
   await expect(pol).toContainText(MEMORIES[PAPER].title)
   await page.waitForTimeout(900)
   await shot(page, 'rooftop-polaroid-paper')
-  expect(errors).toEqual([])
+  expect(errors.filter((e) => !/404|Failed to load resource/.test(e))).toEqual([])
 })
 
 test('another group is ignored until the current one is finished', async ({ page }) => {
