@@ -1,1 +1,339 @@
-.scene--house .stub { display: grid; gap: 1rem; justify-items: center; color: var(--paper); }
+/* House hub — paper cut-outs at night. Colours only from tokens (mixed with color-mix). */
+.scene--house {
+  --h-paper: color-mix(in oklab, var(--paper-2) 74%, var(--dusk));
+  --h-paper-dim: color-mix(in oklab, var(--paper-2) 52%, var(--night));
+  --h-pane: color-mix(in oklab, var(--indigo) 45%, var(--night-deep));
+  --h-ground: color-mix(in oklab, var(--sage) 42%, var(--night-deep));
+  --h-ground-2: color-mix(in oklab, var(--sage) 55%, var(--night));
+  --h-wood: color-mix(in oklab, var(--mustard) 34%, var(--ink));
+  --h-shadow: color-mix(in oklab, var(--ink) 70%, var(--night-deep));
+  --h-warm-ink: color-mix(in oklab, var(--ink) 72%, var(--mustard));
+  display: block;
+  background:
+    radial-gradient(120% 50% at 50% 100%, color-mix(in oklab, var(--dusk) 70%, var(--mustard)) 0%, transparent 60%),
+    linear-gradient(180deg, var(--night-deep) 0%, var(--night) 42%, var(--dusk) 82%, color-mix(in oklab, var(--dusk) 80%, var(--berry)) 100%);
+}
+
+.house { position: absolute; inset: 0; overflow: hidden; }
+
+/* ───────── sky ───────── */
+.house-sky { position: absolute; inset: 0; transform-origin: 50% 60%; pointer-events: none; }
+.sky-field { position: absolute; inset: 0 0 30% 0; }
+.sky-dot {
+  position: absolute; width: 2px; height: 2px; border-radius: 50%;
+  background: var(--star); opacity: 0.55;
+  animation: hTwinkle 4.5s ease-in-out infinite alternate;
+}
+.sky-star { position: absolute; fill: var(--star); animation: hTwinkle 3.6s ease-in-out infinite alternate; filter: drop-shadow(0 0 3px var(--lamp-glow)); }
+@keyframes hTwinkle { from { opacity: 0.25; transform: scale(0.8); } to { opacity: 0.95; transform: scale(1); } }
+
+.sky-moon {
+  position: absolute;
+  width: clamp(110px, 30vw, 170px);
+  right: max(-2%, calc(50% - min(22rem, 38svh)));
+  top: 7svh;
+  overflow: visible;
+}
+.moon-halo { fill: var(--moon); opacity: 0.08; }
+.moon-halo--2 { opacity: 0.05; }
+.moon-shadow { fill: var(--night-deep); }
+.moon-disc { fill: var(--moon); stroke: var(--ink); stroke-width: 2; }
+.moon-crater { fill: color-mix(in oklab, var(--moon) 78%, var(--mustard)); }
+.moon-shine { fill: none; stroke: var(--paper); stroke-width: 2.2; stroke-linecap: round; opacity: 0.8; }
+
+.sky-constellations {
+  position: absolute;
+  width: clamp(110px, 30vw, 160px);
+  left: max(4%, calc(50% - min(26rem, 46svh)));
+  top: 15svh;
+  overflow: visible;
+  opacity: 0;
+  transition: opacity 2s ease;
+}
+.sky-constellations polyline, .sky-constellations path {
+  fill: none; stroke: var(--star); stroke-width: 0.9; stroke-dasharray: 2.5 2.5; stroke-linecap: round; opacity: 0.55;
+}
+.sky-constellations circle { fill: var(--star); }
+.scene--house[data-done~="rooftop"] .sky-constellations { opacity: 0.85; }
+
+/* ───────── house frame: both layers share one box, origin top-left for the zoom maths ───────── */
+.house-frame {
+  position: absolute;
+  left: 50%;
+  --fh: min(130vw, calc(100svh - 5.5rem));
+  /* tall phones: lift the house off the bottom so it sits mid-screen on its lawn */
+  bottom: max(0px, calc((100svh - 130vw - 5.5rem) * 0.5));
+  height: var(--fh);
+  aspect-ratio: 400 / 520;
+  margin-left: calc(var(--fh) * -0.3846);
+}
+.house-layer { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
+.house-svg { width: 100%; height: 100%; overflow: visible; }
+.house-far { pointer-events: none; }
+
+/* far layer */
+.f-city rect { fill: color-mix(in oklab, var(--indigo) 38%, var(--night-deep)); }
+.f-city-win rect { fill: var(--lamp); opacity: 0.55; }
+.f-hill { stroke: var(--ink); stroke-width: 1.5; }
+.f-hill--back { fill: color-mix(in oklab, var(--indigo) 60%, var(--night)); }
+.f-hill--front { fill: color-mix(in oklab, var(--sage) 22%, var(--night)); }
+.f-tree circle { fill: color-mix(in oklab, var(--sage) 30%, var(--night)); stroke: var(--ink); stroke-width: 1.5; }
+
+/* shared paper pieces */
+.ink-line { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ink-faint { fill: none; stroke: var(--ink); stroke-width: 1; opacity: 0.18; }
+.ink-shadow, .w-shadow rect { fill: var(--h-shadow); opacity: 0.9; }
+.p-ground { fill: var(--h-ground); }
+.g-lawn { stroke: var(--ink); stroke-width: 1.6; }
+.g-lawn--1 { fill: color-mix(in oklab, var(--sage) 34%, var(--night-deep)); }
+.g-lawn--2 { fill: color-mix(in oklab, var(--sage) 27%, var(--night-deep)); }
+.g-lawn--3 { fill: color-mix(in oklab, var(--sage) 20%, var(--night-deep)); }
+.g-tuft { fill: var(--h-ground-2); stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; }
+.h-fore { pointer-events: none; }
+.g-grass { fill: none; stroke: var(--h-ground-2); stroke-width: 1.6; stroke-linecap: round; }
+.p-stone { fill: var(--h-paper-dim); stroke: var(--ink); stroke-width: 1.5; }
+.p-wall { fill: var(--h-paper); }
+.p-speckle { fill: url(#h-speckle); pointer-events: none; }
+#h-speckle circle { fill: var(--ink); opacity: 0.22; }
+.p-wall-shade { fill: var(--h-shadow); opacity: 0.25; }
+.p-wall-outline { fill: none; stroke: var(--ink); stroke-width: 2.5; }
+.p-trim { fill: var(--berry-deep); stroke: var(--ink); stroke-width: 2; }
+.p-roof { fill: var(--berry-deep); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.p-brick { fill: color-mix(in oklab, var(--tomato) 55%, var(--night)); stroke: var(--ink); stroke-width: 2; }
+.p-tank { fill: color-mix(in oklab, var(--sky) 40%, var(--night)); stroke: var(--ink); stroke-width: 2; }
+.p-tank-lid { fill: color-mix(in oklab, var(--sky) 30%, var(--night-deep)); stroke: var(--ink); stroke-width: 2; }
+.p-rail { fill: var(--h-paper); stroke: var(--ink); stroke-width: 2; }
+.h-baluster { stroke-width: 1.6; }
+.p-wood { fill: var(--h-wood); stroke: var(--ink); stroke-width: 2; }
+.p-wood-line { fill: none; stroke: var(--h-wood); stroke-width: 2.5; }
+.p-door { fill: var(--berry-deep); stroke: var(--ink); stroke-width: 2.5; }
+.p-step { fill: var(--h-paper-dim); stroke: var(--ink); stroke-width: 2; }
+.p-brass { fill: var(--mustard); stroke: var(--ink); stroke-width: 1.2; }
+.p-sconce { fill: var(--ink); }
+.h-slot { fill: var(--ink); }
+.h-porch-bulb { fill: var(--lamp); filter: drop-shadow(0 0 4px var(--lamp)); }
+.h-porch-glow { fill: url(#h-halo); opacity: 0.8; }
+.h-spill { fill: url(#h-spill); opacity: 0.5; }
+.h-cat { fill: var(--ink); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.h-cat path:last-child { fill: none; }
+.h-rail, .h-fairy, .h-cat, .h-tank, .h-chimney, .h-smoke, .h-spill, .g-bush, .h-garden { pointer-events: none; }
+.st-glow-0 { stop-color: var(--butter); }
+.st-glow-1 { stop-color: var(--lamp); }
+.st-glow-2 { stop-color: var(--mustard); }
+.st-halo-0 { stop-color: var(--lamp); stop-opacity: 0.85; }
+.st-halo-1 { stop-color: var(--lamp); stop-opacity: 0; }
+
+/* ───────── windows ───────── */
+.win { cursor: pointer; outline: none; -webkit-tap-highlight-color: transparent; }
+.w-hit { fill: transparent; }
+.w-pane { fill: var(--h-pane); stroke: none; }
+.w-frame { fill: none; stroke: var(--ink); stroke-width: 2.6; }
+.w-mullion { fill: none; stroke: var(--h-paper); stroke-width: 3.5; }
+.win .w-mullion { filter: drop-shadow(0 0 0 var(--ink)); }
+.w-sill { fill: var(--h-paper); stroke: var(--ink); stroke-width: 2; }
+.w-glow { fill: url(#h-glow); opacity: 0; transition: opacity 0.8s ease; }
+.w-halo { fill: url(#h-halo); opacity: 0; transition: opacity 0.8s ease; pointer-events: none; }
+.w-inside { fill: var(--h-warm-ink); stroke: var(--h-warm-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transition: opacity 0.8s ease; }
+.w-inside path { fill: none; }
+.w-inside .i-frame { fill: none; }
+.w-inside .i-steam { stroke-width: 1.4; opacity: 0.7; }
+.w-curtain { fill: color-mix(in oklab, var(--pink) 45%, var(--night)); stroke: var(--ink); stroke-width: 1.5; transition: fill 0.8s ease; }
+.w-glint { fill: none; stroke: var(--paper); stroke-width: 2; opacity: 0.12; stroke-linecap: round; }
+.p-shutter { fill: color-mix(in oklab, var(--sage) 50%, var(--night)); stroke: var(--ink); stroke-width: 2; }
+.aw-a { fill: var(--berry); stroke: var(--ink); stroke-width: 1.5; }
+.aw-b { fill: var(--h-paper); stroke: var(--ink); stroke-width: 1.5; }
+.fl { stroke: var(--ink); stroke-width: 1.2; }
+.fl--0 { fill: var(--pink); }
+.fl--1 { fill: var(--butter); }
+.fl--2 { fill: var(--blush); }
+.fl-c { fill: var(--mustard); }
+.w-tape { display: none; }
+.w-tape path { fill: color-mix(in oklab, var(--butter) 70%, var(--paper-2)); stroke: var(--ink); stroke-width: 1.3; opacity: 0.94; }
+.w-tape .w-tape-edge { fill: none; opacity: 0.5; }
+
+.win:focus-visible .w-frame { stroke: var(--butter); stroke-width: 4; }
+
+/* dark: a faint moonlit reflection only */
+.win[data-state="dark"] .w-glint { opacity: 0.2; }
+
+/* suggested: a soft candle flicker, as if someone just walked in with a lamp */
+.win[data-state="suggested"] .w-glow { animation: hFlicker 2.6s ease-in-out infinite; }
+.win[data-state="suggested"] .w-halo { animation: hFlickerHalo 2.6s ease-in-out infinite; }
+.win[data-state="suggested"] .w-inside { opacity: 0.35; }
+@keyframes hFlicker {
+  0%, 100% { opacity: 0.25; }
+  18% { opacity: 0.55; }
+  26% { opacity: 0.4; }
+  48% { opacity: 0.6; }
+  70% { opacity: 0.32; }
+}
+@keyframes hFlickerHalo { 0%, 100% { opacity: 0.12; } 48% { opacity: 0.35; } }
+
+/* lit: steady warm glow */
+.win[data-state="lit"] .w-glow { opacity: 0.92; }
+.win[data-state="lit"] .w-halo { opacity: 0.55; }
+.win[data-state="lit"] .w-inside { opacity: 0.85; }
+.win[data-state="lit"] .w-curtain { fill: color-mix(in oklab, var(--pink) 80%, var(--lamp)); }
+.win[data-state="lit"] .w-glint { opacity: 0.25; }
+.win[data-state="lit"] .w-pane { filter: drop-shadow(0 0 10px var(--lamp-glow)); }
+
+/* locked: taped across */
+.win[data-state="locked"] .w-tape { display: inline; }
+.win[data-state="locked"] .w-glint { opacity: 0.18; }
+
+/* desk done: an extra-warm reading lamp */
+.scene--house[data-done~="desk"] .win--desk .w-glow { opacity: 1; filter: saturate(1.25) brightness(1.06); }
+.scene--house[data-done~="desk"] .win--desk .w-halo { opacity: 0.9; }
+
+/* tapped: brighten as we fly in */
+.win--entering .w-glow { animation: none !important; opacity: 1 !important; transition: opacity 0.3s ease; }
+.win--entering .w-halo { animation: none !important; opacity: 0.9 !important; }
+
+/* garden lantern */
+.p-arch { fill: var(--h-wood); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.p-gate { fill: color-mix(in oklab, var(--h-wood) 70%, var(--night)); stroke: var(--ink); stroke-width: 2; }
+.p-lantern-cap { fill: var(--ink); }
+.w-flame { fill: var(--paper); opacity: 0; transition: opacity 0.6s ease; }
+.win--garden[data-state="lit"] .w-flame, .win--garden[data-state="suggested"] .w-flame { opacity: 0.9; }
+.win--garden[data-state="lit"] .w-halo { opacity: 0.75; }
+
+/* ───────── garden ───────── */
+.g-bush { fill: color-mix(in oklab, var(--sage) 36%, var(--night)); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.g-fence path:not(.ink-line) { fill: var(--h-paper-dim); stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; }
+.g-stem { fill: none; stroke: color-mix(in oklab, var(--sage) 60%, var(--ink)); stroke-width: 1.6; stroke-linecap: round; }
+.g-leaf { fill: color-mix(in oklab, var(--sage) 75%, var(--night)); stroke: var(--ink); stroke-width: 1; }
+.g-cap { fill: var(--berry); stroke: var(--ink); stroke-width: 1.4; filter: drop-shadow(0 0 3px var(--pink)); }
+.g-stalk { fill: var(--paper-2); stroke: var(--ink); stroke-width: 1.2; }
+.g-dot { fill: var(--paper); }
+.p-soil { fill: color-mix(in oklab, var(--h-wood) 60%, var(--night-deep)); stroke: var(--ink); stroke-width: 1.5; }
+.p-trunk { fill: var(--h-wood); stroke: var(--ink); stroke-width: 2; }
+.g-crown { fill: color-mix(in oklab, var(--sage) 62%, var(--night)); stroke: var(--ink); stroke-width: 2; }
+.g-crown--b { fill: color-mix(in oklab, var(--sage) 40%, var(--night)); }
+.g-blossom circle { fill: var(--pink); stroke: var(--ink); stroke-width: 0.8; }
+.p-tag { fill: var(--paper); stroke: var(--ink); stroke-width: 1.2; }
+.g-tree { display: none; }
+.scene--house[data-done~="garden"] .g-tree { display: inline; }
+.scene--house[data-done~="garden"] .g-patch { display: none; }
+
+/* ───────── chimney smoke (after the kitchen) ───────── */
+.smoke { display: none; }
+.smoke circle { fill: var(--paper-2); stroke: var(--ink); stroke-width: 1.2; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.scene--house[data-done~="kitchen"] .smoke { display: inline; }
+.scene--house[data-done~="kitchen"] .smoke circle { animation: hSmoke 4.2s ease-out infinite; }
+.scene--house[data-done~="kitchen"] .smoke circle:nth-child(2) { animation-delay: -1.4s; }
+.scene--house[data-done~="kitchen"] .smoke circle:nth-child(3) { animation-delay: -2.8s; }
+@keyframes hSmoke {
+  0% { opacity: 0; transform: translate(0, 18px) scale(0.4); }
+  20% { opacity: 0.55; }
+  100% { opacity: 0; transform: translate(10px, -26px) scale(1.25); }
+}
+
+/* ───────── fairy lights ───────── */
+.h-fairy-wire { fill: none; stroke: var(--ink); stroke-width: 1.1; opacity: 0.85; }
+.fairy { stroke: var(--ink); stroke-width: 0.8; opacity: 0.85; animation: hFairy 3.2s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -0.37s); }
+.fairy--0 { fill: var(--lamp); }
+.fairy--1 { fill: var(--pink); }
+.fairy--2 { fill: var(--butter); }
+.fairy--3 { fill: var(--sky); }
+.fairy--4 { fill: var(--mustard); }
+.h-fairy-bulbs { filter: drop-shadow(0 0 2.5px var(--lamp-glow)); }
+@keyframes hFairy { from { opacity: 0.5; } to { opacity: 1; } }
+.scene--house[data-done~="finale"] .fairy { animation: hChase 1.4s linear infinite; animation-delay: calc(var(--i) * -0.09s); }
+@keyframes hChase { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+
+/* ───────── nameplate + letterbox ───────── */
+.h-plate, .h-letter { cursor: pointer; outline: none; }
+.plate-board { fill: var(--paper); stroke: var(--ink); stroke-width: 1.8; }
+.plate-halo { fill: url(#h-halo); opacity: 0.7; animation: hPulse 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes hPulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+.plate-names, .plate-est { fill: var(--ink); text-anchor: middle; font-family: var(--display); font-weight: 700; }
+.plate-names { font-size: 6.2px; }
+.plate-est { font-size: 3.6px; font-family: var(--body); font-weight: 500; letter-spacing: 0.04em; }
+.h-plate .plate-names, .h-plate .plate-est { opacity: 0; transition: opacity 1s ease; }
+.h-plate[data-hung="true"] .plate-names, .h-plate[data-hung="true"] .plate-est { opacity: 1; }
+.h-plate[data-hung="true"] .plate-halo { animation: none; opacity: 0.45; }
+.h-plate:focus-visible .plate-board, .h-letter:focus-visible .letter-paper { stroke: var(--butter); stroke-width: 2.5; }
+
+.letter-paper { fill: var(--paper); stroke: var(--ink); stroke-width: 1.2; }
+.letter-flap { stroke-width: 0.9; }
+.letter-seal { fill: var(--berry); }
+.h-slot-lip { fill: var(--mustard); stroke: var(--ink); stroke-width: 1.2; }
+.letter-env { transform-box: fill-box; transform-origin: 50% 100%; transform: rotate(-6deg); animation: hPeek 3.4s var(--bounce) infinite; }
+@keyframes hPeek { 0%, 70%, 100% { transform: rotate(-6deg) translateY(0); } 80% { transform: rotate(-3deg) translateY(-1.5px); } }
+.letter-glint { fill: none; stroke: var(--paper); stroke-width: 1; stroke-linecap: round; opacity: 0; animation: hGlint 3.4s ease-in-out infinite; }
+@keyframes hGlint { 0%, 72%, 100% { opacity: 0; } 82% { opacity: 1; } }
+
+/* ───────── tag over the next room ───────── */
+.house-tag {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.house-tag[hidden] { display: none; }
+.house-tag span {
+  display: block;
+  padding: 0.05em 0.6em 0.15em;
+  font-size: clamp(1.05rem, 4.2vw, 1.3rem);
+  line-height: 1.1;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--line-thin);
+  border-radius: 8px;
+  box-shadow: var(--pop-sm);
+  rotate: -3deg;
+  animation: hBob 2.4s ease-in-out infinite;
+}
+.house-tag span::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  background: var(--paper);
+  border-right: var(--line-thin);
+  border-bottom: var(--line-thin);
+  rotate: 45deg;
+}
+@keyframes hBob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -4px; } }
+
+/* ───────── caption ───────── */
+.house-head {
+  position: absolute;
+  top: calc(max(0.7rem, env(safe-area-inset-top)) + 2.9rem);
+  left: 0;
+  right: 0;
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  pointer-events: none;
+  text-align: center;
+  padding: 0 1rem;
+}
+.house-caption {
+  font-size: clamp(1.7rem, 7vw, 2.2rem);
+  line-height: 1;
+  color: var(--butter);
+  text-shadow: 0 0 18px var(--lamp-glow), 2px 2px 0 var(--night-deep);
+}
+.house-bulbs { display: flex; gap: 0.55rem; }
+.house-bulbs i {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--h-pane, var(--indigo));
+  border: var(--line-thin);
+  border-color: var(--paper-2);
+  opacity: 0.6;
+}
+.house-bulbs i.on { background: var(--lamp); border-color: var(--ink); opacity: 1; box-shadow: 0 0 10px var(--lamp-glow); }
+.house-prompt { font-size: clamp(1.15rem, 4.6vw, 1.4rem); color: var(--paper); opacity: 0.9; }
+.house-prompt[hidden] { display: none; }
+
+.house-fireflies { position: absolute; inset: 0; pointer-events: none; }
+
+/* reduced motion: no ambient, everything still */
+.house[data-reduced] *, .house[data-reduced] *::after { animation: none !important; }
+.house[data-reduced] .win[data-state="suggested"] .w-glow { opacity: 0.5; }
+.house[data-reduced] .win[data-state="suggested"] .w-halo { opacity: 0.25; }
+.house[data-reduced] .smoke circle:first-child { opacity: 0.5; }
