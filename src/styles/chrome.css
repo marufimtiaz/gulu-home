@@ -4,8 +4,8 @@
 .chip {
   position: absolute;
   top: max(0.7rem, env(safe-area-inset-top));
-  height: 2.4rem;
-  min-width: 2.4rem;
+  height: 2.75rem;
+  min-width: 2.75rem;
   padding: 0 0.8em;
   display: grid;
   place-items: center;
@@ -21,7 +21,7 @@
 .chip[hidden] { display: none; }
 .chip--home { left: max(0.7rem, env(safe-area-inset-left)); }
 .chip--sound { right: max(0.7rem, env(safe-area-inset-right)); padding: 0; }
-.chip--lang { right: calc(max(0.7rem, env(safe-area-inset-right)) + 3rem); font-family: var(--bn); }
+.chip--lang { right: calc(max(0.7rem, env(safe-area-inset-right)) + 3.35rem); font-family: var(--bn); }
 
 .toasts {
   position: fixed;

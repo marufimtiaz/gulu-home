@@ -54,3 +54,53 @@ function test_info_project() {
     return 'default'
   }
 }
+
+/*
+ * Responsiveness matrix. Every scene spec runs `checkLayout` across VIEWPORTS:
+ *   for (const vp of VIEWPORTS) { await page.setViewportSize(vp); await checkLayout(page, ['[data-try]', …], `door-${vp.name}`) }
+ * It asserts each interactive selector is visible, fully inside the viewport, and ≥ 44×44 px,
+ * that nothing scrolls, and saves a screenshot per size for review.
+ */
+export const VIEWPORTS = [
+  { name: 'small-android', width: 360, height: 640 },
+  { name: 'iphone', width: 390, height: 844 },
+  { name: 'pixel', width: 412, height: 915 },
+  { name: 'landscape-phone', width: 844, height: 390 },
+  { name: 'tablet', width: 768, height: 1024 },
+  { name: 'laptop', width: 1280, height: 800 },
+  { name: 'desktop', width: 1920, height: 1080 },
+]
+
+export async function checkLayout(page, selectors, name, { minTap = 44 } = {}) {
+  await page.waitForTimeout(350) // let resize handlers + springs settle
+  const vp = page.viewportSize()
+  if (name) await shot(page, name) // before asserting, so failures still leave a picture
+  for (const sel of selectors) {
+    const loc = page.locator(sel).first()
+    await expect(loc, `${sel} visible at ${vp.width}×${vp.height}`).toBeVisible()
+    const b = await loc.boundingBox()
+    expect(b.x, `${sel} left edge at ${vp.width}×${vp.height}`).toBeGreaterThanOrEqual(-1)
+    expect(b.y, `${sel} top edge at ${vp.width}×${vp.height}`).toBeGreaterThanOrEqual(-1)
+    expect(b.x + b.width, `${sel} right edge at ${vp.width}×${vp.height}`).toBeLessThanOrEqual(vp.width + 1)
+    expect(b.y + b.height, `${sel} bottom edge at ${vp.width}×${vp.height}`).toBeLessThanOrEqual(vp.height + 1)
+    expect(Math.min(b.width, b.height), `${sel} tap size at ${vp.width}×${vp.height}`).toBeGreaterThanOrEqual(minTap)
+  }
+  const scrolls = await page.evaluate(() => document.scrollingElement.scrollHeight > innerHeight + 1 || document.scrollingElement.scrollWidth > innerWidth + 1)
+  expect(scrolls, `page scrolls at ${vp.width}×${vp.height}`).toBe(false)
+}
+
+/** Time from pointerdown on `sel` until its transform/scale visibly changes (ms). Must be < 100. */
+export async function pressLatency(page, sel) {
+  const box = await page.locator(sel).first().boundingBox()
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  const t = await page.evaluate((s) => {
+    const el = document.querySelector(s)
+    const before = getComputedStyle(el).transform
+    return new Promise((resolve) => {
+      const t0 = performance.now()
+      const check = () => (getComputedStyle(el).transform !== before ? resolve(performance.now() - t0) : performance.now() - t0 > 500 ? resolve(999) : requestAnimationFrame(check))
+      el.addEventListener('pointerdown', () => requestAnimationFrame(check), { once: true })
+    })
+  }, sel).catch(() => 999)
+  return t
+}

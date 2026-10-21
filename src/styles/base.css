@@ -44,6 +44,9 @@ em { font-style: italic; color: var(--berry); }
 
 .fx-layer { position: fixed; inset: 0; z-index: var(--z-fx); pointer-events: none; overflow: hidden; }
 
+/* idle guidance from ui/feel.js nudge(): a warm halo on the thing to touch next */
+.nudge { filter: drop-shadow(0 0 10px var(--lamp-glow)) drop-shadow(0 0 3px var(--lamp)); transition: filter var(--t-med) ease; }
+
 /* reusable paper button */
 .btn {
   display: inline-flex;

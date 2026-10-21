@@ -212,6 +212,40 @@ Cormorant Garamond.
 Content placeholders in `config.js` → `card` (event name, date, time, venue, hosts, families,
 compliments, invocation) are clearly marked `// ← fill in` until Maruf supplies them.
 
+## Feel: timing, responsiveness, interactivity
+
+The two earlier sites suffered from three things. They are requirements here, enforced by
+shared code and tests, not taste.
+
+**1. Timing that never drifts** (`src/ui/choreo.js`)
+- Every multi-step moment is one GSAP timeline from `moment()`. Sounds (`beat()`), text and
+  state changes sit *on* that timeline. No `setTimeout` chains, no CSS animation racing GSAP
+  on the same property.
+- Durations come from `T` (`tap .12 · quick .25 · move .5 · reveal .9 · moment 1.6 · linger 2.2`).
+- Text appears only after the motion it describes lands (`'>'` positions, not absolute guesses).
+- `ctx.complete()` and `ctx.go()` run at a timeline's end, never after a guessed delay.
+- Reduced motion speeds the same timeline up (`timeScale(4)`) instead of a second code path,
+  so order and sync are identical.
+
+**2. Responsive at every size** (`tests/e2e/helpers.js` → `VIEWPORTS`, `checkLayout`)
+- Every scene is checked at 360×640, 390×844, 412×915, 844×390 (landscape phone), 768×1024,
+  1280×800 and 1920×1080: every interactive element visible, fully inside the viewport,
+  ≥ 44×44 px; nothing scrolls; a screenshot per size is reviewed.
+- Scene art is a fixed design canvas (SVG viewBox) fitted to the screen with a defined focal
+  area that must stay on screen; landscape phones get a deliberate layout (art left, UI right,
+  or art scaled to height), never just a shrunken portrait.
+- Layout reacts live to resize and orientation change.
+
+**3. Feels alive under her finger** (`src/ui/feel.js`)
+- `press()` on everything interactive: visible squash + tap sound + haptic within 100 ms
+  (`pressLatency` test helper).
+- `poke()` on decorative objects: tapping scenery always does something small (hop, sparkle).
+- `wobble()` on draggable things so they look draggable.
+- `nudge()` guides her: after ~4 s idle, the next thing to touch bounces and glows; it stops
+  the moment she engages and retargets as the room progresses.
+- Long gestures show continuous progress; released objects settle with springs
+  (`EASE.spring`, `EASE.wobble`), never a linear stop.
+
 ## Content & i18n
 
 - `src/content/config.js` — everything personal, English. `src/content/config.bn.js` — Bengali
