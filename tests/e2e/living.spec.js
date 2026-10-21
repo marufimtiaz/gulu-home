@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { collectErrors, open, shot } from './helpers.js'
+import { checkLayout, collectErrors, open, pressLatency, shot, VIEWPORTS } from './helpers.js'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const today = () => {
@@ -59,14 +59,15 @@ test('turning the clock anticlockwise rewinds time', async ({ page }) => {
   expect(errors).toEqual([])
 })
 
-test('seeking to the middle shows photos from before then, and event cards pop', async ({ page }) => {
+test('seeking to the middle shows photos from before then', async ({ page }) => {
   await open(page, 'living')
   await seek(page, 0.5)
   await page.waitForTimeout(400)
   const hrefs = await frameHrefs(page)
   expect(hrefs.some((h) => h.includes('2024'))).toBe(true)
   expect(hrefs.every((h) => !/IMG_202(5|6)/.test(h))).toBe(true)
-  await expect(page.locator('[data-event]')).toBeVisible()
+  // mid-2024 is months from any event: no card may be left up from the ones jumped past
+  await expect(page.locator('[data-event]')).toBeHidden()
   await shot(page, 'living-mid')
   // close to the start the frames empty out — no photos before the first text
   await seek(page, 0.03)
@@ -74,6 +75,55 @@ test('seeking to the middle shows photos from before then, and event cards pop',
   const early = await frameHrefs(page)
   expect(early.filter(Boolean).every((h) => /IMG_2022/.test(h))).toBe(true)
   expect(early.some((h) => h.includes('20220420'))).toBe(false)
+})
+
+const tAt = (page, iso) => page.evaluate((d) => window.__living.tAt(d), iso)
+
+test('event cards track the scrubbed date: they pop as she passes, and go when she moves on', async ({ page }) => {
+  const errors = collectErrors(page)
+  await open(page, 'living')
+  const card = page.locator('[data-event]')
+  // rewind to just before 9 Dec 2025 → that card pops
+  await seek(page, await tAt(page, '2025-12-04'))
+  await expect(card).toBeVisible()
+  await expect(card).toContainText('ordinary days')
+  await shot(page, 'living-event')
+  // wind forward past it again → gone at once
+  await seek(page, await tAt(page, '2025-12-20'))
+  await expect(card).toBeHidden({ timeout: 400 })
+  // pass it again, then keep rewinding far beyond it → gone at once
+  await seek(page, await tAt(page, '2025-12-01'))
+  await expect(card).toBeVisible()
+  await seek(page, await tAt(page, '2024-07-21'))
+  await expect(card).toBeHidden({ timeout: 400 })
+  await expect(page.locator('[data-date]')).toHaveText('21 Jul 2024')
+  expect(errors).toEqual([])
+})
+
+test('while flicking through the years, a visible card is never far from the date plate', async ({ page }) => {
+  await open(page, 'living')
+  // three hard flicks, sampling every frame: whenever a card is up, its date is within
+  // ~2 months of the plate (and never after it)
+  const worst = await page.evaluate(async () => {
+    const card = document.querySelector('[data-event]')
+    let worst = 0, seen = 0
+    for (let k = 0; k < 4; k++) {
+      window.__living.fling(-30)
+      const t0 = performance.now()
+      while (performance.now() - t0 < 2600) {
+        await new Promise((r) => requestAnimationFrame(r))
+        if (card.hidden || getComputedStyle(card).opacity < 0.5) continue
+        seen++
+        const gap = (+new Date(card.dataset.eventDate) - +new Date(window.__living.date())) / 864e5
+        worst = Math.max(worst, Math.abs(gap))
+      }
+    }
+    return { worst, seen, t: window.__living.t() }
+  })
+  expect(worst.seen).toBeGreaterThan(0)
+  expect(worst.worst).toBeLessThan(75)
+  // and four flicks are enough to reach the start (2022)
+  expect(worst.t).toBeLessThan(0.02)
 })
 
 test('dawn: the phone glows, the first text, then back to tonight', async ({ page }) => {
@@ -155,55 +205,61 @@ test('leaving the room removes its debug hook', async ({ page }) => {
 })
 
 // ── responsiveness: every interactive thing inside the screen and ≥ 44 px, at every size ──
-const SIZES = [
-  [360, 640], [390, 844], [412, 915], [844, 390], [768, 1024], [1280, 800], [1920, 1080],
-]
-
-async function expectTappable(page, selector, vp, { min = 44 } = {}) {
+async function onScreen(page, selector, vp) {
   const box = await page.locator(selector).first().boundingBox()
   expect(box, selector).not.toBeNull()
-  expect(box.x, `${selector} left`).toBeGreaterThanOrEqual(-1)
-  expect(box.y, `${selector} top`).toBeGreaterThanOrEqual(-1)
-  expect(box.x + box.width, `${selector} right`).toBeLessThanOrEqual(vp.width + 1)
-  expect(box.y + box.height, `${selector} bottom`).toBeLessThanOrEqual(vp.height + 1)
-  if (min) {
-    expect(box.width, `${selector} width`).toBeGreaterThanOrEqual(min)
-    expect(box.height, `${selector} height`).toBeGreaterThanOrEqual(min)
-  }
+  expect(box.x, `${selector} left @${vp.name}`).toBeGreaterThanOrEqual(-1)
+  expect(box.y, `${selector} top @${vp.name}`).toBeGreaterThanOrEqual(-1)
+  expect(box.x + box.width, `${selector} right @${vp.name}`).toBeLessThanOrEqual(vp.width + 1)
+  expect(box.y + box.height, `${selector} bottom @${vp.name}`).toBeLessThanOrEqual(vp.height + 1)
+  return box
 }
+const overlap = (a, b) => !(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y)
 
 test('every size: clock, phone, text card and counter are on screen and big enough', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'sizes are set explicitly; one project is enough')
-  test.setTimeout(240_000)
+  test.setTimeout(300_000)
   const errors = collectErrors(page)
   await open(page, 'living')
-  for (const [width, height] of SIZES) {
-    const vp = { width, height }
+  for (const vp of VIEWPORTS) {
     await page.setViewportSize(vp)
-    await page.waitForTimeout(300)
-    await expectTappable(page, '[data-face]', vp)
-    await expectTappable(page, '[data-plate]', vp, { min: 0 })
-    for (const i of [0, 1, 2]) await expectTappable(page, `[data-frame="${i}"]`, vp, { min: 0 })
-    await shot(page, `living-${width}x${height}-now`)
+    await checkLayout(page, ['[data-face]', '.chip--home'], `living-${vp.name}-now`)
+    await onScreen(page, '[data-plate]', vp)
+    for (const i of [0, 1, 2]) await onScreen(page, `[data-frame="${i}"]`, vp)
     await seek(page, 0)
     await expect(page.locator('.scene[data-scene="living"]')).toHaveClass(/living--dawn/)
     await page.waitForTimeout(1900)
-    await expectTappable(page, '[data-phone]', vp)
-    await shot(page, `living-${width}x${height}-dawn`)
+    await checkLayout(page, ['[data-phone]'], `living-${vp.name}-dawn`)
     await page.locator('[data-phone]').click()
     await expect(page.locator('[data-bubble]')).toBeVisible()
     await page.waitForTimeout(1900)
-    await expectTappable(page, '.lv-phonecard__phone', vp, { min: 0 })
-    await expectTappable(page, '[data-bubble]', vp, { min: 0 })
-    await shot(page, `living-${width}x${height}-text`)
+    await onScreen(page, '.lv-phonecard__phone', vp)
+    await onScreen(page, '[data-bubble]', vp)
+    // "tap to go on" sits clear of the phone (and the heart on the bubble)
+    const on = await onScreen(page, '.lv-phonecard__on', vp)
+    const phone = await page.locator('.lv-phonecard__phone').boundingBox()
+    expect(overlap(on, phone), `"tap to go on" clear of the phone @${vp.name}`).toBe(false)
+    await shot(page, `living-${vp.name}-text`)
     await page.locator('[data-phonecard]').click() // skip the wait
     await expect(page.locator('[data-counter]')).toBeVisible({ timeout: 12_000 })
-    await page.waitForTimeout(800)
-    await expectTappable(page, '[data-counter]', vp, { min: 0 })
-    await expectTappable(page, '[data-counter] [data-back]', vp)
-    await shot(page, `living-${width}x${height}-done`)
+    await page.waitForTimeout(900)
+    await onScreen(page, '[data-counter]', vp)
+    await checkLayout(page, ['[data-counter] [data-back]'], `living-${vp.name}-done`)
   }
   expect(errors).toEqual([])
+})
+
+test('the back button squashes under a press within 100 ms', async ({ page }) => {
+  await open(page, 'living')
+  await seek(page, 0)
+  await page.waitForTimeout(1200)
+  await page.locator('[data-phone]').click()
+  await expect(page.locator('[data-bubble]')).toBeVisible()
+  await page.waitForTimeout(1200)
+  await page.locator('[data-phonecard]').click()
+  await expect(page.locator('[data-counter]')).toBeVisible({ timeout: 12_000 })
+  await page.waitForTimeout(900)
+  expect(await pressLatency(page, '[data-counter] [data-back]')).toBeLessThan(100)
 })
 
 test('pressing the clock and poking things respond at once', async ({ page }) => {

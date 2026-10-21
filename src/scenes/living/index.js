@@ -232,13 +232,21 @@ export default {
     }
 
     let shownEvent = null
+    let pendingEvent = null // passed while time was rushing by; shown if she slows near it
+    const READABLE = 8 // rad/s (~5 months a second): any faster and a card would only flash
+    const near = (e, d) => e && +d <= +e.d && +e.d - +d <= EVENT_NEAR
     function renderEvents(d) {
-      if (shownEvent && (+d > +shownEvent.d || +shownEvent.d - +d > EVENT_NEAR)) hideEvent()
+      if (shownEvent && !near(shownEvent, d)) hideEvent()
+      if (pendingEvent && !near(pendingEvent, d)) pendingEvent = null
       if (!busy && +d < +lastDate) {
-        // the nearest event she just rewound past, if it's still close to the plate
+        // the nearest event she just rewound past
         let hit = null
         for (const e of events) if (+e.d >= +d && +e.d < +lastDate) hit = e
-        if (hit && hit !== shownEvent && +hit.d - +d <= EVENT_NEAR) showEvent(hit)
+        if (hit && hit !== shownEvent && near(hit, d)) pendingEvent = hit
+      }
+      if (!busy && pendingEvent && speed < READABLE) {
+        showEvent(pendingEvent)
+        pendingEvent = null
       }
       lastDate = d
     }
@@ -250,23 +258,19 @@ export default {
       el.event.dataset.eventDate = e.d.toISOString()
       el.event.hidden = false
       eventTl?.kill()
-      const tl = momentTl({ onComplete: () => hideEvent(true) })
+      const tl = momentTl({ onComplete: hideEvent })
       beat(tl, 'chime', 0)
       tl.fromTo(el.event, { opacity: 0, y: 16, rotate: -4, scale: 0.9 }, { opacity: 1, y: 0, rotate: -1.5, scale: 1, duration: 0.45, ease: 'back.out(2)' })
         .to(el.event, { opacity: 0, y: -10, duration: 0.4, ease: 'power1.in' }, `+=${T.linger}`)
       eventTl = tw(tl)
     }
 
-    function hideEvent(faded = false) {
+    function hideEvent() {
+      // she moved on: the card goes at once, so it never sits beside the wrong date
       shownEvent = null
       eventTl?.kill()
       eventTl = null
-      if (faded || el.event.hidden) {
-        el.event.hidden = true
-        return
-      }
-      // she moved on: gone at once (a blink, not a linger)
-      eventTl = tw(gsap.to(el.event, { opacity: 0, scale: 0.92, duration: T.tap / 1.5, ease: 'power1.in', onComplete: () => (el.event.hidden = true) }))
+      el.event.hidden = true
     }
 
     function render() {
@@ -466,6 +470,9 @@ export default {
       tl.set(el.bubble, { opacity: 0, scale: 0.4 })
         .set(el.on, { opacity: 0 })
         .fromTo(el.card, { opacity: 0, y: 70, scale: 0.55, rotate: -6 }, { opacity: 1, y: 0, scale: 1, rotate: -1.5, duration: 0.75 * D, ease: 'back.out(1.5)' })
+        // the card IS the phone now: the little glowing one on the sofa goes, so it never
+        // sits under "tap to go on"
+        .to(el.phoneWrap, { attr: { opacity: 0 }, duration: 0.3 * D }, '<')
         .call(() => sound.play('pop'))
         .to(el.bubble, { opacity: 1, scale: 1, duration: 0.55 * D, ease: 'back.out(2.4)' })
         .call(() => {
@@ -484,7 +491,6 @@ export default {
         })
         .addLabel('spin')
         .to(blend, { v: 0, duration: 0.6 * D }, 'spin')
-        .to(el.phoneWrap, { attr: { opacity: 0 }, duration: 0.5 * D }, 'spin')
         .to(el.dawnsky, { attr: { opacity: 0 }, duration: 1.4 * D }, 'spin')
         .to(el.dim, { attr: { opacity: 0 }, duration: 2 * D, ease: 'power1.inOut' }, `spin+=${0.4 * D}`)
         .to(o, { t: 1, duration: 2.6 * D, ease: 'power2.inOut', onUpdate: () => scrub.set(o.t) }, 'spin')
@@ -615,6 +621,7 @@ export default {
     const onBack = () => ctx.back()
     const backBtn = root.querySelector('[data-back]')
     backBtn.addEventListener('click', onBack)
+    offs.push(press(backBtn))
     offs.push(() => backBtn.removeEventListener('click', onBack))
 
     // ── run ──
@@ -650,6 +657,9 @@ export default {
       const m = render()
       stepSparks(dt, m)
       tickSound()
+      // the clock's own tick-tock follows how fast time is rushing past, and settles back
+      // to one tick a second when the hands stop
+      stopLayer?.setRate?.(Math.min(1, speed / 25))
     })
 
     if (ctx.params.has('debug')) {
@@ -663,6 +673,15 @@ export default {
           render()
         },
         t: () => scrub.t(),
+        /** t at which the plate shows this date */
+        tAt: (iso) => (+parseDate(iso) - +start) / (+end - +start),
+        date: () => scrub.date().toISOString(),
+        /** release the hand at v rad/s, as onRotate's onEnd would */
+        fling(v) {
+          if (busy) return
+          snap?.kill()
+          scrub.fling(v)
+        },
       }
     }
 
