@@ -12,6 +12,11 @@ const params = new URLSearchParams(location.search)
 if (params.has('reset')) state.reset()
 if (params.has('skip')) state.update({ doorSeen: true })
 if (params.has('door')) state.update({ doorSeen: false })
+// ?unlock: everything lit (rooms + finale), so the finale and the reception card can be opened directly
+if (params.has('unlock')) {
+  state.update({ doorSeen: true })
+  for (const r of [...state.ROOMS, 'finale']) state.markDone(r)
+}
 
 i18n.init()
 document.title = i18n.t('title')
@@ -21,7 +26,7 @@ document.title = i18n.t('title')
 {
   const url = new URL(location.href)
   const before = url.search
-  for (const k of ['reset', 'skip', 'door', 'lang']) url.searchParams.delete(k)
+  for (const k of ['reset', 'skip', 'door', 'lang', 'unlock']) url.searchParams.delete(k)
   if (url.search !== before) history.replaceState(history.state, '', url)
 }
 
