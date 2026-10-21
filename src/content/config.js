@@ -133,7 +133,7 @@ export default {
     paragraphs: [
       'Welcome home. I know — it\'s small, and it\'s made of paper, and the lights only come on when you touch them. But it\'s the first thing I built that was meant for both of us.',
       'We\'ve been "us" for {days} days. You grew up with me, you put up with me, you believed in me on the days I didn\'t. Every room in this house is something you gave me first.',
-      'Tonight you stop being my girlfriend and start being my wife, and I keep trying to think of what changes. I don\'t think much does. I\'ll still be annoying. You\'ll still be right. I\'ll still choose you.',
+      'Tonight you stop being my girlfriend and start being my wife, and everything begins again — a home with both our names on the door, a whole life of ordinary days that are finally ours. I\'ll still be annoying. You\'ll still be right. And I\'ll keep choosing you.',
       'Every time. In every lifetime. Without ever thinking twice. My bou.',
     ],
     signOff: 'Yours, from today in every way,',
