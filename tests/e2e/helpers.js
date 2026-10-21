@@ -89,18 +89,32 @@ export async function checkLayout(page, selectors, name, { minTap = 44 } = {}) {
   expect(scrolls, `page scrolls at ${vp.width}×${vp.height}`).toBe(false)
 }
 
-/** Time from pointerdown on `sel` until its transform/scale visibly changes (ms). Must be < 100. */
+/** Time from a real pointerdown on `sel` until its transform visibly changes (ms). Must be < 100. */
 export async function pressLatency(page, sel) {
   const box = await page.locator(sel).first().boundingBox()
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-  const t = await page.evaluate((s) => {
+  await page.evaluate((s) => {
     const el = document.querySelector(s)
     const before = getComputedStyle(el).transform
-    return new Promise((resolve) => {
-      const t0 = performance.now()
-      const check = () => (getComputedStyle(el).transform !== before ? resolve(performance.now() - t0) : performance.now() - t0 > 500 ? resolve(999) : requestAnimationFrame(check))
-      el.addEventListener('pointerdown', () => requestAnimationFrame(check), { once: true })
+    window.__pressLatency = new Promise((resolve) => {
+      el.addEventListener(
+        'pointerdown',
+        () => {
+          const t0 = performance.now()
+          const check = () => {
+            const dt = performance.now() - t0
+            if (getComputedStyle(el).transform !== before) resolve(dt)
+            else if (dt > 500) resolve(999)
+            else requestAnimationFrame(check)
+          }
+          requestAnimationFrame(check)
+        },
+        { once: true, capture: true },
+      )
     })
-  }, sel).catch(() => 999)
-  return t
+  }, sel)
+  await page.mouse.down()
+  const ms = await page.evaluate(() => window.__pressLatency)
+  await page.mouse.up()
+  return ms
 }
