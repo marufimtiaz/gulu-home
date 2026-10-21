@@ -96,7 +96,8 @@ export async function cardToPng(el, { width = 1080, prepare, fetcher = fetchAsDa
   const css = `${fontCss}\n${rest}`.replace(/<\/style/gi, '<\\/style')
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${w0} ${h0}">` +
     `<foreignObject x="0" y="0" width="${w0}" height="${h0}">` +
-    `<div xmlns="${XHTML}" style="width:${w0}px;height:${h0}px;margin:0;padding:0;position:relative">` +
+    // scene--card: scene CSS is scoped to the scene (vite.config.js), so the copy needs the scope too
+    `<div xmlns="${XHTML}" class="scene--card" style="width:${w0}px;height:${h0}px;margin:0;padding:0;position:relative">` +
     `<style>${escapeXml(css)}</style>${body}</div></foreignObject></svg>`
 
   const img = new Image()

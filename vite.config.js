@@ -35,6 +35,33 @@ function photosPlugin() {
   }
 }
 
+
+// Every src/scenes/<id>/scene.css is scoped to its scene at build time: `.wall {}` becomes
+// `.scene--<id> .wall {}`. Scene stylesheets stay loaded after a scene is left, so without this
+// two scenes using the same class name (the finale copies the house's art) restyle each other.
+// Selectors that already name the scene, or start at html/body, get the scope inserted after
+// that part instead. @keyframes are left alone.
+function scopeSceneCss() {
+  return {
+    postcssPlugin: 'scope-scene-css',
+    Once(root, { result }) {
+      const m = (result.opts.from || '').replace(/\\/g, '/').match(/\/src\/scenes\/([\w-]+)\/scene\.css$/)
+      if (!m) return
+      const scope = `.scene--${m[1]}`
+      root.walkRules((rule) => {
+        if (rule.parent?.type === 'atrule' && /keyframes$/i.test(rule.parent.name)) return
+        rule.selectors = rule.selectors.map((sel) => {
+          if (sel.includes(scope)) return sel
+          const lead = sel.match(/^\s*((?::root|html|body)(?:\[[^\]]*\]|[.:#][\w-]+(?:\([^)]*\))?)*)(\s+|$)/)
+          if (lead) return lead[2] ? `${lead[1]} ${scope} ${sel.slice(lead[0].length)}` : `${lead[1]} ${scope}`
+          return `${scope} ${sel.trim()}`
+        })
+      })
+    },
+  }
+}
+scopeSceneCss.postcss = true
+
 export default defineConfig({
   plugins: [
     photosPlugin(),
@@ -49,6 +76,7 @@ export default defineConfig({
       },
     }),
   ],
+  css: { postcss: { plugins: [scopeSceneCss()] } },
   server: { port: 4180, strictPort: true },
   test: {
     environment: 'happy-dom',
