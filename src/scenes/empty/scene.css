@@ -21,6 +21,9 @@
   top: var(--vvt, 0px);
   height: var(--vvh, 100%);
   display: block;
+  /* clip, not hidden: a phone scrolls every scroll container around a focused field into view as
+     the keyboard reflows the room, and a hidden-overflow box would stay shifted afterwards */
+  overflow: clip;
   container: room / size;
   color: var(--paper);
   background: var(--night-deep);
@@ -53,6 +56,10 @@
   justify-items: center;
   text-align: center;
   padding: 0 1rem 0.55rem;
+  /* painting the wall completes the room, and the "light came on" toast (top, under the chips,
+     ~3.3rem tall) shows while the new prompt arrives: the prompt (up to two lines) sits under it */
+  min-height: 7.4rem;
+  align-content: end;
 }
 .e-kicker { font-size: 1.25rem; line-height: 1; color: var(--mustard); rotate: -3deg; }
 .e-title {
@@ -85,7 +92,7 @@
   --board-bottom: calc(var(--form-h) + 34px);
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  overflow: clip; /* see .scene--empty */
   background-color: var(--plaster);
   background-image:
     /* old patches, a nail hole, a pale rectangle where a frame once hung */
@@ -443,6 +450,7 @@ html[lang="bn"] .e-input { font-family: var(--bn-hand); font-size: 1.25rem; }
 }
 @container room (max-height: 560px) and (max-aspect-ratio: 13/10) {
   .e-title { display: none; }
+  .e-head { min-height: 0; }
   .e-prompt { margin-top: 0; font-size: 1.15rem; }
   .empty[data-phase="painted"] { grid-template-rows: auto minmax(0, 1fr) 22px; }
   .empty[data-phase="painted"] .e-cans,
@@ -461,7 +469,7 @@ html[lang="bn"] .e-input { font-family: var(--bn-hand); font-size: 1.25rem; }
     padding-top: max(0.6rem, env(safe-area-inset-top));
   }
   .e-room { margin: 0 0 0 calc(max(0.7rem, env(safe-area-inset-left)) + 3.4rem); }
-  .e-head { align-self: end; padding: var(--pad-top) 1rem 0.4rem; }
+  .e-head { align-self: end; padding: var(--pad-top) 1rem 0.4rem; min-height: 0; }
   .e-kicker { display: block; }
   .e-title { display: block; font-size: clamp(1.5rem, 4.4cqw, 2.2rem); }
   .e-cans {
@@ -493,6 +501,7 @@ html[lang="bn"] .e-input { font-family: var(--bn-hand); font-size: 1.25rem; }
 .empty--typing .e-title,
 .empty--typing .e-floor,
 .empty--typing .e-cans { display: none !important; }
+.empty--typing .e-head { min-height: 0; }
 .empty--typing .e-room { margin: 0 var(--side) !important; }
 .empty--typing .e-wall { border-bottom: var(--line); border-radius: 14px; }
 

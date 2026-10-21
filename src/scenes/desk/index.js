@@ -73,6 +73,7 @@ export default {
                 <button class="btn btn--berry" type="button" data-back>${esc(t('reward.back'))}</button>
               </div>
               <i class="nib" data-nib aria-hidden="true">${nibSVG()}</i>
+              <span class="rule-probe" aria-hidden="true">x<i></i></span>
             </div>
           </div>
           <span class="sheet__crease sheet__crease--1" aria-hidden="true"></span>
@@ -117,6 +118,8 @@ export default {
     const backBtn = $('[data-back]')
     const ring = $('[data-ring]')
     const ringFill = ring.querySelector('.ring-fill')
+    const probe = $('.rule-probe i')
+    const sig = $('.l-sig')
 
     // ── bookkeeping: everything that runs gets killed on unmount ──
     const live = new Set()
@@ -145,9 +148,33 @@ export default {
       track(gsap.fromTo(prompt, { scale: 0.9, rotation: -2, autoAlpha: 0.4 }, { scale: 1, rotation: 0, autoAlpha: 1, duration: reduced ? 0.01 : 0.45, ease: 'back.out(2.6)', overwrite: true }))
     }
 
+    // ── ruled paper: every baseline sits on a rule ──
+    // The rules are a background tiled every line-height; the probe (a zero-size inline-block in
+    // one line of the letter's font) tells us where the baseline falls in a line box, so the
+    // tile is shifted to put its rule just under it. Every block is a whole number of lines tall,
+    // so one offset fits all. The signature is bigger (two lines tall): it is nudged onto a rule.
+    function alignRules() {
+      const fs = parseFloat(getComputedStyle(body).fontSize) || 20
+      const lh = parseFloat(getComputedStyle(body).lineHeight) || fs * 1.5
+      const base = probe.getBoundingClientRect().top - probe.parentElement.getBoundingClientRect().top // baseline, from the top of its line box
+      const y = base + fs * 0.07 + 1.5 - lh // tile bottom = the rule's bottom edge
+      body.style.setProperty('--rule-y', `${y.toFixed(2)}px`)
+      // the signature is set bigger, in a box two lines tall: shift it so its baseline lands on a rule
+      const scs = getComputedStyle(sig)
+      const sfs = parseFloat(scs.fontSize) || fs * 1.6
+      const slh = parseFloat(scs.lineHeight) || lh * 2
+      const sigBase = slh / 2 + (base - lh / 2) * (sfs / fs) // half-leading model, same font
+      let d = (base - sigBase) % lh
+      if (d > lh / 2) d -= lh
+      if (d < -lh / 2) d += lh
+      sig.style.setProperty('--sig-y', `${d.toFixed(2)}px`)
+    }
+    document.fonts?.ready.then(() => !dead && alignRules())
+
     // ── layout: where the lamp's pool sits on screen (live on resize) ──
     let lastWord = null
     function layout() {
+      alignRules()
       const a = deskArt.getBoundingClientRect()
       const r = root.getBoundingClientRect()
       const s = a.width / DESK.w
@@ -473,6 +500,19 @@ export default {
     on(scroller, 'pointercancel', cancelHold)
     on(scroller, 'pointerleave', cancelHold)
 
+    /**
+     * Scroll position for the signed letter: as far down as it goes, but never so far that the
+     * sign-off slides under the "a light came on" toast (top of the screen, 2.6 s) — the toast
+     * arrives exactly when she reaches the signature.
+     */
+    function signedTop() {
+      const sr = scroller.getBoundingClientRect()
+      const toasts = document.getElementById('toasts')
+      const clear = toasts ? Math.max(0, toasts.getBoundingClientRect().top + 60 - sr.top) : 0
+      const offTop = $('.l-off').getBoundingClientRect().top - sr.top + scroller.scrollTop
+      return Math.min(scroller.scrollHeight, offTop - clear)
+    }
+
     // ── signed: the stamp lands, the room is lit ──
     function signed() {
       setPhase('signed')
@@ -488,11 +528,11 @@ export default {
         ctx.complete()
         guide.set(heart)
       } }))
-      // read-it-all lands at the bottom; otherwise just keep the signature in view
+      // read-it-all glides down to the end; otherwise just keep the signature in view
       if (allCtl.signal.aborted) {
         following = true
-        tl.call(() => autoScroll(scroller.scrollHeight, T.moment), null, 0)
-      } else tl.call(() => following && autoScroll(scroller.scrollHeight), null, 0)
+        tl.call(() => autoScroll(signedTop(), T.moment), null, 0)
+      } else tl.call(() => following && autoScroll(signedTop()), null, 0)
       tl.to(heart, { scale: 1, rotation: 0, duration: T.move, ease: EASE.spring }, 0.25)
       beat(tl, 'stamp', '<0.18')
       tl.call(() => {

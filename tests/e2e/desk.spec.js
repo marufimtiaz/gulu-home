@@ -194,35 +194,79 @@ test('leaving mid-letter cleans up', async ({ page }) => {
   expect(errors).toEqual([])
 })
 
-/**
- * helpers.pressLatency() starts its clock and then waits for a pointerdown without pressing, so
- * press for it the moment its listener is in: a real PointerEvent dispatched on the element right
- * then (no round trip through the test runner inflating the number).
- */
-async function latency(page, sel) {
-  await page.evaluate((s) => {
-    const el = document.querySelector(s)
-    const add = el.addEventListener
-    el.addEventListener = function (type, fn, opts) {
-      add.call(this, type, fn, opts)
-      if (type === 'pointerdown' && opts?.once) {
-        el.addEventListener = add
-        const r = el.getBoundingClientRect()
-        const at = { bubbles: true, cancelable: true, pointerId: 7, isPrimary: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }
-        queueMicrotask(() => {
-          el.dispatchEvent(new PointerEvent('pointerdown', at))
-          setTimeout(() => el.dispatchEvent(new PointerEvent('pointerup', at)), 200)
-        })
-      }
-    }
-  }, sel)
-  return pressLatency(page, sel)
-}
-
 test('press feedback is instant', async ({ page }) => {
   await open(page, 'desk')
   await page.waitForTimeout(300)
-  expect(await latency(page, '[data-envelope]')).toBeLessThan(100)
+  expect(await pressLatency(page, '[data-envelope]')).toBeLessThan(100)
+})
+
+/**
+ * Where each written line's baseline falls relative to the nearest rule (px; 0 = sitting on it).
+ * A zero-size inline-block after a block's last word sits on that line's baseline; the rules are the
+ * body's background tiles (bottom edge every line-height from the content box, shifted by --rule-y).
+ */
+async function ruleGaps(page) {
+  return page.evaluate(() => {
+    const body = document.querySelector('[data-body]')
+    const cs = getComputedStyle(body)
+    const lh = parseFloat(cs.lineHeight)
+    const fs = parseFloat(cs.fontSize)
+    const top = body.getBoundingClientRect().top + parseFloat(cs.paddingTop) + parseFloat(cs.borderTopWidth)
+    const ruleY = parseFloat(cs.backgroundPositionY) // px, set by the scene
+    const out = []
+    for (const el of body.querySelectorAll('.l-hello, .l-p, .l-off, .l-sig, .l-ps__line')) {
+      if (!el.textContent.trim()) continue
+      const i = document.createElement('i')
+      i.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline'
+      el.append(i)
+      const y = i.getBoundingClientRect().top - top // the baseline, in the content box
+      i.remove()
+      const rule = ruleY + lh - 1.5 // the first rule's top edge
+      let d = (y - rule) % lh
+      if (d > lh / 2) d -= lh
+      if (d < -lh / 2) d += lh
+      out.push({ cls: el.className, gap: d + fs * 0.07 }) // the rule sits a hair under the baseline
+    }
+    return out
+  })
+}
+
+for (const lang of ['en', 'bn']) {
+  test(`every line sits on a rule (${lang})`, async ({ page }, info) => {
+    test.skip(info.project.name !== 'desktop', 'viewport loop runs once')
+    test.setTimeout(120_000)
+    for (const vp of [VIEWPORTS[0], VIEWPORTS[1], VIEWPORTS[3], VIEWPORTS[4], VIEWPORTS[6]]) {
+      await page.setViewportSize(vp)
+      await open(page, 'desk', { lang })
+      await page.evaluate(() => window.__desk.skip())
+      await expect(page.locator('.scene--desk')).toHaveAttribute('data-done', 'true', { timeout: 10_000 })
+      await page.locator('[data-heart]').click()
+      await page.waitForTimeout(900)
+      for (const { cls, gap } of await ruleGaps(page)) {
+        const tol = cls.includes('l-sig') ? 3 : 1.5 // the signature is tilted a little
+        expect(Math.abs(gap), `${cls} baseline vs rule at ${vp.name} (${lang})`).toBeLessThanOrEqual(tol)
+      }
+      await shot(page, `desk-rules-${lang}-${vp.name}`)
+    }
+  })
+}
+
+test('the "light came on" toast never covers the sign-off', async ({ browser }, info) => {
+  test.skip(info.project.name !== 'desktop', 'viewport loop runs once')
+  test.setTimeout(120_000)
+  for (const vp of VIEWPORTS) {
+    const page = await browser.newPage({ viewport: vp, baseURL: info.project.use.baseURL })
+    await open(page, 'desk')
+    await page.evaluate(() => window.__desk.skip())
+    await expect(page.locator('.toast')).toBeVisible({ timeout: 10_000 })
+    await page.waitForTimeout(1900) // the glide down to the end has landed; the toast is still up
+    await expect(page.locator('.toast')).toBeVisible()
+    const toast = await page.locator('.toast').boundingBox()
+    const off = await page.locator('.l-off').boundingBox()
+    expect(off.y, `sign-off below the toast at ${vp.name}`).toBeGreaterThan(toast.y + toast.height)
+    await expect(page.locator('[data-back]'), `back button on the paper at ${vp.name}`).toBeInViewport({ ratio: 1 })
+    await page.close()
+  }
 })
 
 for (const vp of VIEWPORTS) {

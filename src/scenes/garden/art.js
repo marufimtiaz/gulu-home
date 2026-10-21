@@ -194,6 +194,19 @@ export function gardenSVG() {
     if (x > 120 && x < 290 && y < 486) continue // keep the soil clear
     front += fr() > 0.42 ? tuft(x, y, 0.8 + fr() * 0.7) : wild(x, y, 0.8 + fr() * 0.5, Math.floor(fr() * 4))
   }
+  // below the canvas (only seen on tall phones, where the garden sits higher): a stepping-stone
+  // path from the soil toward her, and a deeper band of grass and wildflowers
+  let deep = ''
+  const dr = rng(77)
+  for (let i = 0; i < 40; i++) {
+    const x = -500 + dr() * 1500
+    const y = 548 + dr() * 110
+    if (x > 150 && x < 250) continue // keep the path clear
+    deep += dr() > 0.45 ? tuft(x, y, 0.9 + dr() * 0.8) : wild(x, y, 0.9 + dr() * 0.6, Math.floor(dr() * 4))
+  }
+  const stones = [[204, 532, 15, 6], [192, 566, 18, 7], [210, 604, 21, 8], [196, 648, 24, 9], [214, 696, 27, 10]]
+    .map(([x, y, rx, ry]) => `<ellipse class="pebble g-stone" cx="${x}" cy="${y}" rx="${rx}" ry="${ry}"/>`)
+    .join('')
   const shrooms = [
     shroom(118, 480, 0.85, 'berry'), shroom(100, 488, 0.6, 'tomato', -1), shroom(300, 486, 0.9, 'tomato', -1),
     shroom(322, 492, 0.55, 'berry'), shroom(24, 500, 0.7, 'mustard'),
@@ -337,6 +350,12 @@ export function gardenSVG() {
     ${shrooms}
     <g class="g-front-scatter">${front}</g>
     ${lawn(512, 12, 130, 6, 'g-lawn--3')}
+    <g class="g-deep">
+      ${stones}
+      ${shroom(120, 590, 1, 'tomato')}${shroom(292, 628, 0.8, 'berry', -1)}${shroom(330, 600, 0.6, 'mustard')}
+      ${deep}
+      ${lawn(668, 14, 150, 8, 'g-lawn--4')}
+    </g>
   </svg>`
 }
 
@@ -441,13 +460,13 @@ export function saplingSVG() {
     </g>`).join('')
   return `
   <g class="sapling" data-sapling style="opacity:0">
-    <g class="sap-scale">
+    <g class="g-grow"><g class="sap-scale">
       <path class="sap-stem-ink" d="M200 ${G} C198 ${G - 22} 203 ${G - 46} 200 ${G - 80}"/>
       <path class="sap-stem" d="M200 ${G} C198 ${G - 22} 203 ${G - 46} 200 ${G - 80}"/>
       <path class="sap-stem sap-twig" d="M201 ${G - 68} q8 -2 12 -8"/>
       ${leaves}
       <g class="sap-bud"><circle class="bud" cx="200" cy="${G - 82}" r="4.5"/></g>
-    </g>
+    </g></g>
   </g>`
 }
 
