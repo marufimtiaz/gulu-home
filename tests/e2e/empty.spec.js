@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { checkLayout, collectErrors, open, shot, VIEWPORTS } from './helpers.js'
+import { checkLayout, collectErrors, open, pressLatency, shot, VIEWPORTS } from './helpers.js'
 import config from '../../src/content/config.js'
 
 const FIVE = ['living', 'kitchen', 'garden', 'rooftop', 'desk']
@@ -11,26 +11,6 @@ const rgb = (hex) => {
   return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`
 }
 const herNotes = (n) => Array.from({ length: n }, (_, i) => ({ text: `plan number ${i + 1}`, who: 'her', at: 1_700_000_000_000 + i }))
-/** ms from a real pointerdown on sel until its transform visibly changes. */
-async function pressLatencyFromDown(page, sel) {
-  const box = await page.locator(sel).first().boundingBox()
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-  await page.evaluate((s) => {
-    const el = document.querySelector(s)
-    const before = getComputedStyle(el).transform
-    window.__lat = new Promise((resolve) => {
-      el.addEventListener('pointerdown', () => {
-        const t0 = performance.now()
-        const check = () => (getComputedStyle(el).transform !== before ? resolve(performance.now() - t0) : performance.now() - t0 > 500 ? resolve(999) : requestAnimationFrame(check))
-        requestAnimationFrame(check)
-      }, { once: true })
-    })
-  }, sel)
-  await page.mouse.down()
-  const ms = await page.evaluate(() => window.__lat)
-  await page.mouse.up()
-  return ms
-}
 const stored = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('our-home')).empty)
 
 async function paintWith(page, i) {
@@ -259,9 +239,7 @@ test('idle: the paint cans get a nudge; then the marker line', async ({ page }) 
 
 test('press feedback lands within 100 ms', async ({ page }) => {
   await open(page, 'empty', { done: FIVE })
-  // helpers.pressLatency starts its clock when it arms, not at the press, and waits for a
-  // press nobody sends — so measure the same thing here, timed from the real pointerdown
-  const ms = await pressLatencyFromDown(page, '[data-swatch="1"]')
+  const ms = await pressLatency(page, '[data-swatch="1"]')
   expect(ms).toBeLessThan(100)
 })
 

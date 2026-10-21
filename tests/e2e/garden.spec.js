@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { checkLayout, collectErrors, open, shot, VIEWPORTS } from './helpers.js'
+import { checkLayout, collectErrors, open, pressLatency, shot, VIEWPORTS } from './helpers.js'
 
 // real-pointer tests on a shared machine: generous time rather than shortened gestures
 // (one retry only covers helpers.open()'s fixed 5 s mount wait when other agents load the box)
@@ -93,31 +93,6 @@ test('the can before the seed points back at the soil', async ({ page }) => {
   expect(await phase(page)).toBe('plant')
   expect(await growth(page)).toBe(0)
 })
-
-/*
- * Press latency measured from the pointerdown itself (helpers.pressLatency arms a listener
- * but neither presses nor starts its clock at the press): time until the element's
- * transform visibly changes. Must be < 100 ms.
- */
-async function pressLatency(page, sel) {
-  const p = await center(page, sel)
-  await page.mouse.move(p.x, p.y)
-  await page.evaluate((s) => {
-    const el = document.querySelector(s)
-    const before = getComputedStyle(el).transform
-    window.__latency = new Promise((resolve) => {
-      el.addEventListener('pointerdown', () => {
-        const t0 = performance.now()
-        const check = () => (getComputedStyle(el).transform !== before ? resolve(performance.now() - t0) : performance.now() - t0 > 500 ? resolve(999) : requestAnimationFrame(check))
-        requestAnimationFrame(check)
-      }, { once: true })
-    })
-  }, sel)
-  await page.mouse.down()
-  const ms = await page.evaluate(() => window.__latency)
-  await page.mouse.up()
-  return ms
-}
 
 test('touching the soil and the can answers at once', async ({ page }) => {
   await open(page, 'garden')

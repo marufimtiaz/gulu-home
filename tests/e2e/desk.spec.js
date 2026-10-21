@@ -194,35 +194,10 @@ test('leaving mid-letter cleans up', async ({ page }) => {
   expect(errors).toEqual([])
 })
 
-/**
- * helpers.pressLatency() starts its clock and then waits for a pointerdown without pressing, so
- * press for it the moment its listener is in: a real PointerEvent dispatched on the element right
- * then (no round trip through the test runner inflating the number).
- */
-async function latency(page, sel) {
-  await page.evaluate((s) => {
-    const el = document.querySelector(s)
-    const add = el.addEventListener
-    el.addEventListener = function (type, fn, opts) {
-      add.call(this, type, fn, opts)
-      if (type === 'pointerdown' && opts?.once) {
-        el.addEventListener = add
-        const r = el.getBoundingClientRect()
-        const at = { bubbles: true, cancelable: true, pointerId: 7, isPrimary: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }
-        queueMicrotask(() => {
-          el.dispatchEvent(new PointerEvent('pointerdown', at))
-          setTimeout(() => el.dispatchEvent(new PointerEvent('pointerup', at)), 200)
-        })
-      }
-    }
-  }, sel)
-  return pressLatency(page, sel)
-}
-
 test('press feedback is instant', async ({ page }) => {
   await open(page, 'desk')
   await page.waitForTimeout(300)
-  expect(await latency(page, '[data-envelope]')).toBeLessThan(100)
+  expect(await pressLatency(page, '[data-envelope]')).toBeLessThan(100)
 })
 
 /**
