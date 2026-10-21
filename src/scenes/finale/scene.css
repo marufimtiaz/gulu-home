@@ -1,201 +1,160 @@
-/* Finale — the same cut-paper front door as the door scene, lit, with the house glowing above.
-   Colours are token mixes only (the door scene's palette, copied). */
+/* Finale — the hub's house (same paper, same palette: the house scene's CSS, copied), every
+   window lit, the camera on its front door. Colours are token mixes only. */
 .scene--finale {
-  --wall: color-mix(in srgb, var(--paper-2) 36%, var(--night));
-  --wall-hi: color-mix(in srgb, var(--paper-2) 47%, var(--night));
-  --trim: color-mix(in srgb, var(--paper) 58%, var(--night));
-  --trim-hi: color-mix(in srgb, var(--paper) 72%, var(--night));
-  --roof: color-mix(in srgb, var(--indigo) 78%, var(--night-deep));
-  --roof-hi: color-mix(in srgb, var(--indigo) 70%, var(--sky));
-  --floor: color-mix(in srgb, var(--paper-2) 24%, var(--night-deep));
-  --floor-line: color-mix(in srgb, var(--night-deep) 70%, transparent);
-  --stone: color-mix(in srgb, var(--paper-2) 38%, var(--indigo));
-  --stone-lo: color-mix(in srgb, var(--paper-2) 26%, var(--indigo));
-  --door: var(--berry-deep);
-  --door-hi: color-mix(in srgb, var(--berry) 62%, var(--berry-deep));
-  --door-lo: color-mix(in srgb, var(--berry-deep) 72%, var(--night-deep));
-  --glass: color-mix(in srgb, var(--indigo) 55%, var(--night-deep));
-  --brass-lo: color-mix(in srgb, var(--mustard) 62%, var(--ink));
-  --leafc: color-mix(in srgb, var(--sage) 52%, var(--night));
-  --leafc-lo: color-mix(in srgb, var(--sage) 36%, var(--night-deep));
-  --pot: color-mix(in srgb, var(--tomato) 58%, var(--night));
-  --pot-hi: color-mix(in srgb, var(--tomato) 70%, var(--night));
-  --mat: color-mix(in srgb, var(--mustard) 52%, var(--night));
+  --h-paper: color-mix(in oklab, var(--paper-2) 74%, var(--dusk));
+  --h-paper-dim: color-mix(in oklab, var(--paper-2) 52%, var(--night));
+  --h-pane: color-mix(in oklab, var(--indigo) 45%, var(--night-deep));
+  --h-ground: color-mix(in oklab, var(--sage) 42%, var(--night-deep));
+  --h-ground-2: color-mix(in oklab, var(--sage) 55%, var(--night));
+  --h-wood: color-mix(in oklab, var(--mustard) 34%, var(--ink));
+  --h-shadow: color-mix(in oklab, var(--ink) 70%, var(--night-deep));
+  --h-warm-ink: color-mix(in oklab, var(--ink) 72%, var(--mustard));
   --shade: color-mix(in srgb, var(--night-deep) 62%, transparent);
-  --hut: color-mix(in srgb, var(--paper-2) 42%, var(--night));
-  --brick: color-mix(in srgb, var(--tomato) 50%, var(--night));
-  --tank: color-mix(in srgb, var(--sky) 40%, var(--night));
-  --warm-ink: color-mix(in srgb, var(--ink) 72%, var(--mustard));
   --panel: 0px;
 
   display: block;
   color: var(--paper);
   background:
-    radial-gradient(90% 40% at 50% 30%, color-mix(in srgb, var(--dusk) 55%, transparent), transparent 70%),
-    linear-gradient(to bottom, var(--night-deep) 0%, var(--night) 45%, var(--dusk) 100%);
+    radial-gradient(120% 50% at 50% 100%, color-mix(in oklab, var(--dusk) 70%, var(--mustard)) 0%, transparent 60%),
+    linear-gradient(180deg, var(--night-deep) 0%, var(--night) 42%, var(--dusk) 82%, color-mix(in oklab, var(--dusk) 80%, var(--berry)) 100%);
 }
 .fin { position: absolute; inset: 0; overflow: hidden; touch-action: manipulation; }
 .fin-stars { position: absolute; inset: 0 0 40% 0; pointer-events: none; }
 .fin-fw { position: absolute; left: 0; right: 0; top: 0; height: 40%; pointer-events: none; }
 .fin-fw .fireworks { position: absolute; inset: 0; width: 100%; height: 100%; }
 
-/* ── the art box: 440×980 canvas units, scaled + placed by the camera (GSAP, origin 0 0) ── */
-.fin-art {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 440px;
-  height: 980px;
-  transform-origin: 0 0;
-}
+/* ── the art box: canvas units (hub units × 2.875), placed + scaled by the camera (GSAP, origin 0 0) ── */
+.fin-art { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .fin-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .fin-svg .pokeable { pointer-events: auto; cursor: pointer; }
-.fin-wall, .fin-floor { position: absolute; left: -1800px; right: -1800px; pointer-events: none; }
-.fin-wall { /* the house wall: paper, dimmed by the night (door scene's clapboard) */
-  top: 130px;
-  height: 776px;
-  background:
-    var(--grain, none),
-    repeating-linear-gradient(to bottom, transparent 0 31px, color-mix(in srgb, var(--ink) 30%, transparent) 31px 33px, color-mix(in srgb, var(--paper) 7%, transparent) 33px 35px),
-    var(--wall);
-}
-.fin-floor { /* the porch floor, full bleed below the sill */
-  top: 904px;
-  height: 1400px;
-  background:
-    var(--grain, none),
-    linear-gradient(to bottom, var(--shade), transparent 18px),
-    repeating-linear-gradient(to bottom, transparent 0 22px, var(--floor-line) 22px 24px),
-    var(--floor);
-  border-top: var(--line);
-}
+.fin-hook { position: absolute; pointer-events: none; }
 
-/* svg paint classes */
-.scene--finale .lift { flood-color: var(--night-deep); flood-opacity: 0.62; }
-.scene--finale .pop { flood-color: var(--ink); flood-opacity: 1; }
-.scene--finale .st-lamp { stop-color: var(--lamp); }
-.scene--finale .st-moon { stop-color: var(--moon); }
-.scene--finale .st-mustard { stop-color: var(--mustard); }
-.scene--finale .st-butter { stop-color: var(--butter); }
-.scene--finale .st-brass-lo { stop-color: var(--brass-lo); }
-
-.fin-svg .shadow { fill: color-mix(in srgb, var(--night-deep) 80%, var(--ink)); opacity: 0.8; }
-.fin-svg .faint { fill: none; stroke: var(--ink); stroke-width: 1; opacity: 0.22; }
+/* svg paint (the hub's) */
+.fin-svg .st-lamp { stop-color: var(--lamp); }
+.fin-svg .st-mustard { stop-color: var(--mustard); }
+.fin-svg .st-butter { stop-color: var(--butter); }
+.fin-svg .st-halo-0 { stop-color: var(--lamp); stop-opacity: 0.85; }
+.fin-svg .st-halo-1 { stop-color: var(--lamp); stop-opacity: 0; }
 .fin-svg .ink-line { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.fin-svg .ink-faint { fill: none; stroke: var(--ink); stroke-width: 1; opacity: 0.18; }
+.fin-svg .ink-shadow, .fin-svg .w-shadow rect { fill: var(--h-shadow); opacity: 0.9; }
 
 /* sky */
 .fin-svg .aura { opacity: 0.35; }
-.fin-svg .pstar { fill: var(--star); stroke: var(--ink); stroke-width: 1; opacity: 0.9; }
-.fin-svg .moon__halo { fill: var(--moon); opacity: 0.1; }
-.fin-svg .moon__body { fill: var(--moon); stroke: var(--ink); stroke-width: 2.2; stroke-linejoin: round; }
+.fin-svg .pstar { fill: var(--star); opacity: 0.85; }
+.fin-svg .moon-halo { fill: var(--moon); opacity: 0.08; }
+.fin-svg .moon-halo--2 { opacity: 0.05; }
+.fin-svg .moon-shadow { fill: var(--night-deep); }
+.fin-svg .moon-disc { fill: var(--moon); stroke: var(--ink); stroke-width: 2; }
+.fin-svg .moon-crater { fill: color-mix(in oklab, var(--moon) 78%, var(--mustard)); }
+.fin-svg .moon-shine { fill: none; stroke: var(--paper); stroke-width: 2.2; stroke-linecap: round; opacity: 0.8; }
 
-/* roof terrace */
-.fin-svg .hut__wall { fill: var(--hut); stroke: var(--ink); stroke-width: 2.5; }
-.fin-svg .hut__roof { fill: var(--berry-deep); stroke: var(--ink); stroke-width: 2.2; stroke-linejoin: round; }
-.fin-svg .tank__body { fill: var(--tank); stroke: var(--ink); stroke-width: 2.2; }
-.fin-svg .tank__lid { fill: color-mix(in srgb, var(--sky) 30%, var(--night-deep)); stroke: var(--ink); stroke-width: 2; }
-.fin-svg .brick { fill: var(--brick); stroke: var(--ink); stroke-width: 2.4; }
-.fin-svg .chimney__cap { fill: var(--trim); stroke: var(--ink); stroke-width: 2.2; }
-.fin-svg .rail__bar { fill: var(--trim); stroke: var(--ink); stroke-width: 2; }
-.fin-svg .baluster { stroke-width: 1.8; }
-.fin-svg .cat { fill: var(--ink); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
-.fin-svg .eave { fill: var(--roof); stroke: var(--ink); stroke-width: 2.5; }
-.fin-svg .eave__scallops { fill: var(--roof); stroke: var(--ink); stroke-width: 2.2; }
+/* far layer */
+.fin-svg .h-far { pointer-events: none; }
+.fin-svg .f-city rect { fill: color-mix(in oklab, var(--indigo) 38%, var(--night-deep)); }
+.fin-svg .f-city-win rect { fill: var(--lamp); opacity: 0.55; }
+.fin-svg .f-hill { stroke: var(--ink); stroke-width: 1.5; }
+.fin-svg .f-hill--back { fill: color-mix(in oklab, var(--indigo) 60%, var(--night)); }
+.fin-svg .f-hill--front { fill: color-mix(in oklab, var(--sage) 22%, var(--night)); }
+.fin-svg .f-tree circle { fill: color-mix(in oklab, var(--sage) 30%, var(--night)); stroke: var(--ink); stroke-width: 1.5; }
 
-/* lit windows */
-.fin-svg .shutter { fill: var(--roof); stroke: var(--ink); stroke-width: 2.5; }
-.fin-svg .shutter-slat { stroke: var(--ink); stroke-width: 1.4; opacity: 0.5; }
-.fin-svg .trim { fill: var(--trim); stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
-.fin-svg .trim-hi { fill: var(--trim-hi); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
-.fin-svg .trim-line { fill: none; stroke: var(--ink); stroke-width: 1.2; opacity: 0.28; }
-.fin-svg .win-glass { fill: var(--glass); }
-.fin-svg .fw-glow { opacity: 0.72; }
-.fin-svg .fw-halo { opacity: 0.3; }
-.fin-svg .win-edge { fill: none; stroke: var(--ink); stroke-width: 2.4; }
-.fin-svg .win-inside { fill: var(--warm-ink); stroke: var(--warm-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
-.fin-svg .win-inside .open, .fin-svg .win-inside.open { fill: none; }
-.fin-svg .win-curtain { fill: color-mix(in srgb, var(--pink) 80%, var(--lamp)); stroke: var(--ink); stroke-width: 1.6; }
-.fin-svg .win-shine { stroke: var(--paper); stroke-width: 2.5; stroke-linecap: round; opacity: 0.35; }
-.fin-svg .win-bars { stroke: var(--trim); stroke-width: 5; }
+/* ground */
+.fin-svg .p-ground { fill: var(--h-ground); }
+.fin-svg .g-lawn { stroke: var(--ink); stroke-width: 1.6; }
+.fin-svg .g-lawn--1 { fill: color-mix(in oklab, var(--sage) 34%, var(--night-deep)); }
+.fin-svg .g-lawn--2 { fill: color-mix(in oklab, var(--sage) 27%, var(--night-deep)); }
+.fin-svg .g-lawn--3 { fill: color-mix(in oklab, var(--sage) 20%, var(--night-deep)); }
+.fin-svg .g-tuft { fill: var(--h-ground-2); stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; }
+.fin-svg .g-grass { fill: none; stroke: var(--h-ground-2); stroke-width: 1.6; stroke-linecap: round; }
+.fin-svg .p-stone { fill: var(--h-paper-dim); stroke: var(--ink); stroke-width: 1.5; }
+.fin-svg .h-spill { fill: url(#fh-spill); opacity: 0.6; }
 
-/* porch (door scene) */
-.fin-svg .roof { fill: var(--roof); stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
-.fin-svg .roof-line { fill: none; stroke: var(--roof-hi); stroke-width: 1.6; stroke-dasharray: 9 7; opacity: 0.6; }
-.fin-svg .wall-hi { fill: var(--wall-hi); stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
-.fin-svg .vent { fill: var(--lamp); stroke: var(--ink); stroke-width: 2; }
-.fin-svg .stone { fill: var(--stone); stroke: var(--ink); stroke-width: 2.5; }
-.fin-svg .stone-lo { fill: var(--stone-lo); stroke: var(--ink); stroke-width: 2.5; }
-.fin-svg .mat__base { fill: var(--mat); stroke: var(--ink); stroke-width: 2.5; }
-.fin-svg .mat__stripe { fill: none; stroke: var(--door-hi); stroke-width: 3; stroke-dasharray: 2 4; }
-.fin-svg .mat__heart { fill: var(--door-hi); stroke: var(--ink); stroke-width: 1.6; }
-.fin-svg .mat__fringe { fill: none; stroke: var(--mat); stroke-width: 2; stroke-linecap: round; }
-.fin-svg .pot { fill: var(--pot); stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
-.fin-svg .pot-rim { fill: var(--pot-hi); stroke: var(--ink); stroke-width: 2.5; }
-.fin-svg .lf { fill: var(--leafc); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
-.fin-svg .lf-lo { fill: var(--leafc-lo); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
-.fin-svg .rib { fill: none; stroke: var(--ink); stroke-width: 1.2; opacity: 0.45; }
-.fin-svg .stem { fill: none; stroke: var(--ink); stroke-width: 2; }
-.fin-svg .fl-a { fill: color-mix(in srgb, var(--pink) 78%, var(--night)); stroke: var(--ink); stroke-width: 1.5; }
-.fin-svg .fl-b { fill: color-mix(in srgb, var(--butter) 78%, var(--night)); stroke: var(--ink); stroke-width: 1.5; }
-.fin-svg .fl-eye { fill: color-mix(in srgb, var(--mustard) 80%, var(--night)); stroke: var(--ink); stroke-width: 1.2; }
+/* the house */
+.fin-svg .p-wall { fill: var(--h-paper); }
+.fin-svg .p-speckle { fill: url(#fh-speckle); }
+.fin-svg #fh-speckle circle { fill: var(--ink); opacity: 0.22; }
+.fin-svg .p-wall-shade { fill: var(--h-shadow); opacity: 0.25; }
+.fin-svg .p-wall-outline { fill: none; stroke: var(--ink); stroke-width: 2.5; }
+.fin-svg .p-trim { fill: var(--berry-deep); stroke: var(--ink); stroke-width: 2; }
+.fin-svg .p-roof { fill: var(--berry-deep); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.fin-svg .p-brick { fill: color-mix(in oklab, var(--tomato) 55%, var(--night)); stroke: var(--ink); stroke-width: 2; }
+.fin-svg .p-tank { fill: color-mix(in oklab, var(--sky) 40%, var(--night)); stroke: var(--ink); stroke-width: 2; }
+.fin-svg .p-tank-lid { fill: color-mix(in oklab, var(--sky) 30%, var(--night-deep)); stroke: var(--ink); stroke-width: 2; }
+.fin-svg .p-rail { fill: var(--h-paper); stroke: var(--ink); stroke-width: 2; }
+.fin-svg .h-baluster { stroke-width: 1.6; }
+.fin-svg .p-wood { fill: var(--h-wood); stroke: var(--ink); stroke-width: 2; }
+.fin-svg .p-door { fill: var(--berry-deep); stroke: var(--ink); stroke-width: 2.5; }
+.fin-svg .p-step { fill: var(--h-paper-dim); stroke: var(--ink); stroke-width: 2; }
+.fin-svg .p-brass { fill: var(--mustard); stroke: var(--ink); stroke-width: 1.2; }
+.fin-svg .p-sconce { fill: var(--ink); }
+.fin-svg .h-slot { fill: var(--ink); }
+.fin-svg .h-porch-bulb { fill: var(--lamp); filter: drop-shadow(0 0 4px var(--lamp)); }
+.fin-svg .h-porch-glow { fill: url(#fh-halo); opacity: 0.9; }
+.fin-svg .h-cat { fill: var(--ink); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
 
-/* porch lamp: on */
-.fin-svg .iron { fill: var(--ink); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
-.fin-svg .iron-arm { fill: none; stroke: var(--ink); stroke-width: 3.2; stroke-linecap: round; }
-.fin-svg .lamp__glass { fill: var(--lamp); stroke: var(--ink); stroke-width: 1.8; }
-.fin-svg .lamp__bulb { fill: var(--moon); }
-.fin-svg .lamp__bars { fill: none; stroke: var(--ink); stroke-width: 1.2; }
-.fin-svg .lamp-glow { opacity: 0.85; }
+/* windows: all lit */
+.fin-svg .w-pane { fill: var(--h-pane); filter: drop-shadow(0 0 10px var(--lamp-glow)); }
+.fin-svg .w-frame { fill: none; stroke: var(--ink); stroke-width: 2.6; }
+.fin-svg .w-mullion { fill: none; stroke: var(--h-paper); stroke-width: 3.5; }
+.fin-svg .w-sill { fill: var(--h-paper); stroke: var(--ink); stroke-width: 2; }
+.fin-svg .w-glow { fill: url(#fh-glow); opacity: 0.92; }
+.fin-svg .w-halo { fill: url(#fh-halo); opacity: 0.55; }
+.fin-svg .w-inside { fill: var(--h-warm-ink); stroke: var(--h-warm-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.85; }
+.fin-svg .w-inside .open { fill: none; }
+.fin-svg .w-inside .i-steam { stroke-width: 1.4; opacity: 0.7; }
+.fin-svg .w-curtain { fill: color-mix(in oklab, var(--pink) 80%, var(--lamp)); stroke: var(--ink); stroke-width: 1.5; }
+.fin-svg .w-glint { fill: none; stroke: var(--paper); stroke-width: 2; opacity: 0.25; stroke-linecap: round; }
+.fin-svg .p-shutter { fill: color-mix(in oklab, var(--sage) 50%, var(--night)); stroke: var(--ink); stroke-width: 2; }
+.fin-svg .aw-a { fill: var(--berry); stroke: var(--ink); stroke-width: 1.5; }
+.fin-svg .aw-b { fill: var(--h-paper); stroke: var(--ink); stroke-width: 1.5; }
+.fin-svg .fl { stroke: var(--ink); stroke-width: 1.2; }
+.fin-svg .fl--0 { fill: var(--pink); }
+.fin-svg .fl--1 { fill: var(--butter); }
+.fin-svg .fl--2 { fill: var(--blush); }
+.fin-svg .fl-c { fill: var(--mustard); }
+.fin-svg .p-arch { fill: var(--h-wood); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.fin-svg .p-gate { fill: color-mix(in oklab, var(--h-wood) 70%, var(--night)); stroke: var(--ink); stroke-width: 2; }
+.fin-svg .p-lantern-cap { fill: var(--ink); }
+.fin-svg .w-flame { fill: var(--paper); opacity: 0.9; }
+.fin-svg .win--garden .w-halo { opacity: 0.75; }
 
-/* the door leaf: closed, its fan window lit from inside */
-.fin-svg .leaf__face { fill: var(--door); stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
-.fin-svg .leaf__hi { fill: none; stroke: var(--door-hi); stroke-width: 3; stroke-linecap: round; opacity: 0.8; }
-.fin-svg .leaf__rail { fill: var(--door-hi); stroke: var(--ink); stroke-width: 2.2; }
-.fin-svg .leaf__recess { fill: var(--door-lo); }
-.fin-svg .fan { fill: var(--lamp); }
-.fin-svg .fan__bars { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
-.fin-svg .fan__rim { fill: none; stroke: var(--ink); stroke-width: 3; }
-.fin-svg .panel { fill: var(--door-lo); stroke: var(--ink); stroke-width: 2.4; }
-.fin-svg .panel__bevel { fill: none; stroke: var(--door-hi); stroke-width: 1.6; opacity: 0.75; }
-.fin-svg .brass { fill: var(--mustard); stroke: var(--ink); stroke-width: 2; }
-.fin-svg .brass-lo { fill: var(--brass-lo); stroke: var(--ink); stroke-width: 1.5; }
-.fin-svg .knob__hi { fill: var(--butter); }
-.fin-svg .slot { fill: var(--ink); }
-.fin-svg .flap { transform-box: fill-box; transform-origin: 50% 0; }
+/* garden (the tree is grown: she planted it) */
+.fin-svg .g-bush { fill: color-mix(in oklab, var(--sage) 36%, var(--night)); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.fin-svg .g-fence path:not(.ink-line) { fill: var(--h-paper-dim); stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; }
+.fin-svg .g-stem { fill: none; stroke: color-mix(in oklab, var(--sage) 60%, var(--ink)); stroke-width: 1.6; stroke-linecap: round; }
+.fin-svg .g-cap { fill: var(--berry); stroke: var(--ink); stroke-width: 1.4; filter: drop-shadow(0 0 3px var(--pink)); }
+.fin-svg .g-stalk { fill: var(--paper-2); stroke: var(--ink); stroke-width: 1.2; }
+.fin-svg .g-dot { fill: var(--paper); }
+.fin-svg .p-trunk { fill: var(--h-wood); stroke: var(--ink); stroke-width: 2; }
+.fin-svg .g-crown { fill: color-mix(in oklab, var(--sage) 62%, var(--night)); stroke: var(--ink); stroke-width: 2; }
+.fin-svg .g-crown--b { fill: color-mix(in oklab, var(--sage) 40%, var(--night)); }
+.fin-svg .g-blossom circle { fill: var(--pink); stroke: var(--ink); stroke-width: 0.8; }
+.fin-svg .p-tag { fill: var(--paper); stroke: var(--ink); stroke-width: 1.2; }
 
-/* the clock lock, resting at the time it opened */
-.fin-svg .lock__bezel { stroke: var(--ink); stroke-width: 3; }
-.fin-svg .rivet { fill: var(--brass-lo); stroke: var(--ink); stroke-width: 1.2; }
-.fin-svg .lock__face { fill: color-mix(in srgb, var(--moon) 88%, var(--mustard)); stroke: var(--ink); stroke-width: 2.6; }
-.fin-svg .lock__glow { fill: var(--lamp); opacity: 0.35; }
-.fin-svg .tick { stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; }
-.fin-svg .tick--big { stroke-width: 4; }
-.fin-svg .lock__num { font-family: var(--display); font-weight: 700; font-size: 17px; text-anchor: middle; fill: var(--ink); }
-.fin-svg .lock__keyhole { fill: var(--ink); }
-.fin-svg .hand { fill: var(--ink); }
-.fin-svg .hand__heart { fill: var(--berry); stroke: var(--ink); stroke-width: 1.6; }
-.fin-svg .lock__pin { stroke: var(--ink); stroke-width: 2; }
-.fin-svg .lock__pin-dot { fill: var(--ink); }
+/* the doormat */
+.fin-svg .mat__base { fill: color-mix(in srgb, var(--mustard) 52%, var(--night)); stroke: var(--ink); stroke-width: 1.6; }
+.fin-svg .mat__stripe { fill: none; stroke: color-mix(in srgb, var(--berry) 62%, var(--berry-deep)); stroke-width: 1.2; stroke-dasharray: 1 2; }
+.fin-svg .mat__heart { fill: color-mix(in srgb, var(--berry) 62%, var(--berry-deep)); stroke: var(--ink); stroke-width: 0.8; }
+.fin-svg .mat__fringe { fill: none; stroke: color-mix(in srgb, var(--mustard) 52%, var(--night)); stroke-width: 1; stroke-linecap: round; }
 
 /* the hook: glows while she carries the plate, brighter once she's close */
-.fin-svg .hook__iron { fill: none; stroke: var(--ink); stroke-width: 3.4; stroke-linecap: round; }
-.fin-svg .hook__glow { opacity: 0.25; transition: opacity var(--t-med) ease, r var(--t-med) ease; }
-.fin.is-carrying .fin-svg .hook__glow { opacity: 0.8; }
-.fin.is-near .fin-svg .hook__glow { opacity: 1; r: 30px; }
+.fin-svg .hook__iron { fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-linecap: round; }
+.fin-svg .hook__glow { fill: url(#fh-halo); opacity: 0.3; transition: opacity var(--t-med) ease, r var(--t-med) ease; }
+.fin.is-carrying .fin-svg .hook__glow { opacity: 0.9; }
+.fin.is-near .fin-svg .hook__glow { opacity: 1; r: 13px; }
 .fin.is-hung .fin-svg .hook__glow { opacity: 0; }
-.fin-hook { position: absolute; left: 196px; top: 572px; width: 48px; height: 48px; pointer-events: none; }
 
-/* the envelope in the letterbox */
+/* the letterbox + the envelope in it */
+.fin-svg .flap { transform-box: fill-box; transform-origin: 50% 0; }
 .fin-svg .mail { opacity: 0; }
-.fin-svg .mail__paper { fill: var(--card-ivory); stroke: var(--ink); stroke-width: 2; }
-.fin-svg .mail__flap { fill: none; stroke: var(--card-gold); stroke-width: 2; stroke-linejoin: round; }
-.fin-svg .mail__edge { fill: none; stroke: var(--card-gold); stroke-width: 1; opacity: 0.7; }
-.fin-svg .mail__seal { fill: var(--berry); stroke: var(--ink); stroke-width: 1.4; }
-.fin-svg .mail__seal-heart { fill: var(--berry-deep); }
+.fin-svg .mail__paper { fill: var(--card-ivory); stroke: var(--ink); stroke-width: 0.9; }
+.fin-svg .mail__flap { fill: none; stroke: var(--card-gold); stroke-width: 0.8; stroke-linejoin: round; }
+.fin-svg .mail__seal { fill: var(--berry); stroke: var(--ink); stroke-width: 0.5; }
 
 /* fairy lights */
-.fin-svg .fairy-wire { fill: none; stroke: var(--ink); stroke-width: 1.2; opacity: 0.85; }
-.fin-svg .fairy { stroke: var(--ink); stroke-width: 0.9; opacity: 0.9; }
+.fin-svg .h-fairy-wire { fill: none; stroke: var(--ink); stroke-width: 1.1; opacity: 0.85; }
+.fin-svg .fairy { stroke: var(--ink); stroke-width: 0.8; opacity: 0.9; }
+.fin-svg .fairy-bulbs { filter: drop-shadow(0 0 2.5px var(--lamp-glow)); }
 .fin-svg .fairy-bulbs[data-chase="0"] .fairy:nth-child(3n + 1),
 .fin-svg .fairy-bulbs[data-chase="1"] .fairy:nth-child(3n + 2),
 .fin-svg .fairy-bulbs[data-chase="2"] .fairy:nth-child(3n) { opacity: 0.25; }
@@ -208,10 +167,9 @@
 /* ── the nameplate (draggable until it hangs) ── */
 .fin-plate {
   position: absolute;
-  width: 184px;
+  width: 184px; /* = the hub nameplate's 52 units at 2.875 px per unit, twine included */
   height: 100px;
   transform-origin: 92px 14px;
-  will-change: transform; /* it sways while it waits: keep that on the compositor */
   touch-action: none;
   cursor: grab;
   outline: none;
@@ -241,14 +199,7 @@
 html[lang="bn"] .fin-plate .plate__names { font-family: var(--bn); }
 
 /* ── the HELLO-my-name-is slip ── */
-.fin-slip {
-  position: absolute;
-  left: 172px; /* centre (228, 878) in canvas units, minus half its 112×88 box */
-  top: 874px;
-  width: 112px;
-  height: 88px;
-  visibility: hidden;
-}
+.fin-slip { position: absolute; visibility: hidden; } /* placed + sized by index.js from art.js */
 .fin-sticker { width: 100%; height: 100%; will-change: transform; touch-action: none; cursor: grab; outline: none; filter: drop-shadow(0 5px 0 var(--shade)); }
 .fin-sticker svg { width: 100%; height: 100%; overflow: visible; }
 .fin-sticker.is-held { cursor: grabbing; filter: drop-shadow(0 16px 9px var(--shade)); }
@@ -316,6 +267,20 @@ html[lang="bn"] .fin-sticker .sticker__name { font-family: var(--bn-hand); }
   rotate: -3deg;
 }
 .fin-card__title { font-size: clamp(1.9rem, 8vw, 2.5rem); line-height: 1; color: var(--berry); }
+.fin-card__plate { /* the names as they hang on the door — big enough to read on any phone */
+  display: grid;
+  justify-items: center;
+  margin: 0.15rem 0 0.1rem;
+  padding: 0.3rem 1.1rem 0.35rem;
+  background: var(--paper-2);
+  border: var(--line);
+  border-radius: 10px;
+  box-shadow: var(--pop-sm);
+  rotate: 1deg;
+}
+.fin-card__names { font-size: clamp(1.45rem, 6.4vw, 1.8rem); font-weight: 700; line-height: 1.1; color: var(--ink); }
+html[lang="bn"] .fin-card__names { font-family: var(--bn); }
+.fin-card__est { font: 600 0.82rem/1.2 var(--body); letter-spacing: 0.06em; color: var(--berry-deep); }
 .fin-card__line { font-size: 1.02rem; line-height: 1.4; max-width: 22rem; text-wrap: balance; }
 .fin-card__after { font-size: 1.35rem; line-height: 1.1; color: var(--berry-deep); }
 .fin-card__home { margin-top: 0.3rem; min-height: 48px; font-size: 1.05rem; }
@@ -385,13 +350,41 @@ html[lang="bn"] .fin-sticker .sticker__name { font-family: var(--bn-hand); }
   .fin-prompt { font-size: 1.3rem; }
   .fin-card { gap: 0.25rem; padding: 0.8rem 1rem 0.9rem; }
   .fin-card__title { font-size: 1.9rem; }
-  .fin-card__line { font-size: 0.95rem; line-height: 1.3; }
+  .fin-card__plate { /* the names as they hang on the door — big enough to read on any phone */
+  display: grid;
+  justify-items: center;
+  margin: 0.15rem 0 0.1rem;
+  padding: 0.3rem 1.1rem 0.35rem;
+  background: var(--paper-2);
+  border: var(--line);
+  border-radius: 10px;
+  box-shadow: var(--pop-sm);
+  rotate: 1deg;
+}
+.fin-card__names { font-size: clamp(1.45rem, 6.4vw, 1.8rem); font-weight: 700; line-height: 1.1; color: var(--ink); }
+html[lang="bn"] .fin-card__names { font-family: var(--bn); }
+.fin-card__est { font: 600 0.82rem/1.2 var(--body); letter-spacing: 0.06em; color: var(--berry-deep); }
+.fin-card__line { font-size: 0.95rem; line-height: 1.3; }
   .fin-card__after { font-size: 1.2rem; }
 }
 @media (max-height: 700px) and (max-width: 500px) {
   .fin-card { gap: 0.25rem; padding: 0.8rem 1rem 0.9rem; }
   .fin-card__title { font-size: 1.9rem; }
-  .fin-card__line { font-size: 0.95rem; line-height: 1.3; }
+  .fin-card__plate { /* the names as they hang on the door — big enough to read on any phone */
+  display: grid;
+  justify-items: center;
+  margin: 0.15rem 0 0.1rem;
+  padding: 0.3rem 1.1rem 0.35rem;
+  background: var(--paper-2);
+  border: var(--line);
+  border-radius: 10px;
+  box-shadow: var(--pop-sm);
+  rotate: 1deg;
+}
+.fin-card__names { font-size: clamp(1.45rem, 6.4vw, 1.8rem); font-weight: 700; line-height: 1.1; color: var(--ink); }
+html[lang="bn"] .fin-card__names { font-family: var(--bn); }
+.fin-card__est { font: 600 0.82rem/1.2 var(--body); letter-spacing: 0.06em; color: var(--berry-deep); }
+.fin-card__line { font-size: 0.95rem; line-height: 1.3; }
 }
 
 /* nudge glow on SVG-ish html bits */

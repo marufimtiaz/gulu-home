@@ -20,30 +20,6 @@ async function drag(page, from, to, steps = 14) {
 
 const stage = (page) => page.evaluate(() => window.__finale.stage())
 
-/**
- * helpers.pressLatency() arms its listener and starts its clock but never presses, so press for
- * it the moment the listener is in: a real PointerEvent on the element (no test-runner round trip).
- */
-async function latency(page, sel) {
-  await page.evaluate((s) => {
-    const el = document.querySelector(s)
-    const add = el.addEventListener
-    el.addEventListener = function (type, fn, opts) {
-      add.call(this, type, fn, opts)
-      if (type === 'pointerdown' && opts?.once) {
-        el.addEventListener = add
-        const r = el.getBoundingClientRect()
-        const at = { bubbles: true, cancelable: true, pointerId: 7, isPrimary: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }
-        queueMicrotask(() => {
-          el.dispatchEvent(new PointerEvent('pointerdown', at))
-          setTimeout(() => el.dispatchEvent(new PointerEvent('pointerup', at)), 200)
-        })
-      }
-    }
-  }, sel)
-  return pressLatency(page, sel)
-}
-
 test('guarded: five rooms is not enough', async ({ page }) => {
   await open(page, 'finale', { done: FIVE, expect: 'house' })
   await expect(page).toHaveURL(/#\/house$/)
@@ -230,11 +206,69 @@ test('the home button answers a press within 100 ms', async ({ page }) => {
   await page.evaluate(() => window.__finale.stick())
   await expect(page.locator('[data-letterbox]')).toBeVisible({ timeout: 15000 })
   await page.waitForTimeout(500)
-  const ms = await latency(page, '[data-home]')
+  const ms = await pressLatency(page, '[data-home]')
   expect(ms).toBeLessThan(100)
 })
 
 test('idle on the doormat nudges the plate', async ({ page }) => {
   await open(page, 'finale', { done: ROOMS })
   await expect(page.locator('[data-plate]')).toHaveClass(/nudge/, { timeout: 7000 })
+})
+
+test('the names engrave large enough to read, and the card repeats them big', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 })
+  await open(page, 'finale', { done: ROOMS })
+  await page.waitForTimeout(400)
+  await page.evaluate(() => window.__finale.hang())
+  // while the camera leans in on the engraving, the names line is at least 16 px tall
+  await expect
+    .poll(async () => (await page.locator('[data-name-line]').boundingBox()).height, { timeout: 4000, intervals: [100] })
+    .toBeGreaterThanOrEqual(16)
+  await expect.poll(() => stage(page), { timeout: 8000 }).toBe('sticker')
+  await page.evaluate(() => window.__finale.stick())
+  const names = page.locator('[data-card-names]')
+  await expect(names).toBeVisible({ timeout: 10000 })
+  await expect(names).toContainText('Maruf & Sneha')
+  await expect(names).toContainText('est. 22 October 2026')
+  const box = await page.locator('.fin-card__names').boundingBox()
+  expect(box.height).toBeGreaterThanOrEqual(16)
+  expect(box.x).toBeGreaterThanOrEqual(0)
+  expect(box.x + box.width).toBeLessThanOrEqual(360)
+})
+
+test('the windows flare in the order the rooms are lit', async ({ page }) => {
+  await open(page, 'finale', { done: ROOMS })
+  await page.evaluate(() => {
+    window.__flares = []
+    const seen = new Set()
+    const glows = [...document.querySelectorAll('[data-win] [data-glow]')]
+    const tick = () => {
+      for (const g of glows) {
+        const id = g.closest('[data-win]').dataset.win
+        if (!seen.has(id) && Number(getComputedStyle(g).opacity) > 0.97) {
+          seen.add(id)
+          window.__flares.push(id)
+        }
+      }
+      if (seen.size < glows.length) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+    window.__finale.stick()
+  })
+  await expect.poll(() => page.evaluate(() => window.__flares.length), { timeout: 12000 }).toBe(6)
+  expect(await page.evaluate(() => window.__flares)).toEqual(['living', 'kitchen', 'garden', 'rooftop', 'desk', 'empty'])
+})
+
+test('leaving mid-fireworks stops them', async ({ page }) => {
+  const errors = collectErrors(page)
+  await open(page, 'finale', { done: ROOMS })
+  await page.evaluate(() => window.__finale.stick())
+  await expect(page.locator('.fin-fw canvas.fireworks')).toHaveCount(1, { timeout: 10000 })
+  const stopped = page.evaluate(() => window.__finale.fireworks().then(() => performance.now()))
+  const leftAt = await page.evaluate(() => performance.now())
+  await page.locator('.chip--home').click()
+  await expect(page.locator('.scene[data-scene="house"]')).toBeVisible()
+  expect((await stopped) - leftAt).toBeLessThan(2500) // the show runs 7 s; leaving ends it
+  await expect(page.locator('canvas.fireworks')).toHaveCount(0)
+  expect(errors).toEqual([])
 })
