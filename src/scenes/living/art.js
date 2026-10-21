@@ -29,8 +29,8 @@ const FW = 98, FH = 122
 
 const leaf = (x, y, len, w, rot) =>
   `<g transform="translate(${x} ${y}) rotate(${rot})">
-    <path class="lv-leaf ink" d="M0 0 Q${w} ${-len * 0.45} 0 ${-len} Q${-w} ${-len * 0.45} 0 0 Z"/>
-    <path class="lv-rib" d="M0 -2 L0 ${-len * 0.82}"/>
+    <g class="lv-leaf-g"><path class="lv-leaf ink" d="M0 0 Q${w} ${-len * 0.45} 0 ${-len} Q${-w} ${-len * 0.45} 0 0 Z"/>
+    <path class="lv-rib" d="M0 -2 L0 ${-len * 0.82}"/></g>
   </g>`
 
 function plant() {
@@ -42,9 +42,9 @@ function plant() {
     [x - 1, y, x - 18, 630, x - 48, 626],
     [x + 1, y, x + 18, 636, x + 40, 632],
   ]
-  return `<g data-poke="bottom">
+  return `<g class="lv-plant-wrap" data-poke="plant">
     <g class="lv-plant" data-plant>
-      <g class="lv-plant__sway">
+      <g class="lv-plant__sway"><g class="lv-plant__rustle" data-rustle>
         ${stems.map(([a, b, c, d, e, f]) => `<path class="lv-stem" d="M${a} ${b} Q${c} ${d} ${e} ${f}"/>`).join('')}
         ${leaf(x - 40, 582, 58, 22, -30)}
         ${leaf(x - 6, 552, 62, 24, -8)}
@@ -53,7 +53,7 @@ function plant() {
         ${leaf(x + 40, 634, 44, 18, 62)}
         ${leaf(x - 16, 616, 40, 16, -22)}
         ${leaf(x + 14, 606, 42, 17, 20)}
-      </g>
+      </g></g>
     </g>
     <path class="lv-pot ink" d="M${x - 27} ${y + 2} L${x + 27} ${y + 2} L${x + 21} ${y + 60} L${x - 21} ${y + 60} Z"/>
     <rect class="lv-pot ink" x="${x - 31}" y="${y - 6}" width="62" height="13" rx="3"/>
@@ -75,7 +75,7 @@ function windowArt() {
     [ix + 6, iy + 34], [ix + 20, iy + 46], [ix + 12, iy + 60], [ix + 32, iy + 54], [ix + 26, iy + 30], [ix + 40, iy + 66],
   ]
   return `
-    <g class="lv-window" data-poke="top">
+    <g class="lv-window" data-poke="window">
       <rect class="lv-pop" x="${x + 5}" y="${y + 5}" width="${w}" height="${h}" rx="6"/>
       <rect class="lv-frame-paper ink" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/>
       <g clip-path="url(#lv-sky-clip)">
@@ -92,6 +92,7 @@ function windowArt() {
           <path class="lv-branch" d="M${ix - 2} ${iy + 50} Q${ix + 20} ${iy + 46} ${ix + 44} ${iy + 62} M${ix + 16} ${iy + 48} Q${ix + 22} ${iy + 32} ${ix + 34} ${iy + 28}"/>
           <g class="lv-blossoms" data-blossoms opacity="0">${blossoms.map(([bx, by]) => `<circle cx="${bx}" cy="${by}" r="3.4"/>`).join('')}</g>
           <g class="lv-rain" data-rain opacity="0">${rain}</g>
+          <g class="lv-shoot" data-shoot opacity="0" transform="translate(496 128)"><path d="M0 0 L26 -9"/><circle r="2.4"/></g>
         </g>
       </g>
       <path class="lv-muntin" d="M${x + w / 2} ${iy} V${iy + ih} M${ix} ${y + h * 0.48} H${ix + iw}"/>
@@ -137,19 +138,20 @@ function clock() {
         <path class="lv-hand-heart ink-thin" d="M${x} ${y - 58} c-4 -4.5 -9 -1.5 -9 2.5 c0 4.5 9 9 9 9 c0 0 9 -4.5 9 -9 c0 -4 -5 -7 -9 -2.5 z"/></g>
       <circle class="lv-cap ink-thin" cx="${x}" cy="${y}" r="7"/>
     </g>
-    <path class="lv-chain" d="M${x} ${y + r} V${y + r + 18}"/>
-    <g class="lv-plate" data-plate data-poke="top">
+    <g class="lv-plate" data-plate data-poke="plate"><g class="lv-plate__swing" data-plate-swing>
+      <path class="lv-chain" d="M${x} ${y + r} V${y + r + 18}"/>
       <rect class="lv-pop" x="${x - 78 + 4}" y="${y + r + 18 + 4}" width="156" height="50" rx="9"/>
       <rect class="lv-plate__card ink" x="${x - 78}" y="${y + r + 18}" width="156" height="50" rx="9"/>
       <circle class="lv-nailhead" cx="${x}" cy="${y + r + 24}" r="2.4"/>
       <text class="lv-date" data-date x="${x}" y="${y + r + 46}"></text>
       <text class="lv-time" data-time x="${x}" y="${y + r + 63}"></text>
-    </g>`
+    </g></g>`
 }
 
 function lamp() {
   return `
-    <g class="lv-lamp" data-poke="top">
+    <g class="lv-lamp" data-poke="lamp">
+      <rect class="lv-hit" x="716" y="116" width="66" height="116"/>
       <rect class="lv-frame-paper ink" x="756" y="196" width="16" height="30" rx="4"/>
       <path class="lv-lamp-arm" d="M764 210 Q786 168 744 132"/>
       <path class="lv-bulb" data-bulb d="M736 152 a8 8 0 0 0 16 0 Z"/>
@@ -163,7 +165,7 @@ function frames() {
     const left = x - FW / 2
     const top = y + 6
     return `
-    <g data-poke="top"><g class="lv-hang">
+    <g data-poke="frame" data-swing="${i}"><g data-tilt><g class="lv-hang">
       <path class="lv-string" d="M${x - 30} ${top + 2} L${x} ${y - 16} L${x + 30} ${top + 2}"/>
       <circle class="lv-nailhead" cx="${x}" cy="${y - 16}" r="3"/>
     </g>
@@ -179,13 +181,13 @@ function frames() {
         <image data-photo x="${left + 13}" y="${top + 13}" width="${FW - 26}" height="${FH - 26}" preserveAspectRatio="xMidYMid slice" clip-path="url(#lv-photo-clip-${i})" />
         <rect class="lv-photo-edge" x="${left + 13}" y="${top + 13}" width="${FW - 26}" height="${FH - 26}"/>
       </g>
-    </g></g>`
+    </g></g></g>`
   }).join('')
 }
 
 function sofa() {
   return `
-    <g class="lv-sofa" data-poke="squash">
+    <g class="lv-sofa" data-poke="sofa">
       <rect class="lv-sofa-back ink" x="452" y="556" width="296" height="98" rx="24"/>
       <path class="lv-seam" d="M600 566 V640"/>
       <path class="lv-tuft" d="M526 590 h0.1 M674 590 h0.1 M526 620 h0.1 M674 620 h0.1"/>
@@ -195,15 +197,16 @@ function sofa() {
       <rect class="lv-sofa-arm ink" x="422" y="600" width="56" height="106" rx="24"/>
       <rect class="lv-sofa-arm ink" x="722" y="600" width="56" height="106" rx="24"/>
       <path class="lv-leg" d="M456 706 v12 M744 706 v12"/>
-      <g data-poke="squash"><g transform="rotate(12 694 608)">
+    </g>
+    <g class="lv-found" data-found></g>
+    <g class="lv-pillow-g" data-poke="pillow-heart"><g transform="rotate(12 694 608)">
         <rect class="lv-pillow ink" x="668" y="584" width="54" height="48" rx="12"/>
         <path class="lv-pillow-heart" d="M695 612 c-5 -5 -11 -1.5 -11 3 c0 5 11 10 11 10 c0 0 11 -5 11 -10 c0 -4.5 -6 -8 -11 -3 z" transform="translate(0 -8)"/>
       </g></g>
-      <g data-poke="squash"><g transform="rotate(-10 506 612)">
+    <g class="lv-pillow-g" data-poke="pillow-sage"><g transform="rotate(-10 506 612)">
         <rect class="lv-pillow lv-pillow--sage ink" x="482" y="590" width="48" height="44" rx="12"/>
         <path class="lv-pillow-stripe" d="M486 604 h40 M486 614 h40 M486 624 h40"/>
-      </g></g>
-    </g>`
+      </g></g>`
 }
 
 function extras() {
@@ -213,35 +216,37 @@ function extras() {
   ]
   const books2 = [[196, 24, 'mustard'], [222, 30, 'sky'], [254, 22, 'berry'], [278, 26, 'sage']]
   return `
-    <g class="lv-shelf" data-poke="bottom">
+    <g class="lv-shelf" data-poke="shelf">
       <rect class="lv-pop" x="186" y="386" width="170" height="330" rx="4"/>
       <rect class="lv-wood lv-wood--mustard ink" x="180" y="380" width="170" height="330" rx="4"/>
       <rect class="lv-shelf-in ink-thin" x="190" y="390" width="150" height="310"/>
       <path class="lv-shelf-board" d="M190 490 H340 M190 600 H340"/>
-      ${books.map(([bx, bw, col], i) => `<rect class="lv-book lv-book--${col} ink-thin" x="${bx}" y="${490 - 60 - (i % 3) * 10}" width="${bw}" height="${60 + (i % 3) * 10}" rx="2"/>`).join('')}
-      ${books2.map(([bx, bw, col], i) => `<rect class="lv-book lv-book--${col} ink-thin" x="${bx}" y="${600 - 70 + (i % 2) * 12}" width="${bw}" height="${70 - (i % 2) * 12}" rx="2"/>`).join('')}
-      <path class="lv-book lv-book--berry ink-thin" d="M306 600 l26 -62 l14 6 l-26 62 z"/>
+      ${books.map(([bx, bw, col], i) => `<rect data-book class="lv-book lv-book--${col} ink-thin" x="${bx}" y="${490 - 60 - (i % 3) * 10}" width="${bw}" height="${60 + (i % 3) * 10}" rx="2"/>`).join('')}
+      ${books2.map(([bx, bw, col], i) => `<rect data-book class="lv-book lv-book--${col} ink-thin" x="${bx}" y="${600 - 70 + (i % 2) * 12}" width="${bw}" height="${70 - (i % 2) * 12}" rx="2"/>`).join('')}
+      <path class="lv-book lv-book--berry ink-thin" data-lazy d="M306 600 l26 -62 l14 6 l-26 62 z"/>
       <path class="lv-pot ink" d="M206 700 L246 700 L242 664 L210 664 Z"/>
       ${leaf(226, 664, 34, 13, -26)}${leaf(226, 664, 38, 14, 18)}
       <rect class="lv-frame-paper ink" x="270" y="652" width="54" height="48" rx="3"/>
       <path class="lv-empty-heart" d="M297 680 c-5 -5 -11 -1.5 -11 3 c0 5 11 10 11 10 c0 0 11 -5 11 -10 c0 -4.5 -6 -8 -11 -3 z" transform="translate(0 -6)"/>
     </g>
-    <g class="lv-hoop" data-poke="top">
+    <g class="lv-hoop" data-poke="hoop">
       <circle class="lv-pop" cx="904" cy="424" r="48"/>
       <circle class="lv-hoop-cloth ink" cx="900" cy="420" r="48"/>
       <circle class="lv-hoop-ring" cx="900" cy="420" r="48"/>
-      <path class="lv-stitch" d="M900 444 c-14 -12 -30 -22 -30 -36 c0 -10 8 -16 16 -16 c6 0 11 4 14 9 c3 -5 8 -9 14 -9 c8 0 16 6 16 16 c0 14 -16 24 -30 36 z"/>
+      <path class="lv-stitch" data-stitch d="M900 444 c-14 -12 -30 -22 -30 -36 c0 -10 8 -16 16 -16 c6 0 11 4 14 9 c3 -5 8 -9 14 -9 c8 0 16 6 16 16 c0 14 -16 24 -30 36 z"/>
+      <path class="lv-thread" data-thread pathLength="100" d="M900 444 c-14 -12 -30 -22 -30 -36 c0 -10 8 -16 16 -16 c6 0 11 4 14 9 c3 -5 8 -9 14 -9 c8 0 16 6 16 16 c0 14 -16 24 -30 36 z"/>
       <rect class="lv-hoop-screw ink-thin" x="894" y="364" width="12" height="10" rx="2"/>
     </g>
-    <g class="lv-table" data-poke="bottom">
+    <g class="lv-table" data-poke="mugs">
       <rect class="lv-pop" x="844" y="628" width="130" height="14" rx="4"/>
       <rect class="lv-wood lv-wood--berry ink" x="840" y="624" width="130" height="14" rx="4"/>
       <path class="lv-leg" d="M856 638 V718 M954 638 V718 M856 690 H954"/>
-      <path class="lv-mug ink" d="M866 590 h30 v30 a6 6 0 0 1 -6 6 h-18 a6 6 0 0 1 -6 -6 Z"/>
+      <g data-mug="0"><path class="lv-mug ink" d="M866 590 h30 v30 a6 6 0 0 1 -6 6 h-18 a6 6 0 0 1 -6 -6 Z"/>
       <path class="lv-mug-handle" d="M896 598 q12 0 12 9 q0 9 -12 9"/>
-      <path class="lv-mug lv-mug--sage ink" d="M914 594 h28 v26 a6 6 0 0 1 -6 6 h-16 a6 6 0 0 1 -6 -6 Z"/>
+      <path class="lv-steam" d="M876 580 q-6 -10 0 -18 q6 -8 0 -16"/></g>
+      <g data-mug="1"><path class="lv-mug lv-mug--sage ink" d="M914 594 h28 v26 a6 6 0 0 1 -6 6 h-16 a6 6 0 0 1 -6 -6 Z"/>
       <path class="lv-mug-handle" d="M914 602 q-11 0 -11 8 q0 8 11 8"/>
-      <path class="lv-steam" d="M876 580 q-6 -10 0 -18 q6 -8 0 -16 M928 584 q-6 -10 0 -18 q6 -8 0 -16"/>
+      <path class="lv-steam" d="M928 584 q-6 -10 0 -18 q6 -8 0 -16"/></g>
     </g>`
 }
 
@@ -286,7 +291,7 @@ export function roomSVG() {
   <rect fill="url(#lv-paper-dots)" x="${X0}" y="${Y0}" width="${BW}" height="${718 - Y0}"/>
   <rect class="lv-grain" filter="url(#lv-grain)" x="0" y="0" width="${w}" height="${h}"/>
   <rect class="lv-night" x="${X0}" y="${Y0}" width="${BW}" height="${BH}"/>
-  <rect class="lv-lampglow" data-lampglow fill="url(#lv-lampglow)" x="${X0}" y="${Y0}" width="${BW}" height="${718 - Y0}"/>
+  <g data-flick><rect class="lv-lampglow" data-lampglow fill="url(#lv-lampglow)" x="${X0}" y="${Y0}" width="${BW}" height="${718 - Y0}"/></g>
   <path class="lv-rail" d="M${X0} 66 H${X0 + BW}"/>
   <path class="lv-rail-shadow" d="M${X0} 71 H${X0 + BW}"/>
 
@@ -303,14 +308,15 @@ export function roomSVG() {
   </g>
   ${lamp()}
   ${frames()}
-  <ellipse class="lv-rug ink" cx="600" cy="792" rx="252" ry="42"/>
-  <ellipse class="lv-rug-in" cx="600" cy="792" rx="226" ry="31"/>
+  <g class="lv-rug-g" data-poke="rug"><ellipse class="lv-rug ink" cx="600" cy="792" rx="252" ry="42"/>
+  <ellipse class="lv-rug-in" cx="600" cy="792" rx="226" ry="31"/></g>
   ${sofa()}
   ${plant()}
   ${clock()}
   <g class="lv-dust" data-dust></g>
   <rect class="lv-vignette" fill="url(#lv-vignette)" x="${X0}" y="${Y0}" width="${BW}" height="${BH}"/>
 
+  <rect class="lv-shed" data-shed x="${X0}" y="${Y0}" width="${BW}" height="${BH}" opacity="0"/>
   <rect class="lv-dim" data-dim x="${X0}" y="${Y0}" width="${BW}" height="${BH}" opacity="0"/>
   <rect class="lv-dawnsky" data-dawnsky x="413" y="111" width="70" height="170" rx="3" fill="url(#lv-dawn)" opacity="0"/>
 
