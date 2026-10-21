@@ -68,9 +68,11 @@ export function setLang(l, { reload = true } = {}) {
   if (!LANGS.includes(l)) return
   update({ lang: l })
   if (reload) {
+    // a real reload: replace() to the same URL (only a #hash) would be a no-op fragment jump
     const url = new URL(location.href)
     url.searchParams.delete('lang')
-    location.replace(url.toString())
+    history.replaceState(history.state, '', url)
+    location.reload()
   } else apply(l)
 }
 

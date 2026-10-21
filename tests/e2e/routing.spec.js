@@ -43,3 +43,28 @@ test('home chip returns to the house; language switch keeps the route', async ({
   await expect(page.locator('html')).toHaveAttribute('lang', 'bn')
   await expect(page).toHaveURL(/#\/kitchen$/)
 })
+
+test('language switch works from a plain address, and one-shot switches are not re-applied', async ({ page }) => {
+  // regression: replace() to an identical URL with only a #hash never reloaded, so the pill did nothing
+  await page.goto('/?skip#/house')
+  await expect(page.locator('.scene[data-scene="house"]')).toBeVisible()
+  await expect(page).toHaveURL(/\/#\/house$/) // ?skip applied once, then dropped
+  await page.locator('.chip--lang').click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'bn')
+  await expect(page.locator('.scene[data-scene="house"]')).toBeVisible()
+  await page.locator('.chip--lang').click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+
+  // ?reset wipes once; switching language afterwards must not wipe again
+  await page.goto('/?reset#/door')
+  await expect(page.locator('.scene[data-scene="door"]')).toBeVisible()
+  await page.evaluate(() => {
+    window.__home.state.update({ doorSeen: true })
+    window.__home.complete('kitchen')
+  })
+  await page.goto('/#/house')
+  await expect(page.locator('.scene[data-scene="house"]')).toBeVisible()
+  await page.locator('.chip--lang').click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'bn')
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('our-home')).done.kitchen)).toBe(true)
+})

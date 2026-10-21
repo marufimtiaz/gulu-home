@@ -16,6 +16,15 @@ if (params.has('door')) state.update({ doorSeen: false })
 i18n.init()
 document.title = i18n.t('title')
 
+// one-shot switches are applied once, then dropped from the address — otherwise any later
+// reload (e.g. switching language) would re-run them: ?reset would wipe the progress again
+{
+  const url = new URL(location.href)
+  const before = url.search
+  for (const k of ['reset', 'skip', 'door', 'lang']) url.searchParams.delete(k)
+  if (url.search !== before) history.replaceState(history.state, '', url)
+}
+
 // ── corner chrome ──
 const chrome = document.getElementById('chrome')
 chrome.innerHTML = `
