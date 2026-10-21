@@ -58,13 +58,6 @@ function apply(l) {
   if (typeof document !== 'undefined') {
     document.documentElement.lang = l
     document.body?.classList.toggle('lang-bn', l === 'bn')
-    if (l === 'bn' && !document.getElementById('bn-fonts')) {
-      const link = document.createElement('link')
-      link.id = 'bn-fonts'
-      link.rel = 'stylesheet'
-      link.href = 'https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;700&family=Atma:wght@500;700&display=swap'
-      document.head.append(link)
-    }
   }
 }
 

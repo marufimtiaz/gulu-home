@@ -25,7 +25,7 @@ h1, h2, h3, p { margin: 0; }
 input, textarea { font: inherit; user-select: text; -webkit-user-select: text; }
 
 .hand { font-family: var(--hand); font-weight: 700; }
-html[lang="bn"] .hand { font-family: "Atma", var(--bn); }
+html[lang="bn"] .hand { font-family: var(--bn-hand); }
 .display { font-family: var(--display); font-variation-settings: "SOFT" 100, "WONK" 1; }
 em { font-style: italic; color: var(--berry); }
 

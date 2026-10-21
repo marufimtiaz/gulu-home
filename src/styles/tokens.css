@@ -31,6 +31,14 @@
   --hand: "Caveat", "Bradley Hand", "Segoe Script", cursive;
   --body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --bn: "Hind Siliguri", "DM Sans", system-ui, sans-serif;
+  --bn-hand: "Atma", "Hind Siliguri", cursive;
+
+  /* the reception card (formal print, not paper craft) */
+  --card-bn-display: "Galada", "Tiro Bangla", serif;   /* Bangla calligraphic headline */
+  --card-bn: "Tiro Bangla", "Noto Serif Bengali", serif;
+  --card-script: "Pinyon Script", "Caveat", cursive;   /* names */
+  --card-caps: "Cinzel", "Cormorant Garamond", serif;  /* engraved capitals */
+  --card-serif: "Cormorant Garamond", Georgia, serif;  /* formal body */
 
   /* shape */
   --line: 2.5px solid var(--ink);
