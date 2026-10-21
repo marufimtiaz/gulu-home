@@ -148,6 +148,34 @@
 .g-tag { translate: 0 calc((1 - var(--grow, 1)) * 82 / 42 * 100%); }
 @container (max-aspect-ratio: 10 / 14) { .g-stage { --grow: 1.15; } }
 @container (max-aspect-ratio: 10 / 16) { .g-stage { --grow: 1.3; } }
+/*
+ * Tall portrait phones (the garden is width-bound): scale the art up ×1.2 and anchor the ground
+ * line ~62% down (fence ~57%), so the garden fills the screen instead of a strip under a big sky.
+ * The crop is then ~307 units wide, so the sign steps right and the can steps left (index.js
+ * reads --can-dx to keep the pour on target), the moon comes out from under the chips, and a
+ * smaller well and bench come into view in the deep band below the canvas.
+ * A viewport query (not a container one): the header grows at the end, the layout mustn't jump.
+ * The shifts use margins / a wrapper group: GSAP folds the CSS `translate` of what it tweens.
+ */
+@media (orientation: portrait) and (max-aspect-ratio: 1 / 2) {
+  .g-stage {
+    --sh: 169cqw;
+    --lift: calc(38dvh - var(--sh) * 86 / 520);
+    --can-dx: -26;
+    --sign-dx: 30;
+    --mini: inline; /* (.g-mini's own nearest container is the stage, so it reads a variable) */
+    --moon-dx: -50; --moon-dy: 120;
+    --year-dy: 136;
+    --treefit: 0.76;
+  }
+}
+.g-mini { display: var(--mini, none); }
+.g-can { margin-left: calc(var(--can-dx, 0) * 100% / 400); }
+.g-signboard { margin-left: calc(var(--sign-dx, 0) * 100% / 400); }
+.g-signpost { translate: calc(var(--sign-dx, 0) * 1px) 0; }
+.g-moonspot { translate: calc(var(--moon-dx, 0) * 1px) calc(var(--moon-dy, 0) * 1px); }
+.g-stage .g-year { margin-top: calc(var(--year-dy, 0) * 100% / 400); }
+.g-stage .tree { transform-box: view-box; transform-origin: 200px 434px; scale: var(--treefit, 1); }
 .g-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .g-back { z-index: 0; }
 .g-front { z-index: 2; pointer-events: none; }

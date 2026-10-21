@@ -2,7 +2,7 @@
  * A little paper label that pops up over a piece of scenery when it has something to say
  * (the payoffs: jokes, nicknames, callbacks). One at a time; a new one replaces the old.
  *
- *   const say = sayer(host, { reduced, keep, cls })
+ *   const say = sayer(host, { reduced, keep, cls, avoid })   (avoid: an element the label must stay below)
  *   say(text, el | { x, y }, { hold = 2.6, small, below }) → the label element
  *
  * host: the scene's positioned root. The label sits above the point (client coords), kept
@@ -10,7 +10,7 @@
  */
 import { gsap } from 'gsap'
 
-export function sayer(host, { reduced = false, keep = (a) => a, cls = 'say' } = {}) {
+export function sayer(host, { reduced = false, keep = (a) => a, cls = 'say', avoid = null } = {}) {
   let cur = null
   let tl = null
   const clear = () => {
@@ -41,7 +41,12 @@ export function sayer(host, { reduced = false, keep = (a) => a, cls = 'say' } = 
     const h = el.offsetHeight
     const m = 10
     const x = Math.max(m, Math.min(hr.width - w - m, p.x - hr.left - w / 2))
-    const y = Math.max(m + 48, Math.min(hr.height - h - m, below ? p.y - hr.top + 12 : p.y - hr.top - h - 12))
+    // never over the header (title + prompt): if there's no room above the point, drop below it
+    const head = avoid?.getBoundingClientRect()
+    const minY = Math.max(m + 48, head && head.height ? head.bottom - hr.top + 8 : 0)
+    let y = below ? p.y - hr.top + 12 : p.y - hr.top - h - 12
+    if (y < minY) y = Math.max(minY, p.y - hr.top + 24)
+    y = Math.min(hr.height - h - m, y)
     el.style.left = `${x.toFixed(0)}px`
     el.style.top = `${y.toFixed(0)}px`
     const d = reduced ? 0.01 : 1

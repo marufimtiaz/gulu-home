@@ -67,6 +67,39 @@ function flower(x, y, s, kind, stem = 46, lean = 0) {
   </g></g>`
 }
 
+/** bday's wishing well (base at 0,0). */
+function wellSVG(tf, cls = '') {
+  return `
+    <g transform="${tf}"${cls ? ` class="${cls}"` : ''}><g class="pk g-well">
+      <ellipse class="ink-shadow" cx="4" cy="4" rx="54" ry="10"/>
+      <path class="p-stone" d="M-48 4 L-42 -46 L42 -46 L48 4 Z"/>
+      <path class="ink-faint" d="M-45 -20 H45 M-44 -34 H44 M-20 -46 V-34 M14 -34 V-20 M-6 -20 V4 M26 -20 V4 M-30 -20 V4"/>
+      <ellipse class="g-water" cx="0" cy="-46" rx="42" ry="10"/>
+      <rect class="p-wood" x="-46" y="-126" width="10" height="82" rx="3"/>
+      <rect class="p-wood" x="36" y="-126" width="10" height="82" rx="3"/>
+      <path class="p-roof" d="M-62 -122 L0 -164 L62 -122 Z"/>
+      <path class="ink-line" d="M0 -122 V-84"/><rect class="p-bucket" x="-8" y="-86" width="16" height="13" rx="2"/>
+    </g></g>`
+}
+
+/** The bench with the coupon gift on it (base at 0,0). */
+function benchSVG(tf, cls = '') {
+  return `
+    <g transform="${tf}"${cls ? ` class="${cls}"` : ''}><g class="pk g-bench">
+      <rect class="p-wood" x="-44" y="-12" width="7" height="24" rx="2"/><rect class="p-wood" x="37" y="-12" width="7" height="24" rx="2"/>
+      <rect class="p-wood" x="-52" y="-16" width="104" height="10" rx="4"/>
+      <rect class="p-wood" x="-52" y="-44" width="104" height="8" rx="4"/><rect class="p-wood" x="-52" y="-32" width="104" height="8" rx="4"/>
+      <rect class="p-wood" x="-46" y="-46" width="6" height="32" rx="2"/><rect class="p-wood" x="40" y="-46" width="6" height="32" rx="2"/>
+    </g>
+      <g class="g-gift" transform="translate(-14 -16)"><g class="pk g-gift__box">
+        <rect class="gift-box" x="-11" y="-18" width="22" height="18" rx="2"/>
+        <rect class="gift-ribbon" x="-2.5" y="-18" width="5" height="18"/>
+        <g class="gift-top"><rect class="gift-lid" x="-13" y="-22" width="26" height="6" rx="2"/>
+        <path class="gift-ribbon" d="M0 -22 C-6 -32 -14 -28 -9 -23 Z M0 -22 C6 -32 14 -28 9 -23 Z"/></g>
+      </g></g>
+    </g>`
+}
+
 /** Little five-dot wildflower (bday's grass scatter). */
 function wild(x, y, s, kind) {
   let p = ''
@@ -230,6 +263,7 @@ export function gardenSVG() {
     </defs>
 
     <!-- moon: arcs across the sky once a year in the time-lapse -->
+    <g class="g-moonspot">
     <g class="pk g-moon" data-moon>
       <circle class="moon-halo" cx="350" cy="56" r="44"/>
       <circle class="moon-halo" cx="350" cy="56" r="32"/>
@@ -238,7 +272,7 @@ export function gardenSVG() {
       <path class="moon-shine" d="M336 47 a16 16 0 0 1 8 -9"/>
       <circle class="moon-blush" cx="350" cy="56" r="21"/>
       <ellipse class="moon-cheek" cx="341" cy="61" rx="4" ry="2.4"/><ellipse class="moon-cheek" cx="359" cy="61" rx="4" ry="2.4"/>
-    </g>
+    </g></g>
 
     <!-- far: a hill and round trees past the fence -->
     <path class="g-hill" d="${hill(G - 30, 34, 140, 3)}"/>
@@ -263,29 +297,8 @@ export function gardenSVG() {
     ${vineBits}
 
     <!-- bday's wishing well and bench, out past the gate (wide screens) -->
-    <g transform="translate(540 ${G + 6})"><g class="pk g-well">
-      <ellipse class="ink-shadow" cx="4" cy="4" rx="54" ry="10"/>
-      <path class="p-stone" d="M-48 4 L-42 -46 L42 -46 L48 4 Z"/>
-      <path class="ink-faint" d="M-45 -20 H45 M-44 -34 H44 M-20 -46 V-34 M14 -34 V-20 M-6 -20 V4 M26 -20 V4 M-30 -20 V4"/>
-      <ellipse class="g-water" cx="0" cy="-46" rx="42" ry="10"/>
-      <rect class="p-wood" x="-46" y="-126" width="10" height="82" rx="3"/>
-      <rect class="p-wood" x="36" y="-126" width="10" height="82" rx="3"/>
-      <path class="p-roof" d="M-62 -122 L0 -164 L62 -122 Z"/>
-      <path class="ink-line" d="M0 -122 V-84"/><rect class="p-bucket" x="-8" y="-86" width="16" height="13" rx="2"/>
-    </g></g>
-    <g transform="translate(760 ${G + 6})"><g class="pk g-bench">
-      <rect class="p-wood" x="-44" y="-12" width="7" height="24" rx="2"/><rect class="p-wood" x="37" y="-12" width="7" height="24" rx="2"/>
-      <rect class="p-wood" x="-52" y="-16" width="104" height="10" rx="4"/>
-      <rect class="p-wood" x="-52" y="-44" width="104" height="8" rx="4"/><rect class="p-wood" x="-52" y="-32" width="104" height="8" rx="4"/>
-      <rect class="p-wood" x="-46" y="-46" width="6" height="32" rx="2"/><rect class="p-wood" x="40" y="-46" width="6" height="32" rx="2"/>
-    </g>
-      <g class="g-gift" transform="translate(-14 -16)"><g class="pk g-gift__box">
-        <rect class="gift-box" x="-11" y="-18" width="22" height="18" rx="2"/>
-        <rect class="gift-ribbon" x="-2.5" y="-18" width="5" height="18"/>
-        <g class="gift-top"><rect class="gift-lid" x="-13" y="-22" width="26" height="6" rx="2"/>
-        <path class="gift-ribbon" d="M0 -22 C-6 -32 -14 -28 -9 -23 Z M0 -22 C6 -32 14 -28 9 -23 Z"/></g>
-      </g></g>
-    </g>
+    ${wellSVG('translate(540 ' + (G + 6) + ')')}
+    ${benchSVG('translate(760 ' + (G + 6) + ')')}
     ${roundTree(900, G + 4, 0.95, 'a')}${roundTree(1040, G + 8, 0.75, 'a')}
 
     <!-- the back of the house, on the left -->
@@ -363,8 +376,10 @@ export function gardenSVG() {
     ${lawn(512, 12, 130, 6, 'g-lawn--3')}
     <g class="g-deep">
       ${stones}
-      ${shroom(120, 590, 1, 'tomato')}${shroom(292, 628, 0.8, 'berry', -1)}${shroom(330, 600, 0.6, 'mustard')}
+      ${shroom(138, 664, 1, 'tomato')}${shroom(292, 628, 0.8, 'berry', -1)}${shroom(330, 610, 0.6, 'mustard')}
       ${deep}
+      <!-- tall phones: a smaller well and bench inside the crop (the big ones are out past the gate) -->
+      ${wellSVG('translate(88 632) scale(0.6)', 'g-mini')}${benchSVG('translate(302 566) scale(0.66)', 'g-mini')}
       ${lawn(668, 14, 150, 8, 'g-lawn--4')}
     </g>
   </svg>`
