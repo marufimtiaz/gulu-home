@@ -41,6 +41,10 @@ em { font-style: italic; color: var(--berry); }
   place-items: center;
 }
 .scene--leaving { pointer-events: none; }
+/* Scene art is never scrolled or zoomed by the browser. Phones ignore touch-action on SVG
+   children (<g>), so a drag on a clock hand inside the art became a pan and was cancelled
+   after a few moves. Setting it on the <svg> itself is what touch input honours. */
+.scene svg { touch-action: none; }
 
 .fx-layer { position: fixed; inset: 0; z-index: var(--z-fx); pointer-events: none; overflow: hidden; }
 
