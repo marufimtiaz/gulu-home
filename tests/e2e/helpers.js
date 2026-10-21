@@ -11,10 +11,10 @@ import { expect } from '@playwright/test'
 
 export const ROOMS = ['living', 'kitchen', 'garden', 'rooftop', 'desk', 'empty']
 
-export function seed({ doorSeen = true, done = [], lang = 'en', notes = [], wall = null } = {}) {
+export function seed({ doorSeen = true, done = [], lang = 'en', notes = [], wall = null, order = [] } = {}) {
   const d = { living: false, kitchen: false, garden: false, rooftop: false, desk: false, empty: false, finale: false }
   for (const r of done) d[r] = true
-  return { v: 1, doorSeen, done: d, empty: { wall, notes }, lang, sound: 'off' }
+  return { v: 1, doorSeen, done: d, empty: { wall, notes }, order, lang, sound: 'off' }
 }
 
 export async function open(page, route, opts = {}) {

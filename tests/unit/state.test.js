@@ -68,3 +68,22 @@ describe('state', () => {
     expect(calls).toBe(1)
   })
 })
+
+describe('lit order', () => {
+  it('remembers the order rooms were lit, once each', () => {
+    localStorage.clear()
+    state._reload()
+    state.markDone('desk')
+    state.markDone('living')
+    state.markDone('desk')
+    state.markDone('finale')
+    expect(state.get().order).toEqual(['desk', 'living'])
+    expect(state.litOrder()).toEqual(['desk', 'living'])
+  })
+  it('falls back to house order for saves from before order was recorded', () => {
+    localStorage.setItem('our-home', JSON.stringify({ v: 1, doorSeen: true, done: { kitchen: true, living: true } }))
+    state._reload()
+    state.markDone('garden')
+    expect(state.litOrder()).toEqual(['garden', 'living', 'kitchen'])
+  })
+})

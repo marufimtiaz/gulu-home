@@ -236,8 +236,9 @@ test('the names engrave large enough to read, and the card repeats them big', as
   expect(box.x + box.width).toBeLessThanOrEqual(360)
 })
 
-test('the windows flare in the order the rooms are lit', async ({ page }) => {
-  await open(page, 'finale', { done: ROOMS })
+test('the windows flare in the order she lit the rooms', async ({ page }) => {
+  const order = ['garden', 'desk', 'living', 'rooftop', 'kitchen', 'empty']
+  await open(page, 'finale', { done: ROOMS, order })
   await page.evaluate(() => {
     window.__flares = []
     const seen = new Set()
@@ -256,7 +257,7 @@ test('the windows flare in the order the rooms are lit', async ({ page }) => {
     window.__finale.stick()
   })
   await expect.poll(() => page.evaluate(() => window.__flares.length), { timeout: 12000 }).toBe(6)
-  expect(await page.evaluate(() => window.__flares)).toEqual(['living', 'kitchen', 'garden', 'rooftop', 'desk', 'empty'])
+  expect(await page.evaluate(() => window.__flares)).toEqual(order)
 })
 
 test('leaving mid-fireworks stops them', async ({ page }) => {

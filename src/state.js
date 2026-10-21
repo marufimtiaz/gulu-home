@@ -12,6 +12,7 @@ const fresh = () => ({
   doorSeen: false,
   done: { living: false, kitchen: false, garden: false, rooftop: false, desk: false, empty: false, finale: false },
   empty: { wall: null, notes: [] },
+  order: [], // rooms in the order she lit them (the finale replays it)
   lang: null,
   sound: 'all',
 })
@@ -34,6 +35,7 @@ function read() {
       ...saved,
       done: { ...base.done, ...saved.done },
       empty: { ...base.empty, ...saved.empty, notes: Array.isArray(saved.empty?.notes) ? saved.empty.notes : [] },
+      order: Array.isArray(saved.order) ? saved.order : [],
     }
   } else {
     memory = base
@@ -73,8 +75,14 @@ export const isDone = (id) => !!read().done[id]
 export function markDone(id) {
   if (!(id in read().done)) throw new Error(`unknown room: ${id}`)
   if (isDone(id)) return false
-  update((s) => ({ done: { ...s.done, [id]: true } }))
+  update((s) => ({ done: { ...s.done, [id]: true }, order: ROOMS.includes(id) ? [...s.order, id] : s.order }))
   return true
+}
+
+/** The six rooms in the order she lit them; rooms done before order was recorded follow in house order. */
+export function litOrder() {
+  const o = read().order.filter((r) => ROOMS.includes(r) && isDone(r))
+  return [...new Set([...o, ...ROOMS.filter(isDone)])]
 }
 
 /** Number of the six rooms completed (finale not counted). */

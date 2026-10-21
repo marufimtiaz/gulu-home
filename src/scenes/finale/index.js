@@ -28,9 +28,7 @@ const SLIP = { w: 140, h: 110 } // the sticker's box (px in the art box)
 const TOP = 58 // room for the corner chips
 const REDUCED = 6 // reduced motion: the finale's long moments play at 6× (choreo's default is 4×)
 const MIN_DOOR = 1.4 // px per hub unit while she's hanging things: the plate stays a fair target
-// the windows flare one by one, in the order the hub suggests lighting them (state keeps no
-// record of the order she actually lit them in)
-const FLARE = [['living'], ['kitchen'], ['garden'], ['rooftop'], ['desk'], ['empty']]
+// the windows flare one by one, in the order she actually lit them (state.litOrder())
 const STEP = 0.22 // between flares
 
 let teardown = null
@@ -101,7 +99,7 @@ export default {
     const twineTaut = $('[data-twine]')
     const bulbs = $$('[data-fairy]')
     const bulbBox = $('.fairy-bulbs')
-    const flare = FLARE.map((ids) => ids.map((id) => $(`[data-win="${id}"]`)).filter(Boolean))
+    const flare = ctx.state.litOrder().map((id) => [$(`[data-win="${id}"]`)].filter(Boolean))
     const wins = flare.flat()
     const cardBits = [...card.children]
 
