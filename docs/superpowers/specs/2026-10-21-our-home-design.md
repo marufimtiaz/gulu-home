@@ -176,7 +176,8 @@ Flow:
    middle over a jali (lattice) cut-out pattern. Swipe outward (or tap) → each door swings open
    on its hinge (CSS 3D, `rotateY`, shadowed edge). Doors' inner faces show a rose-vine border.
 3. **Card face** (centre panel, portrait ~ 5:7):
-   - top: optional invocation line (`card.invocation`, default none); a gold alpana medallion
+   - top: the invocation `card.invocation` — Bismillahir Rahmanir Rahim in Arabic calligraphy
+     (`--card-arabic`, Amiri, `dir="rtl"`, `aria-label` = `card.invocationLabel`), small and gold, above the medallion; a gold alpana medallion
      that draws itself (SVG stroke reveal, ~2 s);
    - headline: Bangla calligraphy (`card.titleBn`, `--card-bn-display`) and English caps
      beneath (`card.titleEn` "Bou-bhat", with `card.subtitleEn` "Wedding Reception" small, `--card-caps`);
@@ -203,7 +204,7 @@ Flow:
 Palette (reception style, decided default): ivory `--card-ivory #fbf6ec`, dusty pink
 `--card-rose #e8b9b5`, champagne gold `--card-gold #c9a96a` / `--card-gold-hi #f3e2b3`, deep
 rose text `--card-ink #6b2b3a`. Ink outlines thin (1px gold), no pop shadows — print, not paper.
-Fonts (self-hosted): Galada, Tiro Bangla, Noto Serif Bengali, Pinyon Script, Cinzel,
+Fonts (self-hosted): Amiri (Arabic), Galada, Tiro Bangla, Noto Serif Bengali, Pinyon Script, Cinzel,
 Cormorant Garamond.
 
 Content placeholders in `config.js` → `card` (event name, date, time, venue, hosts, families,

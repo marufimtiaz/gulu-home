@@ -161,7 +161,9 @@ export default {
   // ── The reception card (in the letterbox, after the finale) ──
   // Traditional cards are bilingual, so both languages are on the card itself.
   card: {
-    invocation: null, // ← optional top line, e.g. 'বিসমিল্লাহির রাহমানির রাহিম' — null for none
+    // top line, in Arabic calligraphy (set to null to remove)
+    invocation: 'بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
+    invocationLabel: 'Bismillahir Rahmanir Rahim', // read aloud by screen readers
     titleBn: 'শুভ বৌভাত',
     titleEn: 'Bou-bhat',
     subtitleEn: 'Wedding Reception',

@@ -41,6 +41,7 @@
   --bn-hand: "Atma", "Hind Siliguri", cursive;
 
   /* the reception card (formal print, not paper craft) */
+  --card-arabic: "Amiri", "Noto Naskh Arabic", serif;   /* the Bismillah line */
   --card-bn-display: "Galada", "Tiro Bangla", serif;   /* Bangla calligraphic headline */
   --card-bn: "Tiro Bangla", "Noto Serif Bengali", serif;
   --card-script: "Pinyon Script", "Caveat", cursive;   /* names */

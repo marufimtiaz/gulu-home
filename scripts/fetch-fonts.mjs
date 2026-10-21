@@ -15,6 +15,7 @@ const FAMILIES = [
   'Hind+Siliguri:wght@400;500;700',
   'Atma:wght@500;700',
   // the reception card
+  'Amiri:wght@400;700', // Arabic naskh — the Bismillah line on the card
   'Galada', // Bangla calligraphic display
   'Tiro+Bangla:ital@0;1', // formal Bangla serif
   'Noto+Serif+Bengali:wght@400;600',
@@ -22,7 +23,7 @@ const FAMILIES = [
   'Cinzel:wght@500;700', // engraved capitals
   'Cormorant+Garamond:ital,wght@0,400;0,600;1,400', // formal English body
 ]
-const KEEP = new Set(['latin', 'latin-ext', 'bengali'])
+const KEEP = new Set(['latin', 'latin-ext', 'bengali', 'arabic'])
 const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36'
 
 await mkdir(outDir, { recursive: true })
