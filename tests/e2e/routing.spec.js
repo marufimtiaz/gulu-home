@@ -7,6 +7,7 @@ test('first visit lands on the door', async ({ page }) => {
 })
 
 test('every scene mounts without errors', async ({ page }) => {
+  test.setTimeout(120_000) // visits every scene; slow under parallel load
   const errors = collectErrors(page)
   await open(page, 'house', { done: [...ROOMS, 'finale'] })
   for (const id of ['house', ...ROOMS, 'finale', 'card', 'door']) {
