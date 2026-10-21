@@ -246,6 +246,7 @@ export default {
     const seal = $('[data-seal]')
     const halves = $$('.seal__half')
     const envParts = $$('.env')
+    const envTaps = [...envParts, $('[data-env-name]')] // her name on the pocket takes taps of its own
     const doors = { left: $('[data-gate="left"]'), right: $('[data-gate="right"]') }
     const hint = $('[data-hint]')
     const actions = $('[data-actions]')
@@ -256,6 +257,7 @@ export default {
     const fills = $$('.cf [data-fill]')
 
     let stage = 'envelope' // envelope → opening → gate → open
+    let risen = false // the card is out of the pocket far enough that her doors are in sight
     let flipped = false
     let zoomed = false
     let flank = false // is there room for the open doors beside the card?
@@ -425,7 +427,7 @@ export default {
       guide.set([])
       haptic(14)
       gsap.killTweensOf(seal)
-      const tl = big(moment({ onComplete: toGate }))
+      const tl = big(moment())
       beat(tl, 'peel', 0)
       tl.to(hint, { autoAlpha: 0, duration: T.quick }, 0)
       tl.to(seal, { x: 0, y: 0, scale: 1, rotation: 0, duration: T.tap }, 0)
@@ -437,9 +439,18 @@ export default {
         .set(flap, { zIndex: 1 }, `flap+=${T.reveal / 2}`)
         .addLabel('rise', `flap+=${T.reveal * 0.85}`)
       beat(tl, 'whoosh', 'rise')
+      // the doors are in sight as soon as the card is half out: from here a touch on one opens
+      // the gate at once (the envelope stops taking taps; it is only falling away)
+      tl.call(() => {
+        risen = true
+        for (const el of envTaps) el.style.pointerEvents = 'none'
+      }, null, `rise+=${T.quick}`)
       tl.to(leaf, { y: -250, duration: T.moment, ease: EASE.out }, 'rise')
         .to(rig, { y: 118, duration: T.moment, ease: EASE.out }, 'rise')
         .addLabel('free', `rise+=${T.moment * 0.72}`)
+        // the card is clear of the pocket: the doors take taps now, while the envelope falls away
+        // (its parts would otherwise sit over the doors, still catching taps, for another second)
+        .call(toGate, null, 'free')
         .to(envParts, { y: '+=620', autoAlpha: 0, duration: T.reveal, ease: 'power2.in' }, 'free')
         .to(leaf, { y: 0, duration: T.reveal, ease: 'back.out(1.15)' }, `free+=${T.quick}`)
         .to(rig, { y: 0, scale: 1, duration: T.reveal, ease: 'back.out(1.15)' }, '<')
@@ -449,6 +460,8 @@ export default {
     /* ── 2. the gatefold: swing the doors open ──────────────────────────────────────── */
     let sway = null
     function toGate() {
+      if (stage !== 'opening') return
+      for (const el of envTaps) el.style.pointerEvents = 'none'
       stage = 'gate'
       scene.dataset.stage = 'gate'
       setHint(t('card.hintDoors'))
@@ -477,6 +490,7 @@ export default {
       offs.push(
         onDrag(el, {
           onStart() {
+            if (stage === 'opening' && risen) toGate() // don't make her wait for the envelope to land
             if (stage !== 'gate' || opened[side]) return false
             doorHeld = true
             moved = false
@@ -500,7 +514,7 @@ export default {
           },
         }),
       )
-      on(el, 'keydown', (e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), openDoor(side)))
+      on(el, 'keydown', (e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), stage === 'opening' && risen && toGate(), openDoor(side)))
     }
 
     function openDoor(side) {
