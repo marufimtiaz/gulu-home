@@ -20,7 +20,9 @@ import './scene.css'
 import { boxSVG, bulbSVG, canSVG, ladderSVG, markerSVG, rollerSVG, traySVG } from './art.js'
 import { place } from './wall.js'
 import { beat, EASE, moment, T } from '../../ui/choreo.js'
-import { haptic, nudge, poke, press } from '../../ui/feel.js'
+import { haptic, nudge, press } from '../../ui/feel.js'
+import { react } from '../../ui/react.js'
+import { sayer } from './say.js'
 
 const MAX_NOTES = 30
 const MAX_LEN = 140
@@ -88,6 +90,7 @@ export default {
             .join('')}
         </div>
 
+        <div class="e-dark" data-dark aria-hidden="true"></div>
         <div class="e-read" data-read hidden>
           <div class="e-read__card" role="dialog" aria-modal="true">
             <p class="e-read__text hand" data-read-text></p>
@@ -408,25 +411,135 @@ export default {
       on(cn, 'click', () => paint(i))
     })
 
-    // ── the little things answer back ──
-    let swingTl = null
-    on(bulb, 'pointerdown', () => {
-      sound.play('tap')
-      haptic(5)
-      if (ctx.reduced) return
-      swingTl?.kill()
-      swingTl = keep(
-        gsap.timeline()
-          .to(swing, { rotation: 16, duration: 0.18, ease: 'power2.out', transformOrigin: '50% 0%' })
-          .to(swing, { rotation: 0, duration: 2.2, ease: 'elastic.out(1.1, 0.16)' })
-          .fromTo(halo, { opacity: 0.25 }, { keyframes: { opacity: [0.25, 0.9, 0.4, 1, 0.75] }, duration: 0.5, ease: 'none' }, 0),
-      )
+    // ── the room answers back: each thing like what it is ──
+    const say = sayer(room, { reduced: ctx.reduced, keep })
+    const slip = sayer(room, { reduced: ctx.reduced, keep, cls: 'x-slip' })
+    const top = (el, fy = 0) => {
+      const r = el.getBoundingClientRect()
+      return { x: r.left + r.width / 2, y: r.top + r.height * fy }
+    }
+    offs.push(() => {
+      say.clear()
+      slip.clear()
     })
-    for (const sel of ['[data-box]', '[data-ladder]', '[data-tray]']) offs.push(poke($(sel), { sound: sel === '[data-box]' ? 'pop' : 'tap' }))
+
+    // the bulb swings on its cord, and the light pool and every shadow in the room swing with it.
+    // Second time it buzzes and stutters; third time the lights go out — her call.
+    const dark = $('[data-dark]')
+    const glass = $('.b-glass')
+    let bulbN = 0
+    let outTl = null
+    const flick = () => {
+      sound.play('buzz')
+      if (!ctx.reduced) keep(gsap.timeline().to([glass, halo], { opacity: 0.35, duration: 0.05 }).to([glass, halo], { opacity: 1, duration: 0.05 }).to([glass, halo], { opacity: 0.5, duration: 0.06 }).to([glass, halo], { opacity: 1, duration: 0.1 }).set([glass, halo], { clearProps: 'opacity' }))
+    }
+    const lightsOut = () => {
+      if (outTl?.isActive()) return
+      sound.play('buzz')
+      outTl = keep(gsap.timeline())
+      outTl.to([glass, halo], { opacity: 0.15, duration: 0.08 })
+      outTl.to(dark, { opacity: 0.86, duration: 0.12 }, '<')
+      outTl.call(() => say(t('empty.ledu'), top(bulb, 1), { small: t('empty.leduSmall'), below: true, hold: 2 }))
+      outTl.to({}, { duration: 1.9 })
+      outTl.call(() => sound.play('lampOn'))
+      outTl.to([glass, halo], { opacity: 1, duration: 0.05 })
+      outTl.to([glass, halo], { opacity: 0.4, duration: 0.05 })
+      outTl.to([glass, halo], { opacity: 1, duration: 0.08 })
+      outTl.to(dark, { opacity: 0, duration: 0.25 }, '<')
+      outTl.set([glass, halo], { clearProps: 'opacity' })
+    }
+    offs.push(react(bulb, 'sway', { target: swing, origin: '50% 0%', strength: 1.3, steps: [() => {
+      const n = bulbN++ % 3
+      if (n === 1) flick()
+      if (n === 2) phase === 'painting' ? flick() : lightsOut()
+    }] }))
+    if (!ctx.reduced) {
+      const cord = () => bulb.getBoundingClientRect().height * 0.8
+      let last = 0
+      const follow = () => {
+        const deg = Number(gsap.getProperty(swing, 'rotation')) + Number(gsap.getProperty(bulb, 'rotation'))
+        const shx = -Math.sin((deg * Math.PI) / 180) * cord()
+        if (Math.abs(shx - last) < 0.3) return
+        last = shx
+        room.style.setProperty('--shx', shx.toFixed(1))
+      }
+      gsap.ticker.add(follow)
+      offs.push(() => gsap.ticker.remove(follow))
+    }
+
+    // the ladder wobbles on its feet and settles; the third time, a rosette appears on top: Topper
+    const ladder = $('[data-ladder]')
+    const medal = ladder.querySelector('.l-medal')
+    offs.push(react(ladder, 'tip', { origin: '50% 100%', strength: 1.2, steps: [() => {}, () => {}, () => {
+      sound.play('chime')
+      keep(gsap.timeline()
+        .fromTo(medal, { opacity: 0, scale: 0.3, rotation: -200 }, { opacity: 1, scale: 1, rotation: 0, svgOrigin: '36 -14', duration: ctx.reduced ? 0.01 : 0.8, ease: EASE.spring })
+        .call(() => say(t('empty.topper'), top(medal), { small: t('empty.topperSmall') }))
+        .to(medal, { opacity: 0, duration: 0.5 }, '+=3'))
+    }] }))
+
+    // the moving box: a soft cardboard squish, the flaps fly open, and one of her nicknames
+    // is inside on a slip — a different one every time (the jar from site two, unpacked)
+    const box = $('[data-box]')
+    const flaps = [...box.querySelectorAll('.x-flap--l, .x-flap--r')]
+    let nick = 0
+    let boxTl = null
+    offs.push(react(box, 'squish', { sound: 'paper', strength: 0.6, steps: [() => {
+      const list = t('empty.nicknames')
+      const [name, note] = list[nick++ % list.length]
+      sound.play('pop')
+      boxTl?.kill()
+      boxTl = keep(gsap.timeline())
+      if (!ctx.reduced) boxTl.to(flaps, { scaleY: -0.75, svgOrigin: '66 34', duration: 0.22, ease: 'back.out(2.5)', stagger: 0.04 })
+      boxTl.call(() => slip(name, top(box, 0.2), { small: note, hold: 2.8 }))
+      if (!ctx.reduced) boxTl.to(flaps, { scaleY: 1, svgOrigin: '66 34', duration: 0.5, ease: 'bounce.out' }, '+=2.9')
+    }] }))
+
+    // the paint tray: the paint ripples, the roller rocks in it
+    const tray = $('[data-tray]')
+    offs.push(react(tray, 'ripple', { target: tray.querySelector('.t-paint'), origin: '50% 50%', strength: 1.5, steps: [() => {
+      if (!ctx.reduced && trayRoller) keep(gsap.timeline().to(trayRoller, { x: -7, duration: 0.18, ease: 'power1.out' }).to(trayRoller, { x: 0, duration: 0.6, ease: EASE.wobble }))
+    }] }))
+
+    // the bare wall knocks back. Knock knock. — who's there?
+    let knocks = 0
+    wall.dataset.react = 'knock'
+    on(wall, 'pointerdown', (e) => {
+      if (e.target !== wall || phase === 'painting') return
+      const n = knocks++ % 3
+      sound.play('knock')
+      haptic(8)
+      if (n >= 1) keep(gsap.delayedCall(0.17, () => sound.play('knock')))
+      if (!ctx.reduced) keep(gsap.fromTo(wall, { x: 1.5 }, { x: 0, duration: 0.3, ease: 'elastic.out(1, 0.5)', clearProps: 'transform' }))
+      if (n === 2) say(t('empty.knock'), { x: e.clientX, y: e.clientY - 10 }, { small: t('empty.knockSmall'), hold: 3.2 })
+    })
+    // the floorboards creak
+    const floor = $('.e-floor')
+    floor.dataset.react = 'knock'
+    on(floor, 'pointerdown', (e) => e.target === floor && sound.play('creak'))
 
     // ── idle guidance: cans until painted, then the marker line, then home ──
-    const guide = nudge(cans, { after: 4000 })
-    offs.push(() => guide.stop())
+    // the paint cans' lids rattle (with an arrow if she's stuck); later, a soft glow
+    const lidHint = (el) => {
+      const lid = el.querySelectorAll('.c-rim, .c-paint')
+      const tl = keep(gsap.timeline())
+      ;[-2.5, 0, -1.8, 0, -1, 0].forEach((y, i) => tl.to(lid, { y, rotation: i % 4 === 0 ? -4 : i % 4 === 2 ? 3 : 0, svgOrigin: '32 22', duration: 0.06, ease: 'none' }))
+      return tl
+    }
+    let nd = null
+    let ndKey = ''
+    const guide = {
+      set(targets) {
+        const key = targets.length && targets.every((x) => cans.includes(x)) ? 'cans' : 'plain'
+        if (key !== ndKey) {
+          nd?.stop()
+          ndKey = key
+          nd = nudge(targets, key === 'cans' ? { after: 4000, style: lidHint, arrow: true } : {})
+        } else nd.set(targets)
+      },
+    }
+    guide.set(cans)
+    offs.push(() => nd?.stop())
 
     // ── phone keyboard: fit the room to the visible part of the screen while typing ──
     const vv = window.visualViewport
@@ -485,7 +598,8 @@ export default {
     let stopRoom = sound.layer('room')
     offs.push(() => stopRoom?.())
     if (!ctx.reduced) {
-      keep(gsap.fromTo(swing, { rotation: -1.6 }, { rotation: 1.6, duration: 3.4, ease: 'sine.inOut', yoyo: true, repeat: -1, transformOrigin: '50% 0%' }))
+      // a slow idle drift on the outer bulb (taps swing the inner one, so the two never fight)
+      keep(gsap.fromTo(bulb, { rotation: -1.6 }, { rotation: 1.6, duration: 3.4, ease: 'sine.inOut', yoyo: true, repeat: -1, transformOrigin: '50% 0%' }))
     }
 
     // ── first paint: the saved wall, or bare plaster ──

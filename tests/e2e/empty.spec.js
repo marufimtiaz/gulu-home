@@ -357,3 +357,58 @@ for (const vp of VIEWPORTS) {
     expect(errors).toEqual([])
   })
 }
+
+// ── Task 17: the room answers like what it is ──
+test('every thing in the room declares its reaction, and answers without errors', async ({ page }) => {
+  const errors = collectErrors(page)
+  await page.setViewportSize({ width: 1280, height: 800 }) // the paint tray shows from 560 px wide
+  await open(page, 'empty', { done: FIVE })
+  for (const sel of ['[data-bulb]', '[data-ladder]', '[data-box]', '[data-tray]', '[data-wall]', '.e-floor']) {
+    await expect(page.locator(sel), sel).toHaveAttribute('data-react', /.+/)
+    const b = await page.locator(sel).boundingBox()
+    await page.mouse.click(b.x + b.width * 0.5, b.y + b.height * (sel === '[data-wall]' ? 0.7 : sel === '.e-floor' ? 0.92 : 0.6))
+    await page.waitForTimeout(80)
+  }
+  await page.waitForTimeout(300)
+  expect(errors).toEqual([])
+})
+
+test('the moving box opens on one of her nicknames — a different one each time', async ({ page }) => {
+  await open(page, 'empty', { done: FIVE })
+  const box = await page.locator('[data-box]').boundingBox()
+  await page.mouse.click(box.x + box.width * 0.35, box.y + box.height * 0.6)
+  const slip = page.locator('.x-slip')
+  await expect(slip).toContainText('Gulu')
+  await page.waitForTimeout(400)
+  await page.mouse.click(box.x + box.width * 0.35, box.y + box.height * 0.6)
+  await expect(slip).toContainText('Puchu')
+  await expect(slip).toContainText('rhymes with Gulu')
+})
+
+test('the bulb swings (and the light swings with it); the third tap puts the lights out — her call, Ledu', async ({ page }) => {
+  await open(page, 'empty', { done: FIVE })
+  const tap = async () => {
+    const b = await page.locator('[data-bulb] .b-glass').boundingBox()
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2)
+  }
+  await tap()
+  await expect.poll(() => page.locator('.empty').evaluate((e) => Math.abs(Number(e.style.getPropertyValue('--shx') || 0)))).toBeGreaterThan(2)
+  await page.waitForTimeout(300)
+  await tap()
+  await page.waitForTimeout(300)
+  await tap()
+  await expect(page.locator('[data-say]')).toContainText('Ledu')
+  await expect.poll(() => page.locator('[data-dark]').evaluate((e) => Number(getComputedStyle(e).opacity))).toBeGreaterThan(0.5)
+  // and back on by itself
+  await expect.poll(() => page.locator('[data-dark]').evaluate((e) => Number(getComputedStyle(e).opacity)), { timeout: 5000 }).toBeLessThan(0.05)
+})
+
+test('knock knock on the bare wall', async ({ page }) => {
+  await open(page, 'empty', { done: FIVE })
+  const w = await page.locator('[data-wall]').boundingBox()
+  for (let i = 0; i < 3; i++) {
+    await page.mouse.click(w.x + w.width * 0.3, w.y + w.height * 0.7)
+    await page.waitForTimeout(150)
+  }
+  await expect(page.locator('[data-say]')).toContainText('Gu-een')
+})

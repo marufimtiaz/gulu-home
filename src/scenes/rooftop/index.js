@@ -23,7 +23,9 @@ import { TERRACE, moonSVG, starGlyph, terraceSVG } from './art.js'
 import { esc, fillPolaroid, polaroidShell } from './polaroid.js'
 import { onDrag, onHold } from '../../ui/drag.js'
 import { EASE, T, beat, moment } from '../../ui/choreo.js'
-import { haptic, nudge, poke, press } from '../../ui/feel.js'
+import { haptic, nudge, press } from '../../ui/feel.js'
+import { react } from '../../ui/react.js'
+import { sayer } from './say.js'
 
 const HOLD_MS = 2000 // the wish
 const TAP_R = 34 // px: a tap this close to a star's centre counts
@@ -194,23 +196,277 @@ export default {
       const g = active !== null ? groups[active] : groups.find((x) => !x.complete)
       return g ? g.stars.filter((_, j) => !g.lit.includes(j)) : []
     }
-    const guide = nudge(nextTargets())
-    offs.push(() => guide.stop())
-    const retarget = () => guide.set(nextTargets())
+    // the next star twinkles brighter (arrow if she's stuck); the wish star pulses; the rest glow
+    const starHint = (el) => {
+      const g = el.querySelector('.rt-glyph')
+      return keep(gsap.timeline().to(g, { scale: 1.7, duration: 0.22, ease: 'power2.out' }).to(g, { scale: 1, duration: 0.7, ease: EASE.wobble }))
+    }
+    const wishPulse = (el) => keep(gsap.timeline().to(el.querySelector('.rt-wish__glow'), { scale: 1.3, duration: 0.3, ease: 'power2.out' }).to(el.querySelector('.rt-wish__glow'), { scale: 1, duration: 0.8, ease: EASE.wobble }))
+    let guide = null
+    let guideKey = ''
+    const retarget = () => {
+      const key = phase === 'connect' ? 'star' : phase === 'wish' ? 'wish' : 'plain'
+      if (key !== guideKey) {
+        guide?.stop()
+        guideKey = key
+        guide = nudge(nextTargets(), key === 'star' ? { style: starHint, arrow: true } : key === 'wish' ? { style: wishPulse, arrow: true } : {})
+      } else guide.set(nextTargets())
+    }
+    retarget()
+    offs.push(() => guide?.stop())
+
+    // ── the terrace answers a tap: each thing like what it is (wired again whenever it's redrawn) ──
+    const say = sayer(scene, { reduced, keep })
+    const bits = new Set()
+    const sceneXY = (p) => {
+      const r = scene.getBoundingClientRect()
+      return { x: p.x - r.left, y: p.y - r.top }
+    }
+    const top = (el, fy = 0) => {
+      const r = el.getBoundingClientRect()
+      return { x: r.left + r.width / 2, y: r.top + r.height * fy }
+    }
+    let teaShown = false
+    let catN = 0
+    let tankN = 0
+    let moonN = 0
+    function wireTerrace() {
+      const offsT = []
+      const part = (name) => terraceWrap.querySelector(`[data-poke="${name}"]`)
+
+      // the cat: a character, not a reaction kind (the house's rooftop cat, in spirit) —
+      // she looks round, says mrrp, stretches, asks for a back scratch, then strolls off
+      // behind the tank for a while and comes back.
+      const cat = part('cat')
+      if (cat) {
+        cat.dataset.react = 'bespoke'
+        const walk = cat.querySelector('.rt-cat__walk')
+        const sit = cat.querySelector('.rt-cat__sit')
+        const head = cat.querySelector('.rt-cat__head')
+        const eyes = cat.querySelector('.rt-cat__eyes')
+        const tail = cat.querySelector('.rt-cat__tail')
+        let away = false
+        let catTl = null
+        const run = (build) => {
+          catTl?.progress(1).kill()
+          catTl = keep(gsap.timeline())
+          build(catTl)
+          if (reduced) catTl.progress(1)
+        }
+        const down = () => {
+          if (away) return
+          haptic(5)
+          const step = catN++ % 5
+          if (step === 0) {
+            // looks round at her
+            sound.play('rustle')
+            run((tl) => tl
+              .to(head, { rotation: -16, transformOrigin: '50% 90%', duration: 0.25, ease: 'power2.out' })
+              .to(eyes, { opacity: 1, duration: 0.12 }, '<0.08')
+              .to(tail, { rotation: -12, transformOrigin: '0% 0%', duration: 0.3, yoyo: true, repeat: 1 }, '<')
+              .to(eyes, { opacity: 0, duration: 0.2 }, '+=1.4')
+              .to(head, { rotation: 0, duration: 0.6, ease: EASE.wobble }, '<'))
+          } else if (step === 1) {
+            // mrrp
+            sound.play('meow')
+            say(t('rooftop.mew'), top(cat))
+            run((tl) => tl
+              .to(head, { rotation: -10, y: -2, transformOrigin: '50% 90%', duration: 0.18, ease: 'power2.out' })
+              .to(eyes, { opacity: 1, duration: 0.1 }, '<')
+              .to(head, { rotation: -4, y: 0, duration: 0.5, ease: EASE.wobble })
+              .to(eyes, { opacity: 0, duration: 0.2 }, '+=1.2')
+              .to(head, { rotation: 0, duration: 0.5 }, '<'))
+          } else if (step === 2) {
+            // a long stretch: front down, back up, tail straight
+            sound.play('squish')
+            run((tl) => tl
+              .to(sit, { scaleX: 1.32, scaleY: 0.7, transformOrigin: '50% 100%', duration: 0.55, ease: 'sine.inOut' })
+              .to(head, { y: 7, x: -6, rotation: 8, transformOrigin: '50% 90%', duration: 0.55, ease: 'sine.inOut' }, '<')
+              .to(tail, { rotation: -70, transformOrigin: '0% 0%', duration: 0.55, ease: 'sine.inOut' }, '<')
+              .to([sit, head, tail], { scaleX: 1, scaleY: 1, x: 0, y: 0, rotation: 0, duration: 0.8, ease: EASE.spring }, '+=0.5'))
+          } else if (step === 3) {
+            // arches into her finger and purrs: "scratch my back"
+            sound.play('buzz')
+            keep(gsap.delayedCall(0.35, () => sound.play('buzz')))
+            say(t('rooftop.scratch'), top(cat), { small: t('rooftop.scratchSmall'), hold: 3 })
+            run((tl) => tl
+              .to(sit, { scaleY: 1.16, scaleX: 0.92, transformOrigin: '50% 100%', duration: 0.3, ease: 'power2.out' })
+              .to(eyes, { opacity: 1, duration: 0.15 }, '<')
+              .to(sit, { rotation: 2.5, transformOrigin: '50% 100%', duration: 0.09, yoyo: true, repeat: 9, ease: 'sine.inOut' })
+              .to(sit, { scaleY: 1, scaleX: 1, rotation: 0, duration: 0.6, ease: EASE.wobble })
+              .to(eyes, { opacity: 0, duration: 0.3 }, '<'))
+          } else {
+            // had enough: strolls off along the railing, behind the tank — and back later
+            away = true
+            sound.play('whoosh')
+            const far = Math.max(140, (root.clientWidth - top(cat).x) / Math.max(0.5, cat.getCTM()?.a || 1) + 40)
+            catTl?.progress(1).kill()
+            catTl = keep(gsap.timeline({ onComplete: () => (away = false) }))
+            if (reduced) {
+              catTl.set(walk, { opacity: 0 }).set(walk, { opacity: 1 }, 4)
+              return
+            }
+            catTl
+              .to(walk, { x: far, duration: 2.6, ease: 'sine.in' })
+              .to(sit, { y: -2, duration: 0.16, yoyo: true, repeat: 15, ease: 'sine.inOut' }, 0)
+              .set(walk, { scaleX: -1, transformOrigin: '50% 50%' }, '+=4')
+              .to(walk, { x: 0, duration: 2.8, ease: 'sine.out' })
+              .to(sit, { y: -2, duration: 0.16, yoyo: true, repeat: 15, ease: 'sine.inOut' }, '<')
+              .set(walk, { scaleX: 1 })
+              .call(() => sound.play('meow'))
+          }
+        }
+        cat.addEventListener('pointerdown', down)
+        offsT.push(() => {
+          cat.removeEventListener('pointerdown', down)
+          catTl?.kill()
+        })
+      }
+
+      // the plant pot on the parapet tips and its leaves shiver; the third time it nearly goes over
+      const pot = part('pot')
+      if (pot) {
+        const leaf = pot.querySelector('[data-leaf]')
+        const shiver = () => !reduced && keep(gsap.fromTo(leaf, { rotation: -6 }, { rotation: 0, transformOrigin: '50% 100%', duration: 0.8, ease: 'elastic.out(1.2, 0.25)' }))
+        offsT.push(react(pot, 'tip', { origin: '50% 100%', strength: 1.3, steps: [shiver, shiver, () => {
+          shiver()
+          if (!reduced) keep(gsap.timeline().to(pot, { rotation: 22, transformOrigin: '100% 100%', duration: 0.22, ease: 'power2.out' }).to(pot, { rotation: 0, duration: 0.9, ease: 'elastic.out(1, 0.3)' }))
+          say(t('rooftop.noni'), top(pot), { small: t('rooftop.noniSmall') })
+        }] }))
+      }
+
+      // the water tank: a hollow "tung" that echoes — and what echoes back is her nicknames
+      const tank = part('tank')
+      if (tank) {
+        const drum = tank.querySelector('.rt-drum')
+        const lid = tank.querySelector('.rt-tanklid')
+        const echo = (words) => {
+          const p = sceneXY(top(lid))
+          words.forEach((w, i) => {
+            const el = document.createElement('p')
+            el.className = 'rt-echo hand'
+            el.setAttribute('aria-hidden', 'true')
+            el.textContent = w
+            scene.append(el)
+            bits.add(el)
+            const done = () => {
+              el.remove()
+              bits.delete(el)
+            }
+            // each echo further off, smaller and fainter, drifting away over the city
+            gsap.set(el, { x: p.x - i * 46, y: p.y - 18 - i * 30, opacity: 0, scale: 1 - i * 0.22 })
+            keep(gsap.timeline({ delay: 0.25 + i * 0.45, onComplete: done })
+              .to(el, { opacity: 1 - i * 0.28, y: '-=10', duration: reduced ? 0.01 : 0.4, ease: EASE.out })
+              .to(el, { opacity: 0, y: '-=12', duration: 0.6 }, '+=0.7'))
+          })
+        }
+        const tung = () => {
+          const n = tankN++ % 5
+          // hollow, then its echo, quieter twice
+          keep(gsap.delayedCall(0.22, () => sound.play('knock')))
+          keep(gsap.delayedCall(0.48, () => sound.play('slosh')))
+          if (n >= 1 && n <= 3) echo(t('rooftop.echo')[n - 1])
+          if (n === 4) say(t('rooftop.chain'), top(lid), { small: t('rooftop.chainSmall') })
+        }
+        offsT.push(react(tank, 'ripple', { target: drum, origin: '50% 100%', strength: 1.3, sound: 'knock', steps: [tung] }))
+      }
+
+      // the stair hut: the bulb buzzes and flickers, the door creaks; then tea's on the step
+      const door = part('door')
+      if (door) {
+        const leafDoor = door.querySelector('.rt-leafdoor')
+        const creak = () => {
+          sound.play('creak')
+          if (!reduced) keep(gsap.timeline().to(leafDoor, { scaleX: 1.6, transformOrigin: '0% 50%', duration: 0.35, ease: 'power2.out' }).to(leafDoor, { scaleX: 1, duration: 1, ease: EASE.wobble }, '+=0.3'))
+        }
+        offsT.push(react(door, 'flicker', { target: door.querySelector('.rt-bulb'), steps: [creak, creak, () => {
+          creak()
+          const tea = door.querySelector('.rt-tea')
+          if (!teaShown) {
+            teaShown = true
+            keep(gsap.fromTo(tea, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: reduced ? 0.01 : 0.6, ease: EASE.out, delay: 0.3 }))
+          }
+          say(t('rooftop.tea'), top(tea), { small: t('rooftop.teaSmall') })
+        }] }))
+      }
+
+      // the fairy lights: a ripple of light runs along the string from her finger
+      const lights = part('lights')
+      if (lights) {
+        const bulbs = [...lights.querySelectorAll('.rt-fairy')]
+        const chase = (n, e) => {
+          if (reduced || !e) return
+          const order = bulbs.map((b) => ({ b, d: Math.abs(top(b, 0.5).x - e.clientX) })).sort((a, b) => a.d - b.d).map((o) => o.b)
+          const r0 = Number(bulbs[0]?.getAttribute('r')) || 3
+          keep(gsap.fromTo(order, { attr: { r: r0 * 2 } }, { attr: { r: r0 }, duration: 0.7, ease: 'power2.out', stagger: 0.04, immediateRender: false }))
+        }
+        offsT.push(react(lights, 'flicker', { target: lights.querySelector('.rt-bulbs'), sound: 'ting', strength: 0.6, steps: [chase] }))
+      }
+
+      // the city: a few more windows wake each time; the third, all of them — it's half past four
+      const city = part('city')
+      if (city) {
+        const off = [...city.querySelectorAll('.rt-win--off')]
+        const wake = (n) => {
+          const sleepers = off.filter((w) => !w.classList.contains('rt-win--on'))
+          for (let i = 0; i < n && sleepers.length; i++) sleepers.splice(Math.floor(Math.random() * sleepers.length), 1)[0].classList.add('rt-win--on')
+        }
+        offsT.push(react(city, 'flicker', { target: city.querySelector('.rt-citywin'), sound: 'tap', steps: [() => wake(4), () => wake(6), (n, e) => {
+          off.forEach((w, i) => keep(gsap.delayedCall(reduced ? 0 : (i % 17) * 0.05, () => w.classList.add('rt-win--on'))))
+          sound.play('chime')
+          say(t('rooftop.city'), e ? { x: e.clientX, y: e.clientY - 20 } : top(city), { small: t('rooftop.citySmall') })
+          keep(gsap.delayedCall(6, () => off.forEach((w) => w.classList.remove('rt-win--on'))))
+        }] }))
+      }
+
+      // the railing: solid, knocks back
+      const rail = part('rail')
+      if (rail) offsT.push(react(rail, 'knock', { strength: 0.6 }))
+
+      return () => offsT.forEach((f) => f())
+    }
+
+    // the moon leans in for a closer look (a bespoke move: it's the moon)
+    moon.dataset.react = 'bespoke'
+    const face = moon.querySelector('.rt-moon__face')
+    let moonTl = null
+    on(moon, 'pointerdown', () => {
+      if (moonTl?.isActive()) return
+      const lvl = (moonN++ % 3) + 1
+      sound.play('chime')
+      haptic(5)
+      const r = moon.getBoundingClientRect()
+      const sr = scene.getBoundingClientRect()
+      const k = 0.18 + 0.1 * lvl
+      const dx = (sr.left + sr.width / 2 - (r.left + r.width / 2)) * k
+      const dy = (sr.top + sr.height * 0.42 - (r.top + r.height / 2)) * k
+      moonTl = keep(gsap.timeline())
+      moonTl.to(moon, { x: dx, y: dy, scale: 1.25 + 0.25 * lvl, duration: reduced ? 0.01 : 0.7, ease: 'power2.inOut' })
+      if (lvl > 1) moonTl.to(face, { opacity: 1, duration: 0.3 }, '-=0.2')
+      if (lvl === 3) moonTl.call(() => say(t('rooftop.moon'), top(moon, 1), { small: t('rooftop.moonSmall'), below: true }))
+      moonTl.to({}, { duration: lvl === 3 ? 2.8 : 0.6 })
+      moonTl.to(face, { opacity: 0, duration: 0.3 })
+      moonTl.to(moon, { x: 0, y: 0, scale: 1, duration: reduced ? 0.01 : 1.1, ease: EASE.spring }, '<')
+    })
+    offs.push(() => {
+      say.clear()
+      bits.forEach((b) => b.remove())
+      bits.clear()
+    })
 
     // ── layout: terrace drawn for this width, constellations fitted into the sky above it ──
-    let pokeOffs = []
+    let unwire = () => {}
     function place() {
       const W = root.clientWidth
       const H = root.clientHeight
       if (!W || !H) return
       const portrait = H >= W * 1.05
       const k = portrait ? clamp(Math.min(W / 390, H / 720), 0.8, 1.45) : clamp(H / 560, 0.62, 1.35)
-      const terr = terraceSVG({ w: W, k })
-      pokeOffs.forEach((f) => f())
+      const terr = terraceSVG({ w: W, k, tea: teaShown })
+      unwire()
       terraceWrap.innerHTML = terr.svg
       terraceWrap.style.height = `${terr.height}px`
-      pokeOffs = [...terraceWrap.querySelectorAll('[data-poke]')].map((el) => poke(el))
+      unwire = wireTerrace()
       railY = H - TERRACE.band * k
 
       const rr = root.getBoundingClientRect()
@@ -249,7 +505,7 @@ export default {
     offs.push(() => {
       ro?.disconnect()
       cancelAnimationFrame(raf)
-      pokeOffs.forEach((f) => f())
+      unwire()
     })
 
     // ── stars ──
@@ -542,7 +798,7 @@ export default {
       if (phase !== 'wish') return
       phase = 'done'
       wishPanel.classList.remove('is-holding')
-      guide.set([])
+      retarget()
       const p = centre(wishBtn)
       const tl = keep(moment())
       beat(tl, 'sparkle', 0)
@@ -567,7 +823,7 @@ export default {
         backBtn.hidden = false
       })
       tl.fromTo(backBtn, { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: T.quick * 1.6, ease: EASE.spring })
-      tl.call(() => guide.set([backBtn]))
+      tl.call(() => retarget())
     }
 
     // ── pointer: stars (tap, or slide a finger through them) ──
@@ -603,7 +859,7 @@ export default {
     on(shoot, 'click', (e) => e.detail === 0 && catchStar())
 
     // polaroid: button, veil, Escape
-    offs.push(press(polClose), press(backBtn), poke(moon))
+    offs.push(press(polClose), press(backBtn))
     on(polClose, 'click', closePolaroid)
     on(veil, 'click', closePolaroid)
     on(window, 'keydown', (e) => e.key === 'Escape' && closePolaroid())

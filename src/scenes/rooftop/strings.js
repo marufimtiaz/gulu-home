@@ -18,4 +18,23 @@ export default {
   hold: 'press and hold, and wish',
   holding: 'keep holding…',
   wishStar: 'the wishing star — press and hold',
+  // scenery payoffs (Task 17)
+  mew: 'mrrp.',
+  scratch: '"scratch my back."',
+  scratchSmall: 'she learned that from you.',
+  echo: [
+    ['Gulu…', 'ulu…', 'lu…'],
+    ['Puchu…', 'uchu…', 'chu…'],
+    ['Susu…', 'usu…', 'su…'],
+  ],
+  chain: 'Gulu → Puchu → Susu',
+  chainSmall: 'yes, it\'s a chain.',
+  noni: 'careful — handle with care.',
+  noniSmall: 'like a certain Putuler Noni.',
+  tea: 'two cups of tea, still hot.',
+  teaSmall: 'keep talking?',
+  city: 'half past four, and the whole city\'s awake.',
+  citySmall: 'like us, once.',
+  moon: 'the moon leaned in.',
+  moonSmall: 'it wanted a better look at you, {nickname}.',
 }

@@ -226,3 +226,60 @@ test('Bengali: the garden speaks Bengali, years in Bengali numerals', async ({ p
   await shot(page, 'garden-bn-future')
   expect(errors).toEqual([])
 })
+
+// ── Task 17: scenery answers like what it is, with payoffs ──
+test('every piece of garden scenery declares its reaction, and answers without errors', async ({ page }) => {
+  const errors = collectErrors(page)
+  await page.setViewportSize({ width: 1920, height: 1080 }) // wide: the well, bench, cat, pot, door are on screen
+  await open(page, 'garden')
+  const missing = await page.evaluate(() =>
+    [...document.querySelectorAll('.g-back .pk, .g-back .pk-swing, .g-fence .picket, [data-tag], [data-tree], [data-sapling]')]
+      .filter((el) => !el.dataset.react)
+      .map((el) => el.getAttribute('class')),
+  )
+  expect(missing).toEqual([])
+  for (const sel of ['.g-back .fl .fl-head', '.g-back .wild', '.g-back .shroom', '.g-post .lantern', '.g-moon .moon-disc', '.g-back .rtree', '.g-well .g-water', '.g-back .g-bench', '.g-gift__box', '.g-cat', '.g-pot', '.g-pipe', '.g-door', '.picket[data-k="3"]']) {
+    const b = await page.locator(sel).first().boundingBox()
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height * 0.5)
+    await page.waitForTimeout(80)
+  }
+  await page.waitForTimeout(300)
+  expect(errors).toEqual([])
+})
+
+test('the fence is a xylophone: left to right it plays A Thousand Years and the garden sings along', async ({ page }) => {
+  await open(page, 'garden')
+  for (let k = 0; k < 8; k++) {
+    const b = await page.locator(`.picket[data-k="${k}"]`).boundingBox()
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height * 0.12)
+    await page.waitForTimeout(120)
+  }
+  await expect(page.locator('[data-say]')).toContainText('a thousand yearsss')
+  await expect(page.locator('[data-say]')).toContainText('Gulu')
+})
+
+test('the moon gets shy; the third tap calls it Sensitive', async ({ page }) => {
+  await open(page, 'garden')
+  for (let i = 0; i < 3; i++) {
+    const b = await page.locator('.g-moon .moon-disc').boundingBox()
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2)
+    await page.waitForTimeout(150)
+  }
+  await expect(page.locator('[data-say]')).toContainText('Sensitive')
+})
+
+test('toadstools puff spores; flowers wake and, once a few are awake, all of them do', async ({ page }) => {
+  await open(page, 'garden')
+  const shroom = await page.locator('.g-back .shroom').first().boundingBox()
+  await page.mouse.click(shroom.x + shroom.width / 2, shroom.y + shroom.height * 0.3)
+  await expect(page.locator('.g-spore').first()).toBeAttached()
+  const vw = page.viewportSize().width
+  const heads = await page.locator('.g-back .fl .fl-head').evaluateAll((els, w) => els.map((e) => e.getBoundingClientRect().toJSON()).filter((r) => r.left > 0 && r.right < w), vw)
+  for (let i = 0; i < 4; i++) {
+    const r = heads[i % heads.length]
+    await page.mouse.click(r.x + r.width / 2, r.y + r.height / 2)
+    await page.waitForTimeout(100)
+  }
+  await expect(page.locator('[data-say]')).toContainText('you woke up every flower')
+  await expect.poll(() => page.locator('.g-back .fl.fl--awake').count()).toBe(await page.locator('.g-back .fl').count())
+})

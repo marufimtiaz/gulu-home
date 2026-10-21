@@ -38,7 +38,7 @@ function swag(a, b, sag, n) {
  * The terrace across the bottom of the screen, `w` px wide, scaled by `k`.
  * Returned svg is `height` px tall; the railing top sits `rise` px below its top edge.
  */
-export function terraceSVG({ w, k = 1 }) {
+export function terraceSVG({ w, k = 1, tea = false }) {
   const band = TERRACE.band * k
   const rise = Math.max(TERRACE.rise, TERRACE.city) * k
   const H = band + rise
@@ -56,7 +56,9 @@ export function terraceSVG({ w, k = 1 }) {
     if (rand() > 0.5) city += `<rect x="${r1(x + 4 * k + rand() * (bw - 16 * k))}" y="${r1(top - 6 * k)}" width="${r1(9 * k)}" height="${r1(6 * k)}" rx="${r1(2 * k)}"/>`
     for (let wy = top + 7 * k; wy < rail - 4 * k; wy += 11 * k) {
       for (let wx = x + 5 * k; wx < x + bw - 6 * k; wx += 9 * k) {
-        if (rand() > 0.88) wins += `<rect x="${r1(wx)}" y="${r1(wy)}" width="${r1(3.5 * k)}" height="${r1(4.5 * k)}"/>`
+        const v = rand()
+        if (v > 0.88) wins += `<rect x="${r1(wx)}" y="${r1(wy)}" width="${r1(3.5 * k)}" height="${r1(4.5 * k)}"/>`
+        else if (v > 0.6) wins += `<rect class="rt-win--off" x="${r1(wx)}" y="${r1(wy)}" width="${r1(3.5 * k)}" height="${r1(4.5 * k)}"/>`
       }
     }
     x += bw + rand() * 5 * k
@@ -77,7 +79,7 @@ export function terraceSVG({ w, k = 1 }) {
     balusters += `<rect x="${r1(x - 2.2 * k)}" y="${r1(rail + 7 * k)}" width="${r1(4.4 * k)}" height="${r1(34 * k)}" rx="${r1(1.5 * k)}"/>`
   }
   const railing = `
-    <g class="rt-railing">
+    <g class="rt-railing" data-poke="rail">
       <rect class="rt-shadow" x="-10" y="${r1(rail + 4 * k)}" width="${w + 20}" height="${r1(band)}"/>
       <g class="rt-baluster">${balusters}</g>
       <rect class="rt-rail" x="-10" y="${r1(rail)}" width="${w + 20}" height="${r1(8 * k)}" rx="${r1(2 * k)}"/>
@@ -92,18 +94,25 @@ export function terraceSVG({ w, k = 1 }) {
   const px = Math.min(hutR + 26 * k, w * 0.3)
   const pot = `
     <g class="rt-pot" data-poke="pot">
-      <path class="rt-leaf" d="M${r1(px)} ${r1(rail - 12 * k)} q${r1(-14 * k)} ${r1(-6 * k)} ${r1(-12 * k)} ${r1(-20 * k)} q${r1(10 * k)} ${r1(4 * k)} ${r1(12 * k)} ${r1(20 * k)} q${r1(2 * k)} ${r1(-18 * k)} ${r1(14 * k)} ${r1(-24 * k)} q${r1(2 * k)} ${r1(16 * k)} ${r1(-14 * k)} ${r1(24 * k)} q${r1(12 * k)} ${r1(-10 * k)} ${r1(18 * k)} ${r1(-6 * k)} q${r1(-6 * k)} ${r1(10 * k)} ${r1(-18 * k)} ${r1(6 * k)} Z"/>
+      <path class="rt-leaf" data-leaf d="M${r1(px)} ${r1(rail - 12 * k)} q${r1(-14 * k)} ${r1(-6 * k)} ${r1(-12 * k)} ${r1(-20 * k)} q${r1(10 * k)} ${r1(4 * k)} ${r1(12 * k)} ${r1(20 * k)} q${r1(2 * k)} ${r1(-18 * k)} ${r1(14 * k)} ${r1(-24 * k)} q${r1(2 * k)} ${r1(16 * k)} ${r1(-14 * k)} ${r1(24 * k)} q${r1(12 * k)} ${r1(-10 * k)} ${r1(18 * k)} ${r1(-6 * k)} q${r1(-6 * k)} ${r1(10 * k)} ${r1(-18 * k)} ${r1(6 * k)} Z"/>
       <path class="rt-clay" d="M${r1(px - 11 * k)} ${r1(rail - 13 * k)} h${r1(22 * k)} l${r1(-3 * k)} ${r1(14 * k)} h${r1(-16 * k)} Z"/>
       <rect class="rt-clay" x="${r1(px - 13 * k)}" y="${r1(rail - 15 * k)}" width="${r1(26 * k)}" height="${r1(5 * k)}" rx="${r1(1.5 * k)}"/>
+      <rect class="rt-hit" x="${r1(px - 22 * k)}" y="${r1(rail - 46 * k)}" width="${r1(44 * k)}" height="${r1(48 * k)}"/>
     </g>`
 
   // ── the cat on the railing, back to us, watching the sky ──
   const cx = Math.min(Math.max(w * 0.56, hutR + 80 * k), tankL - 40 * k)
   const cat = `
     <g class="rt-cat" data-poke="cat" transform="translate(${r1(cx)} ${r1(rail + 1)}) scale(${r1(k * 100) / 100})">
-      <path class="rt-cat__tail" d="M6 -2 C14 6 18 24 10 34 C6 40 12 46 16 42" />
-      <path class="rt-cat__body" d="M-12 0 C-15 -12 -10 -22 -6 -25 L-8 -36 L-1 -29 Q2 -30 5 -29 L11 -36 L10 -25 C16 -20 18 -10 13 0 Z"/>
-      <rect class="rt-hit" x="-22" y="-44" width="44" height="50"/>
+      <g class="rt-cat__walk"><g class="rt-cat__sit">
+        <path class="rt-cat__tail" d="M6 -2 C14 6 18 24 10 34 C6 40 12 46 16 42" />
+        <path class="rt-cat__body" d="M-13 0 C-16 -9 -13 -18 -7 -20 C-3 -21 3 -21 7 -20 C13 -18 16 -9 13 0 Z"/>
+        <g class="rt-cat__head">
+          <path class="rt-cat__body" d="M-8 -21 C-9.5 -26 -8.5 -32 -7.5 -36 L-2.5 -31.5 Q0 -32.5 2.5 -31.5 L7.5 -36 C8.5 -32 9.5 -26 8 -21 C6 -16 -6 -16 -8 -21 Z"/>
+          <g class="rt-cat__eyes"><ellipse cx="-3.3" cy="-25" rx="1.8" ry="2.2"/><ellipse cx="3.3" cy="-25" rx="1.8" ry="2.2"/><path d="M-1 -21.6 h2 l-1 1.2 Z"/></g>
+        </g>
+      </g></g>
+      <rect class="rt-hit" x="-24" y="-48" width="48" height="54"/>
     </g>`
 
   // ── the stair hut (chilekotha), its door ajar on warm light ──
@@ -122,6 +131,7 @@ export function terraceSVG({ w, k = 1 }) {
         <ellipse class="rt-spill" cx="${r1(hutDoorL + hutDoorW / 2)}" cy="${r1(doorTop + 26 * k)}" rx="${r1(70 * k)}" ry="${r1(56 * k)}"/>
         <path class="rt-doorlight" d="M${r1(hutDoorL)} ${r1(H + 4)} V${r1(doorTop + hutDoorW / 2)} a${r1(hutDoorW / 2)} ${r1(hutDoorW / 2)} 0 0 1 ${r1(hutDoorW)} 0 V${r1(H + 4)} Z"/>
         <path class="rt-stairs" d="M${r1(hutDoorL + 4 * k)} ${r1(H)} h${r1(10 * k)} v${r1(-12 * k)} h${r1(10 * k)} v${r1(-12 * k)} h${r1(10 * k)} v${r1(-12 * k)} h${r1(8 * k)}"/>
+        ${teaSVG(hutDoorL + 33 * k, H - 36 * k, k, tea)}
         <path class="rt-leafdoor" d="M${r1(hutDoorL + hutDoorW)} ${r1(H + 4)} V${r1(doorTop + hutDoorW / 2)} l${r1(16 * k)} ${r1(-10 * k)} V${r1(H + 4)} Z"/>
         <path class="rt-outline" d="M${r1(hutDoorL)} ${r1(H + 4)} V${r1(doorTop + hutDoorW / 2)} a${r1(hutDoorW / 2)} ${r1(hutDoorW / 2)} 0 0 1 ${r1(hutDoorW)} 0 V${r1(H + 4)}"/>
         <path class="rt-ink" d="M${r1(hutDoorL + hutDoorW / 2)} ${r1(hb + 4 * k)} v${r1(8 * k)}"/>
@@ -138,10 +148,12 @@ export function terraceSVG({ w, k = 1 }) {
     <g class="rt-tank" data-poke="tank">
       <path class="rt-ink" d="M${r1(tx + 8 * k)} ${r1(H + 2)} V${r1(tt + 44 * k)} M${r1(tx + tw - 8 * k)} ${r1(H + 2)} V${r1(tt + 44 * k)} M${r1(tx + 8 * k)} ${r1(tt + 70 * k)} L${r1(tx + tw - 8 * k)} ${r1(tt + 100 * k)} M${r1(tx + tw - 8 * k)} ${r1(tt + 70 * k)} L${r1(tx + 8 * k)} ${r1(tt + 100 * k)}"/>
       <rect class="rt-shadow" x="${r1(tx + 5 * k)}" y="${r1(tt + 5 * k)}" width="${r1(tw)}" height="${r1(46 * k)}" rx="${r1(8 * k)}"/>
+      <g class="rt-drum">
       <rect class="rt-tankbody" x="${r1(tx)}" y="${r1(tt)}" width="${r1(tw)}" height="${r1(46 * k)}" rx="${r1(8 * k)}"/>
       <path class="rt-faint" d="M${r1(tx)} ${r1(tt + 16 * k)} H${r1(tx + tw)} M${r1(tx)} ${r1(tt + 31 * k)} H${r1(tx + tw)}"/>
       <rect class="rt-tanklid" x="${r1(tx + tw / 2 - 14 * k)}" y="${r1(tt - 7 * k)}" width="${r1(28 * k)}" height="${r1(8 * k)}" rx="${r1(2 * k)}"/>
       <path class="rt-shine" d="M${r1(tx + 8 * k)} ${r1(tt + 10 * k)} v${r1(26 * k)}"/>
+      </g>
       <rect class="rt-hit" x="${r1(tx - 4 * k)}" y="${r1(tt - 10 * k)}" width="${r1(tw + 8 * k)}" height="${r1(64 * k)}"/>
     </g>`
 
@@ -154,16 +166,18 @@ export function terraceSVG({ w, k = 1 }) {
     strings.push(swag([a, rail + 2 * k], [b, rail + 2 * k], 11 * k, 5))
   }
   let wires = ''
+  let hits = ''
   let bulbs = ''
   let n = 0
   for (const s of strings) {
     wires += `<polyline points="${s.map((p) => p.map(r1).join(',')).join(' ')}"/>`
+    hits += `<polyline points="${s.map((p) => p.map(r1).join(',')).join(' ')}"/>`
     for (const [x, y] of s.slice(1, -1)) {
       bulbs += `<circle class="rt-fairy rt-fairy--${n % 5}" style="--i:${n}" cx="${r1(x)}" cy="${r1(y + 3 * k)}" r="${r1(2.8 * k)}"/>`
       n++
     }
   }
-  const fairy = `<g class="rt-lights"><g class="rt-wire">${wires}</g><g class="rt-bulbs">${bulbs}</g></g>`
+  const fairy = `<g class="rt-lights" data-poke="lights"><g class="rt-lights__hit">${hits}</g><g class="rt-wire">${wires}</g><g class="rt-bulbs">${bulbs}</g></g>`
 
   const svg = `
     <svg class="rt-terrace" width="${r1(w)}" height="${r1(H)}" viewBox="0 0 ${r1(w)} ${r1(H)}" aria-hidden="true" focusable="false">
@@ -174,8 +188,8 @@ export function terraceSVG({ w, k = 1 }) {
         <radialGradient id="rt-halo"><stop offset="0" class="rt-st-halo0"/><stop offset="1" class="rt-st-halo1"/></radialGradient>
         <linearGradient id="rt-door" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="rt-st-door0"/><stop offset="1" class="rt-st-door1"/></linearGradient>
       </defs>
-      <g class="rt-city">${city}</g>
-      <g class="rt-citywin">${wins}</g>
+      <g class="rt-cityg" data-poke="city"><g class="rt-city">${city}</g>
+      <g class="rt-citywin">${wins}</g></g>
       ${railing}
       ${pot}
       ${fairy}
@@ -184,6 +198,12 @@ export function terraceSVG({ w, k = 1 }) {
       ${hut}
     </svg>`
   return { svg, height: H, rise }
+}
+
+/** Two cups of tea, steaming, standing on the top stair (x = centre, y = the step). */
+function teaSVG(x, y, k, shown) {
+  const cup = (cx) => `<path class="rt-cup" d="M${r1(cx - 4 * k)} ${r1(y - 7 * k)} h${r1(8 * k)} l${r1(-1 * k)} ${r1(7 * k)} h${r1(-6 * k)} Z"/><path class="rt-ink" d="M${r1(cx + 4 * k)} ${r1(y - 5.5 * k)} q${r1(3 * k)} ${r1(1 * k)} 0 ${r1(4 * k)}"/><path class="rt-steam" d="M${r1(cx - 1 * k)} ${r1(y - 9 * k)} q${r1(-3 * k)} ${r1(-4 * k)} 0 ${r1(-8 * k)} q${r1(3 * k)} ${r1(-4 * k)} 0 ${r1(-8 * k)}"/>`
+  return `<g class="rt-tea" style="opacity:${shown ? 1 : 0}">${cup(x - 4.6 * k)}${cup(x + 4.8 * k)}</g>`
 }
 
 export function moonSVG() {
@@ -197,6 +217,7 @@ export function moonSVG() {
       <circle class="rt-moon__crater" cx="10" cy="6" r="4.2"/>
       <circle class="rt-moon__crater" cx="-4" cy="13" r="2.8"/>
       <path class="rt-moon__shine" d="M-21 -12 A24 24 0 0 1 -6 -24"/>
+      <g class="rt-moon__face"><path d="M-12 -2 q4 -4 8 0 M4 -2 q4 -4 8 0 M-6 8 q6 6 12 0"/><ellipse class="rt-moon__cheek" cx="-15" cy="6" rx="4" ry="2.4"/><ellipse class="rt-moon__cheek" cx="15" cy="6" rx="4" ry="2.4"/></g>
     </svg>`
 }
 

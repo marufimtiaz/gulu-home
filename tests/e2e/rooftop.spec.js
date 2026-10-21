@@ -325,3 +325,74 @@ test('fits and stays tappable at every screen size', async ({ page }, info) => {
   }
   expect(errors).toEqual([])
 })
+
+// ── Task 17: the terrace answers like what it is; the cat is a character ──
+test('every piece of rooftop scenery declares its reaction, and answers without errors', async ({ page }) => {
+  const errors = collectErrors(page)
+  await open(page, 'rooftop')
+  const missing = await page.evaluate(() => [...document.querySelectorAll('[data-poke]')].filter((el) => !el.dataset.react).map((el) => el.dataset.poke))
+  expect(missing).toEqual([])
+  expect(await page.locator('[data-poke]').count()).toBeGreaterThanOrEqual(8)
+  for (const sel of ['[data-poke="pot"] .rt-hit', '[data-poke="tank"] .rt-tankbody', '[data-poke="door"] .rt-hit', '[data-poke="city"] .rt-city rect', '[data-poke="rail"] .rt-wall', '.rt-moon .rt-moon__disc']) {
+    const b = await page.locator(sel).first().boundingBox()
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2)
+    await page.waitForTimeout(80)
+  }
+  await page.waitForTimeout(300)
+  expect(errors).toEqual([])
+})
+
+test('the cat looks round, mrrps, stretches, asks for a back scratch, then strolls off and comes back', async ({ page }) => {
+  await open(page, 'rooftop')
+  const tap = async () => {
+    const b = await page.locator('[data-poke="cat"] .rt-hit').boundingBox()
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2)
+  }
+  await tap()
+  await expect.poll(() => page.locator('.rt-cat__eyes').evaluate((e) => Number(getComputedStyle(e).opacity))).toBeGreaterThan(0.5)
+  await page.waitForTimeout(500)
+  await tap()
+  await expect(page.locator('[data-say]')).toContainText('mrrp')
+  await page.waitForTimeout(500)
+  await tap()
+  await page.waitForTimeout(500)
+  await tap()
+  await expect(page.locator('[data-say]')).toContainText('scratch my back')
+  await page.waitForTimeout(500)
+  await tap()
+  // off along the railing…
+  await expect.poll(() => page.locator('.rt-cat__walk').evaluate((e) => e.transform.baseVal.consolidate()?.matrix.e ?? 0), { timeout: 4000 }).toBeGreaterThan(60)
+  // …and home again
+  await expect.poll(() => page.locator('.rt-cat__walk').evaluate((e) => e.transform.baseVal.consolidate()?.matrix.e ?? 0), { timeout: 15_000 }).toBeLessThan(1)
+})
+
+test('the water tank echoes her nicknames back, then admits it is a chain', async ({ page }) => {
+  await open(page, 'rooftop')
+  const tap = async () => {
+    const b = await page.locator('[data-poke="tank"] .rt-tankbody').boundingBox()
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2)
+    await page.waitForTimeout(250)
+  }
+  await tap()
+  await tap()
+  await expect(page.locator('.rt-echo').first()).toContainText('Gulu')
+  await tap()
+  await tap()
+  await tap()
+  await expect(page.locator('[data-say]')).toContainText('chain')
+})
+
+test('the stair hut: third knock, two cups of tea on the step (and they stay)', async ({ page }) => {
+  await open(page, 'rooftop')
+  for (let i = 0; i < 3; i++) {
+    const b = await page.locator('[data-poke="door"] .rt-hit').boundingBox()
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2)
+    await page.waitForTimeout(150)
+  }
+  await expect(page.locator('[data-say]')).toContainText('two cups of tea')
+  await expect.poll(() => page.locator('.rt-tea').evaluate((e) => Number(getComputedStyle(e).opacity))).toBeGreaterThan(0.9)
+  // the terrace is redrawn on resize: the tea is still there
+  await page.setViewportSize({ width: 900, height: 700 })
+  await page.waitForTimeout(400)
+  expect(await page.locator('.rt-tea').evaluate((e) => Number(getComputedStyle(e).opacity))).toBeGreaterThan(0.9)
+})

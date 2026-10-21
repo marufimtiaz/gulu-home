@@ -58,12 +58,12 @@ function flower(x, y, s, kind, stem = 46, lean = 0) {
     <path class="g-stem" d="M0 0 C${r1(sx * 0.2 - 3)} ${r1(-stem * 0.4)} ${r1(sx + 3)} ${r1(-stem * 0.7)} ${sx} ${-stem}"/>
     <path class="g-leaf" d="M${r1(sx * 0.3)} ${r1(-stem * 0.38)} c-14 -2 -18 -12 -14 -15 c8 0 13 6 14 15 Z"/>
     <path class="g-leaf" d="M${r1(sx * 0.45)} ${r1(-stem * 0.55)} c13 -3 17 -13 13 -16 c-8 1 -12 7 -13 16 Z"/>
-    <g transform="translate(${sx} ${-stem})">
+    <g transform="translate(${sx} ${-stem})"><g class="fl-head">
       <circle class="fl-glow" r="17"/>
       ${petals}
       <circle class="fl-c" r="5.6"/>
       <circle class="fl-shine" cx="-1.8" cy="-1.8" r="1.8"/>
-    </g>
+    </g></g>
   </g></g>`
 }
 
@@ -146,7 +146,9 @@ export function gardenSVG() {
 
   // fence: pickets all the way along, vines and blooms climbing it (overgrown)
   let pickets = ''
-  for (let x = 30; x < 1360; x += 21) pickets += `<path d="M${x} ${G + 2} V${G - 46} l6 -9 l6 9 V${G + 2} Z"/>`
+  for (let x = 30, k = 0; x < 1360; x += 21, k++) {
+    pickets += `<g class="picket" data-k="${k}"><rect class="pk-hit" x="${x - 4.5}" y="${G - 58}" width="21" height="${60}"/><path d="M${x} ${G + 2} V${G - 46} l6 -9 l6 9 V${G + 2} Z"/></g>`
+  }
   let vine = 'M24 ' + (G - 32)
   for (let x = 24; x < 1360; x += 30) vine += ` q8 ${r1(-10 - rand() * 8)} 15 0 q7 ${r1(9 + rand() * 6)} 15 0`
   let vineBits = ''
@@ -177,7 +179,7 @@ export function gardenSVG() {
   // flowers: tall bday blooms in the bed along the fence (none where the soil and can sit)
   const kinds = ['rose', 'sun', 'tulip', 'blue', 'peach']
   const bed = [
-    [34, 440, 0.95, 54, -4], [62, 446, 0.8, 40, 5], [104, 444, 0.72, 34, -3],
+    [34, 440, 0.95, 40, -4], [62, 446, 0.8, 40, 5], [104, 444, 0.72, 34, -3],
     [372, 446, 0.92, 50, 4], [394, 452, 0.7, 36, -5],
     [430, 444, 0.9, 52, 3], [470, 448, 0.75, 38, -4], [610, 446, 0.95, 56, 3], [650, 450, 0.7, 34, -3],
     [770, 446, 0.88, 48, -4], [900, 448, 0.92, 52, 4], [940, 452, 0.7, 36, -2], [1060, 446, 0.85, 46, 3],
@@ -234,6 +236,8 @@ export function gardenSVG() {
       <circle class="moon-disc" cx="350" cy="56" r="21"/>
       <circle class="moon-crater" cx="343" cy="51" r="4"/><circle class="moon-crater" cx="356" cy="63" r="3"/><circle class="moon-crater" cx="357" cy="48" r="2"/>
       <path class="moon-shine" d="M336 47 a16 16 0 0 1 8 -9"/>
+      <circle class="moon-blush" cx="350" cy="56" r="21"/>
+      <ellipse class="moon-cheek" cx="341" cy="61" rx="4" ry="2.4"/><ellipse class="moon-cheek" cx="359" cy="61" rx="4" ry="2.4"/>
     </g>
 
     <!-- far: a hill and round trees past the fence -->
@@ -274,13 +278,14 @@ export function gardenSVG() {
       <rect class="p-wood" x="-52" y="-16" width="104" height="10" rx="4"/>
       <rect class="p-wood" x="-52" y="-44" width="104" height="8" rx="4"/><rect class="p-wood" x="-52" y="-32" width="104" height="8" rx="4"/>
       <rect class="p-wood" x="-46" y="-46" width="6" height="32" rx="2"/><rect class="p-wood" x="40" y="-46" width="6" height="32" rx="2"/>
-      <g class="g-gift" transform="translate(-14 -16)">
+    </g>
+      <g class="g-gift" transform="translate(-14 -16)"><g class="pk g-gift__box">
         <rect class="gift-box" x="-11" y="-18" width="22" height="18" rx="2"/>
-        <rect class="gift-lid" x="-13" y="-22" width="26" height="6" rx="2"/>
-        <rect class="gift-ribbon" x="-2.5" y="-22" width="5" height="22"/>
-        <path class="gift-ribbon" d="M0 -22 C-6 -32 -14 -28 -9 -23 Z M0 -22 C6 -32 14 -28 9 -23 Z"/>
-      </g>
-    </g></g>
+        <rect class="gift-ribbon" x="-2.5" y="-18" width="5" height="18"/>
+        <g class="gift-top"><rect class="gift-lid" x="-13" y="-22" width="26" height="6" rx="2"/>
+        <path class="gift-ribbon" d="M0 -22 C-6 -32 -14 -28 -9 -23 Z M0 -22 C6 -32 14 -28 9 -23 Z"/></g>
+      </g></g>
+    </g>
     ${roundTree(900, G + 4, 0.95, 'a')}${roundTree(1040, G + 8, 0.75, 'a')}
 
     <!-- the back of the house, on the left -->
@@ -294,9 +299,12 @@ export function gardenSVG() {
       <path class="p-trim" d="M-1000 132 H32 V142 H-1000 Z"/>
       <circle class="p-brass" cx="24" cy="150" r="2.6"/>
       <!-- drainpipe -->
+      <g class="pk g-pipe">
       <rect class="p-pipe" x="12" y="142" width="8" height="${G - 142}"/>
       <rect class="p-pipe" x="9" y="${G - 14}" width="14" height="14" rx="3"/>
       <rect class="p-pipe" x="10" y="200" width="12" height="6" rx="2"/><rect class="p-pipe" x="10" y="320" width="12" height="6" rx="2"/>
+      <circle class="pipe-drop" cx="16" cy="${G - 2}" r="2.6"/>
+      </g>
       <!-- a lit back window with a cat on the sill (wide screens) -->
       <g class="g-backwin">
         <rect class="win-glow" x="-176" y="200" width="104" height="112" rx="6"/>
@@ -312,10 +320,13 @@ export function gardenSVG() {
       </g>
       <!-- the back door, a step, a potted plant -->
       <g class="g-backdoor">
+        <g class="pk g-door">
         <rect class="p-door" x="-330" y="300" width="62" height="${G - 300}" rx="4"/>
         <rect class="win-light win-light--dim" x="-320" y="312" width="42" height="30" rx="3"/>
         <circle class="p-brass" cx="-278" cy="372" r="3"/>
+        </g>
         <rect class="p-step" x="-342" y="${G - 6}" width="86" height="10" rx="2"/>
+        <g class="g-key" transform="translate(-206 ${G - 2})" style="opacity:0"><circle class="p-brass" r="4.2"/><circle class="key-hole" r="1.5"/><path class="p-brass" d="M4 -1.4 H17 V1.4 H15 V4.4 H12.6 V1.4 H4 Z"/></g>
         <g transform="translate(-226 ${G + 2})"><g class="pk g-pot">
           <path class="p-potc" d="M-14 0 L-17 -24 H17 L14 0 Z"/>
           <path class="g-leaf" d="M0 -24 c-16 -6 -22 -24 -14 -28 c10 4 14 14 14 28 Z M0 -24 c14 -8 22 -26 14 -30 c-10 4 -14 16 -14 30 Z M0 -24 c-2 -14 2 -30 6 -34 c3 10 0 24 -6 34 Z"/>
