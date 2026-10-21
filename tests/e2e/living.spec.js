@@ -153,3 +153,86 @@ test('leaving the room removes its debug hook', async ({ page }) => {
   await expect(page.locator('.scene[data-scene="house"]')).toBeVisible()
   await expect.poll(() => page.evaluate(() => typeof window.__living)).toBe('undefined')
 })
+
+// ── responsiveness: every interactive thing inside the screen and ≥ 44 px, at every size ──
+const SIZES = [
+  [360, 640], [390, 844], [412, 915], [844, 390], [768, 1024], [1280, 800], [1920, 1080],
+]
+
+async function expectTappable(page, selector, vp, { min = 44 } = {}) {
+  const box = await page.locator(selector).first().boundingBox()
+  expect(box, selector).not.toBeNull()
+  expect(box.x, `${selector} left`).toBeGreaterThanOrEqual(-1)
+  expect(box.y, `${selector} top`).toBeGreaterThanOrEqual(-1)
+  expect(box.x + box.width, `${selector} right`).toBeLessThanOrEqual(vp.width + 1)
+  expect(box.y + box.height, `${selector} bottom`).toBeLessThanOrEqual(vp.height + 1)
+  if (min) {
+    expect(box.width, `${selector} width`).toBeGreaterThanOrEqual(min)
+    expect(box.height, `${selector} height`).toBeGreaterThanOrEqual(min)
+  }
+}
+
+test('every size: clock, phone, text card and counter are on screen and big enough', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'sizes are set explicitly; one project is enough')
+  test.setTimeout(240_000)
+  const errors = collectErrors(page)
+  await open(page, 'living')
+  for (const [width, height] of SIZES) {
+    const vp = { width, height }
+    await page.setViewportSize(vp)
+    await page.waitForTimeout(300)
+    await expectTappable(page, '[data-face]', vp)
+    await expectTappable(page, '[data-plate]', vp, { min: 0 })
+    for (const i of [0, 1, 2]) await expectTappable(page, `[data-frame="${i}"]`, vp, { min: 0 })
+    await shot(page, `living-${width}x${height}-now`)
+    await seek(page, 0)
+    await expect(page.locator('.scene[data-scene="living"]')).toHaveClass(/living--dawn/)
+    await page.waitForTimeout(1900)
+    await expectTappable(page, '[data-phone]', vp)
+    await shot(page, `living-${width}x${height}-dawn`)
+    await page.locator('[data-phone]').click()
+    await expect(page.locator('[data-bubble]')).toBeVisible()
+    await page.waitForTimeout(1900)
+    await expectTappable(page, '.lv-phonecard__phone', vp, { min: 0 })
+    await expectTappable(page, '[data-bubble]', vp, { min: 0 })
+    await shot(page, `living-${width}x${height}-text`)
+    await page.locator('[data-phonecard]').click() // skip the wait
+    await expect(page.locator('[data-counter]')).toBeVisible({ timeout: 12_000 })
+    await page.waitForTimeout(800)
+    await expectTappable(page, '[data-counter]', vp, { min: 0 })
+    await expectTappable(page, '[data-counter] [data-back]', vp)
+    await shot(page, `living-${width}x${height}-done`)
+  }
+  expect(errors).toEqual([])
+})
+
+test('pressing the clock and poking things respond at once', async ({ page }) => {
+  const errors = collectErrors(page)
+  await open(page, 'living')
+  const { x, y } = await clockCentre(page)
+  await page.mouse.move(x, y - 30)
+  await page.mouse.down()
+  await page.waitForTimeout(100)
+  const pressed = await page.locator('[data-clock]').getAttribute('transform')
+  expect(pressed).toMatch(/matrix|scale/)
+  await page.mouse.up()
+  // a decorative frame swings when tapped
+  const fb = await page.locator('[data-frame="1"]').boundingBox()
+  await page.mouse.click(fb.x + fb.width / 2, fb.y + fb.height / 2)
+  await page.waitForTimeout(60)
+  const poked = await page.locator('[data-poke]:has([data-frame="1"])').getAttribute('transform')
+  expect(poked).toMatch(/matrix|rotate/)
+  expect(errors).toEqual([])
+})
+
+test('idle for a few seconds → the clock nudges itself', async ({ page }) => {
+  await open(page, 'living')
+  const deg = async () => parseFloat((await page.locator('[data-hand="minute"]').getAttribute('transform')).slice(7))
+  await page.waitForTimeout(3500)
+  const samples = []
+  for (let i = 0; i < 70; i++) {
+    samples.push(await deg())
+    await page.waitForTimeout(50)
+  }
+  expect(Math.max(...samples) - Math.min(...samples)).toBeGreaterThan(3)
+})

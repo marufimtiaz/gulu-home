@@ -6,6 +6,20 @@
 export const VIEW = { w: 1200, h: 866 }
 export const CLOCK = { x: 604, y: 214, r: 100 }
 export const PLANT = { x: 441, y: 662 }
+// what must always be on screen: clock (with its grab ring), plate, frames, sofa, phone
+export const SAFE = { x: 400, y: 84, w: 408, h: 640 }
+// backdrop bounds (wall, floor, overlays) — well past the viewBox in every direction
+const X0 = -1200, Y0 = -700, BW = 3600, BH = 2400
+
+function planks() {
+  let d = ''
+  for (const y of [760, 806, 852, 898, 944]) d += `M${X0} ${y} H${X0 + BW} `
+  const rows = [718, 760, 806, 852, 898, 944]
+  rows.slice(0, -1).forEach((y, r) => {
+    for (let x = X0 + ((r * 130) % 280); x < X0 + BW; x += 280) d += `M${x} ${y} V${rows[r + 1]} `
+  })
+  return d
+}
 export const FRAMES = [
   { x: 486, y: 402, tilt: -4, wood: 'mustard' },
   { x: 600, y: 396, tilt: 2, wood: 'berry' },
@@ -28,7 +42,7 @@ function plant() {
     [x - 1, y, x - 18, 630, x - 48, 626],
     [x + 1, y, x + 18, 636, x + 40, 632],
   ]
-  return `
+  return `<g data-poke="bottom">
     <g class="lv-plant" data-plant>
       <g class="lv-plant__sway">
         ${stems.map(([a, b, c, d, e, f]) => `<path class="lv-stem" d="M${a} ${b} Q${c} ${d} ${e} ${f}"/>`).join('')}
@@ -43,7 +57,7 @@ function plant() {
     </g>
     <path class="lv-pot ink" d="M${x - 27} ${y + 2} L${x + 27} ${y + 2} L${x + 21} ${y + 60} L${x - 21} ${y + 60} Z"/>
     <rect class="lv-pot ink" x="${x - 31}" y="${y - 6}" width="62" height="13" rx="3"/>
-    <path class="lv-pot-band" d="M${x - 25} ${y + 22} L${x + 25} ${y + 22}"/>`
+    <path class="lv-pot-band" d="M${x - 25} ${y + 22} L${x + 25} ${y + 22}"/></g>`
 }
 
 function windowArt() {
@@ -61,7 +75,7 @@ function windowArt() {
     [ix + 6, iy + 34], [ix + 20, iy + 46], [ix + 12, iy + 60], [ix + 32, iy + 54], [ix + 26, iy + 30], [ix + 40, iy + 66],
   ]
   return `
-    <g class="lv-window">
+    <g class="lv-window" data-poke="top">
       <rect class="lv-pop" x="${x + 5}" y="${y + 5}" width="${w}" height="${h}" rx="6"/>
       <rect class="lv-frame-paper ink" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/>
       <g clip-path="url(#lv-sky-clip)">
@@ -108,6 +122,9 @@ function clock() {
       <circle class="lv-hit" cx="${x}" cy="${y}" r="${r + 26}"/>
       <path class="lv-hint-arc" data-hint-arc d="M${ax.toFixed(1)} ${ay.toFixed(1)} A${ar} ${ar} 0 0 0 ${bx.toFixed(1)} ${by.toFixed(1)} m-2 -12 l2 12 l11 -5"/>
       <circle class="lv-trail" data-trail cx="${x}" cy="${y}" r="${r + 8}" opacity="0"/>
+      <circle class="lv-progress-track" cx="${x}" cy="${y}" r="${r + 13}"/>
+      <circle class="lv-progress" data-progress cx="${x}" cy="${y}" r="${r + 13}" pathLength="1" stroke-dasharray="0 2"
+        transform="matrix(-1 0 0 1 ${2 * x} 0) rotate(-90 ${x} ${y})"/>
       <circle class="lv-pop" cx="${x + 6}" cy="${y + 6}" r="${r}"/>
       <circle class="lv-rim ink" cx="${x}" cy="${y}" r="${r}"/>
       <circle class="lv-rim-in" cx="${x}" cy="${y}" r="${r - 7}"/>
@@ -121,7 +138,7 @@ function clock() {
       <circle class="lv-cap ink-thin" cx="${x}" cy="${y}" r="7"/>
     </g>
     <path class="lv-chain" d="M${x} ${y + r} V${y + r + 18}"/>
-    <g class="lv-plate" data-plate>
+    <g class="lv-plate" data-plate data-poke="top">
       <rect class="lv-pop" x="${x - 78 + 4}" y="${y + r + 18 + 4}" width="156" height="50" rx="9"/>
       <rect class="lv-plate__card ink" x="${x - 78}" y="${y + r + 18}" width="156" height="50" rx="9"/>
       <circle class="lv-nailhead" cx="${x}" cy="${y + r + 24}" r="2.4"/>
@@ -132,7 +149,7 @@ function clock() {
 
 function lamp() {
   return `
-    <g class="lv-lamp">
+    <g class="lv-lamp" data-poke="top">
       <rect class="lv-frame-paper ink" x="756" y="196" width="16" height="30" rx="4"/>
       <path class="lv-lamp-arm" d="M764 210 Q786 168 744 132"/>
       <path class="lv-bulb" data-bulb d="M736 152 a8 8 0 0 0 16 0 Z"/>
@@ -146,7 +163,7 @@ function frames() {
     const left = x - FW / 2
     const top = y + 6
     return `
-    <g class="lv-hang">
+    <g data-poke="top"><g class="lv-hang">
       <path class="lv-string" d="M${x - 30} ${top + 2} L${x} ${y - 16} L${x + 30} ${top + 2}"/>
       <circle class="lv-nailhead" cx="${x}" cy="${y - 16}" r="3"/>
     </g>
@@ -162,13 +179,13 @@ function frames() {
         <image data-photo x="${left + 13}" y="${top + 13}" width="${FW - 26}" height="${FH - 26}" preserveAspectRatio="xMidYMid slice" clip-path="url(#lv-photo-clip-${i})" />
         <rect class="lv-photo-edge" x="${left + 13}" y="${top + 13}" width="${FW - 26}" height="${FH - 26}"/>
       </g>
-    </g>`
+    </g></g>`
   }).join('')
 }
 
 function sofa() {
   return `
-    <g class="lv-sofa">
+    <g class="lv-sofa" data-poke="squash">
       <rect class="lv-sofa-back ink" x="452" y="556" width="296" height="98" rx="24"/>
       <path class="lv-seam" d="M600 566 V640"/>
       <path class="lv-tuft" d="M526 590 h0.1 M674 590 h0.1 M526 620 h0.1 M674 620 h0.1"/>
@@ -178,14 +195,14 @@ function sofa() {
       <rect class="lv-sofa-arm ink" x="422" y="600" width="56" height="106" rx="24"/>
       <rect class="lv-sofa-arm ink" x="722" y="600" width="56" height="106" rx="24"/>
       <path class="lv-leg" d="M456 706 v12 M744 706 v12"/>
-      <g transform="rotate(12 694 608)">
+      <g data-poke="squash"><g transform="rotate(12 694 608)">
         <rect class="lv-pillow ink" x="668" y="584" width="54" height="48" rx="12"/>
         <path class="lv-pillow-heart" d="M695 612 c-5 -5 -11 -1.5 -11 3 c0 5 11 10 11 10 c0 0 11 -5 11 -10 c0 -4.5 -6 -8 -11 -3 z" transform="translate(0 -8)"/>
-      </g>
-      <g transform="rotate(-10 506 612)">
+      </g></g>
+      <g data-poke="squash"><g transform="rotate(-10 506 612)">
         <rect class="lv-pillow lv-pillow--sage ink" x="482" y="590" width="48" height="44" rx="12"/>
         <path class="lv-pillow-stripe" d="M486 604 h40 M486 614 h40 M486 624 h40"/>
-      </g>
+      </g></g>
     </g>`
 }
 
@@ -196,7 +213,7 @@ function extras() {
   ]
   const books2 = [[196, 24, 'mustard'], [222, 30, 'sky'], [254, 22, 'berry'], [278, 26, 'sage']]
   return `
-    <g class="lv-shelf">
+    <g class="lv-shelf" data-poke="bottom">
       <rect class="lv-pop" x="186" y="386" width="170" height="330" rx="4"/>
       <rect class="lv-wood lv-wood--mustard ink" x="180" y="380" width="170" height="330" rx="4"/>
       <rect class="lv-shelf-in ink-thin" x="190" y="390" width="150" height="310"/>
@@ -209,14 +226,14 @@ function extras() {
       <rect class="lv-frame-paper ink" x="270" y="652" width="54" height="48" rx="3"/>
       <path class="lv-empty-heart" d="M297 680 c-5 -5 -11 -1.5 -11 3 c0 5 11 10 11 10 c0 0 11 -5 11 -10 c0 -4.5 -6 -8 -11 -3 z" transform="translate(0 -6)"/>
     </g>
-    <g class="lv-hoop">
+    <g class="lv-hoop" data-poke="top">
       <circle class="lv-pop" cx="904" cy="424" r="48"/>
       <circle class="lv-hoop-cloth ink" cx="900" cy="420" r="48"/>
       <circle class="lv-hoop-ring" cx="900" cy="420" r="48"/>
       <path class="lv-stitch" d="M900 444 c-14 -12 -30 -22 -30 -36 c0 -10 8 -16 16 -16 c6 0 11 4 14 9 c3 -5 8 -9 14 -9 c8 0 16 6 16 16 c0 14 -16 24 -30 36 z"/>
       <rect class="lv-hoop-screw ink-thin" x="894" y="364" width="12" height="10" rx="2"/>
     </g>
-    <g class="lv-table">
+    <g class="lv-table" data-poke="bottom">
       <rect class="lv-pop" x="844" y="628" width="130" height="14" rx="4"/>
       <rect class="lv-wood lv-wood--berry ink" x="840" y="624" width="130" height="14" rx="4"/>
       <path class="lv-leg" d="M856 638 V718 M954 638 V718 M856 690 H954"/>
@@ -231,7 +248,7 @@ function extras() {
 export function roomSVG() {
   const { w, h } = VIEW
   return `
-<svg class="lv-art" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid slice" aria-hidden="false">
+<svg class="lv-art" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" aria-hidden="false">
   <defs>
     <pattern id="lv-paper-dots" width="28" height="28" patternUnits="userSpaceOnUse">
       <circle cx="7" cy="7" r="1.6" class="lv-dot"/><circle cx="21" cy="21" r="1.6" class="lv-dot"/>
@@ -264,18 +281,19 @@ export function roomSVG() {
     ${FRAMES.map(({ x, y }, i) => `<clipPath id="lv-photo-clip-${i}"><rect x="${x - FW / 2 + 13}" y="${y + 6 + 13}" width="${FW - 26}" height="${FH - 26}"/></clipPath>`).join('')}
   </defs>
 
-  <rect class="lv-wall" x="0" y="0" width="${w}" height="718"/>
-  <rect fill="url(#lv-paper-dots)" x="0" y="0" width="${w}" height="718"/>
+  <!-- wall and floor run far past the viewBox: the camera (index.js fit) may show more -->
+  <rect class="lv-wall" x="${X0}" y="${Y0}" width="${BW}" height="${718 - Y0}"/>
+  <rect fill="url(#lv-paper-dots)" x="${X0}" y="${Y0}" width="${BW}" height="${718 - Y0}"/>
   <rect class="lv-grain" filter="url(#lv-grain)" x="0" y="0" width="${w}" height="${h}"/>
-  <rect class="lv-night" x="0" y="0" width="${w}" height="${h}"/>
-  <rect class="lv-lampglow" data-lampglow fill="url(#lv-lampglow)" x="0" y="0" width="${w}" height="718"/>
-  <path class="lv-rail" d="M0 66 H${w}"/>
-  <path class="lv-rail-shadow" d="M0 71 H${w}"/>
+  <rect class="lv-night" x="${X0}" y="${Y0}" width="${BW}" height="${BH}"/>
+  <rect class="lv-lampglow" data-lampglow fill="url(#lv-lampglow)" x="${X0}" y="${Y0}" width="${BW}" height="${718 - Y0}"/>
+  <path class="lv-rail" d="M${X0} 66 H${X0 + BW}"/>
+  <path class="lv-rail-shadow" d="M${X0} 71 H${X0 + BW}"/>
 
-  <rect class="lv-floor" x="0" y="718" width="${w}" height="${h - 718}"/>
-  <path class="lv-plank" d="M0 760 H${w} M0 806 H${w} M0 852 H${w} M120 718 v42 M380 718 v42 M660 718 v42 M940 718 v42 M250 760 v46 M520 760 v46 M800 760 v46 M1080 760 v46 M60 806 v46 M330 806 v46 M610 806 v46 M890 806 v46"/>
-  <rect class="lv-floor-shade" x="0" y="718" width="${w}" height="${h - 718}"/>
-  <rect class="lv-skirting ink" x="-4" y="704" width="${w + 8}" height="16"/>
+  <rect class="lv-floor" x="${X0}" y="718" width="${BW}" height="${Y0 + BH - 718}"/>
+  <path class="lv-plank" d="${planks()}"/>
+  <rect class="lv-floor-shade" x="${X0}" y="718" width="${BW}" height="${Y0 + BH - 718}"/>
+  <rect class="lv-skirting ink" x="${X0}" y="704" width="${BW}" height="16"/>
 
   ${extras()}
   ${windowArt()}
@@ -291,9 +309,9 @@ export function roomSVG() {
   ${plant()}
   ${clock()}
   <g class="lv-dust" data-dust></g>
-  <rect class="lv-vignette" fill="url(#lv-vignette)" x="0" y="0" width="${w}" height="${h}"/>
+  <rect class="lv-vignette" fill="url(#lv-vignette)" x="${X0}" y="${Y0}" width="${BW}" height="${BH}"/>
 
-  <rect class="lv-dim" data-dim x="0" y="0" width="${w}" height="${h}" opacity="0"/>
+  <rect class="lv-dim" data-dim x="${X0}" y="${Y0}" width="${BW}" height="${BH}" opacity="0"/>
   <rect class="lv-dawnsky" data-dawnsky x="413" y="111" width="70" height="170" rx="3" fill="url(#lv-dawn)" opacity="0"/>
 
   <g class="lv-phone-wrap" data-phonewrap opacity="0">

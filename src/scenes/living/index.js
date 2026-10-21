@@ -11,7 +11,7 @@ import { onRotate, rectCenter } from '../../ui/drag.js'
 import { loop } from '../../ui/motion.js'
 import { parseDate } from '../../i18n.js'
 import { makeScrubber } from './clock.js'
-import { CLOCK, PLANT, roomSVG } from './art.js'
+import { CLOCK, PLANT, SAFE, VIEW, roomSVG } from './art.js'
 
 const TAU = Math.PI * 2
 const DAWN = 0.01 // first 1 % of the span
@@ -79,6 +79,7 @@ export default {
       plate: $('[data-plate]'),
       plant: $('[data-plant]'),
       trail: $('[data-trail]'),
+      progress: $('[data-progress]'),
       arc: $('[data-hint-arc]'),
       glow: $('[data-lampglow]'),
       bulb: $('[data-bulb]'),
@@ -98,6 +99,7 @@ export default {
       event: $('[data-event]'),
       card: $('[data-phonecard]'),
       bubble: $('[data-bubble]'),
+      on: $('.lv-phonecard__on'),
       counter: $('[data-counter]'),
     }
     el.clock.setAttribute('aria-label', t('living.clock'))
@@ -105,12 +107,10 @@ export default {
 
     // ── bookkeeping: everything here is undone in teardown ──
     const tweens = new Set()
-    const timers = new Set()
-    const tw = (x) => (tweens.add(x), x)
-    const later = (fn, ms) => {
-      const id = setTimeout(() => (timers.delete(id), fn()), ms)
-      timers.add(id)
-      return id
+    const tw = (x) => {
+      if (tweens.size > 120) for (const old of tweens) if (!old.isActive()) tweens.delete(old)
+      tweens.add(x)
+      return x
     }
     const offs = []
 
@@ -139,7 +139,7 @@ export default {
       const liveMin = (now.getMinutes() + now.getSeconds() / 60) * 6
       const liveHour = ((now.getHours() % 12) + now.getMinutes() / 60) * 30
       const rad = scrub.rad()
-      let m = liveMin + rad * DEG
+      let m = liveMin + rad * DEG + nudge.v
       let h = liveHour + (rad * DEG) / 12
       if (blend.v > 0) {
         m += wrap180(180 - m) * blend.v
@@ -158,6 +158,7 @@ export default {
       if (ts !== shownTime) el.time.textContent = shownTime = ts
       const y = d.getFullYear()
       if (lastYear !== null && y !== lastYear && !reduced) {
+        gsap.killTweensOf(el.plate, 'scale')
         tw(gsap.fromTo(el.plate, { scale: 1.12 }, { scale: 1, duration: 0.35, ease: 'back.out(3)', svgOrigin: `${cx} ${cy + CLOCK.r + 40}` }))
       }
       lastYear = y
@@ -263,6 +264,8 @@ export default {
       el.glow.setAttribute('opacity', (lamp.v * flicker).toFixed(3))
       el.bulb.setAttribute('opacity', (0.25 + 0.75 * lamp.v).toFixed(3))
       el.trail.setAttribute('opacity', Math.min(0.9, speed / 28).toFixed(3))
+      // continuous progress: how far back she has wound, as an arc round the rim
+      el.progress.setAttribute('stroke-dasharray', `${(1 - tt).toFixed(4)} 2`)
       return m
     }
 
@@ -319,7 +322,16 @@ export default {
       sound.play('tick', { rate: Math.min(1, speed / 25) })
     }
 
-    // ── dawn: 4:30 AM, 20 April 2022 ──
+    // ── moments: each is ONE timeline; starting a new one kills the last, so no two ever
+    //    animate the same property. Sounds, text and state changes sit on the timeline. ──
+    const D = reduced ? 0.01 : 1
+    let moment = null
+    const newMoment = () => {
+      moment?.kill()
+      moment = tw(gsap.timeline())
+      return moment
+    }
+
     function snapToStart() {
       snap?.kill()
       if (reduced) {
@@ -330,20 +342,58 @@ export default {
       snap = tw(gsap.to(o, { t: 0, duration: 0.7, ease: 'power2.out', onUpdate: () => scrub.set(o.t) }))
     }
 
+    // ── nudges: if she does nothing for ~4 s, point at the next thing to touch ──
+    const nudge = { v: 0 } // degrees added to the minute hand
+    let engaged = false
+    let idleCall = null
+    function armNudge() {
+      idleCall?.kill()
+      idleCall = reduced ? null : gsap.delayedCall(4, doNudge)
+    }
+    function stopNudge() {
+      idleCall?.kill()
+      idleCall = null
+    }
+    function doNudge() {
+      if (busy) return
+      if (dawn) {
+        gsap.killTweensOf(el.phoneWrap, 'scale')
+        tw(
+          gsap
+            .timeline()
+            .to(el.phoneWrap, { scale: 1.35, svgOrigin: '548 640', duration: 0.18, ease: 'power2.out' })
+            .to(el.phoneWrap, { scale: 1, svgOrigin: '548 640', duration: 0.8, ease: 'elastic.out(1, 0.35)' }),
+        )
+      } else if (!engaged) {
+        gsap.killTweensOf(nudge)
+        tw(gsap.timeline().to(nudge, { v: -18, duration: 0.25, ease: 'power2.out' }).to(nudge, { v: 0, duration: 1, ease: 'elastic.out(1, 0.3)' }))
+        tw(gsap.fromTo(el.arc, { scale: 1.07, svgOrigin: `${cx} ${cy}` }, { scale: 1, svgOrigin: `${cx} ${cy}`, duration: 0.7, ease: 'back.out(3)' }))
+      } else return
+      armNudge()
+    }
+
+    // ── dawn: 4:30 AM, 20 April 2022 ──
     function enterDawn() {
       dawn = true
+      hideCounter()
       root.classList.add('living--dawn')
       el.phone.classList.add('lv-phone--on')
       el.phone.setAttribute('tabindex', '0')
-      const d = reduced ? 0.01 : 1
-      tw(gsap.to(el.dim, { attr: { opacity: 0.76 }, duration: 1.4 * d, ease: 'power2.inOut' }))
-      tw(gsap.to(lamp, { v: 0, duration: 0.8 * d, ease: 'steps(4)' }))
-      tw(gsap.to(blend, { v: 1, duration: 1.2 * d, ease: 'power2.out' }))
-      tw(gsap.to(el.dawnsky, { attr: { opacity: 1 }, duration: 2 * d, delay: 0.4 * d }))
-      tw(gsap.to(el.phoneWrap, { attr: { opacity: 1 }, duration: 0.9 * d, delay: 0.9 * d }))
-      setHint(t('living.tapPhone'), 1.6)
-      sound.play('sparkle')
+      setHint(null)
+      stopNudge()
       if (!dragging) snapToStart()
+      newMoment()
+        .call(() => sound.play('sparkle'))
+        .to(lamp, { v: 0, duration: 0.8 * D, ease: 'steps(4)' }, 0)
+        .to(el.dim, { attr: { opacity: 0.76 }, duration: 1.4 * D, ease: 'power2.inOut' }, 0)
+        .to(blend, { v: 1, duration: 1.2 * D, ease: 'power2.out' }, 0)
+        .to(el.dawnsky, { attr: { opacity: 1 }, duration: 2 * D }, 0.4 * D)
+        .to(el.phoneWrap, { attr: { opacity: 1 }, duration: 0.9 * D }, 0.9 * D)
+        // the hint only once the phone is actually glowing
+        .call(() => {
+          setHint(t('living.tapPhone'))
+          armNudge()
+        })
     }
 
     function exitDawn() {
@@ -351,111 +401,88 @@ export default {
       root.classList.remove('living--dawn')
       el.phone.classList.remove('lv-phone--on')
       el.phone.setAttribute('tabindex', '-1')
-      gsap.killTweensOf([el.dim, lamp, blend, el.dawnsky, el.phoneWrap])
-      const d = reduced ? 0.01 : 1
-      tw(gsap.to(el.dim, { attr: { opacity: 0 }, duration: 0.6 * d }))
-      tw(gsap.to(lamp, { v: 1, duration: 0.4 * d }))
-      tw(gsap.to(blend, { v: 0, duration: 0.5 * d }))
-      tw(gsap.to(el.dawnsky, { attr: { opacity: 0 }, duration: 0.5 * d }))
-      tw(gsap.to(el.phoneWrap, { attr: { opacity: 0 }, duration: 0.3 * d }))
       setHint(null)
+      stopNudge()
+      newMoment()
+        .to(el.dim, { attr: { opacity: 0 }, duration: 0.6 * D }, 0)
+        .to(lamp, { v: 1, duration: 0.4 * D }, 0)
+        .to(blend, { v: 0, duration: 0.5 * D }, 0)
+        .to(el.dawnsky, { attr: { opacity: 0 }, duration: 0.5 * D }, 0)
+        .to(el.phoneWrap, { attr: { opacity: 0 }, duration: 0.3 * D }, 0)
     }
 
-    function setHint(text, delay = 0) {
+    function setHint(text) {
+      gsap.killTweensOf(el.hint)
       if (!text) {
         hintShown = false
-        gsap.killTweensOf(el.hint)
-        tw(gsap.to(el.hint, { opacity: 0, duration: 0.3 }))
+        tw(gsap.to(el.hint, { opacity: 0, duration: 0.3 * D }))
         return
       }
       hintShown = true
       el.hint.textContent = text
-      gsap.killTweensOf(el.hint)
-      tw(gsap.fromTo(el.hint, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: reduced ? 0.01 : 0.6, delay: reduced ? 0 : delay }))
+      tw(gsap.fromTo(el.hint, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.6 * D, ease: 'back.out(2)' }))
     }
 
+    // the phone → the first text → the clock spins back to tonight → the counter
     function openPhone() {
       if (!dawn || busy) return
       busy = true
       snap?.kill()
       scrub.set(0)
+      stopNudge()
       sound.play('tap')
       setHint(null)
       el.phone.classList.remove('lv-phone--on')
+      el.phone.setAttribute('tabindex', '-1')
       el.card.hidden = false
-      const d = reduced ? 0.01 : 1
-      tw(gsap.fromTo(el.card, { opacity: 0, y: 70, scale: 0.55, rotate: -6 }, { opacity: 1, y: 0, scale: 1, rotate: -1.5, duration: 0.75 * d, ease: 'back.out(1.5)' }))
-      tw(gsap.set(el.bubble, { opacity: 0, scale: 0.4 }))
-      later(() => {
-        sound.play('pop')
-        tw(gsap.to(el.bubble, { opacity: 1, scale: 1, duration: 0.55 * d, ease: 'back.out(2.4)' }))
-        const r = el.bubble.getBoundingClientRect()
-        fx.hearts?.(r.left + r.width * 0.85, r.top + r.height / 2, { count: 6 })
-      }, reduced ? 0 : 1000)
-      later(goOn, reduced ? 1600 : 5200)
-    }
-
-    let goneOn = false
-    function goOn() {
-      if (goneOn || !busy) return
-      goneOn = true
-      const d = reduced ? 0.01 : 1
-      tw(
-        gsap.to(el.card, {
-          opacity: 0,
-          y: 40,
-          scale: 0.8,
-          duration: 0.5 * d,
-          ease: 'power2.in',
-          onComplete: () => {
-            el.card.hidden = true
-            spinForward()
-          },
-        }),
-      )
-    }
-
-    function spinForward() {
-      dawn = false
-      root.classList.remove('living--dawn')
-      sound.play('whoosh')
-      const d = reduced ? 0.01 : 1
-      gsap.killTweensOf([el.dim, lamp, blend, el.dawnsky, el.phoneWrap])
       const o = { t: 0 }
-      tw(gsap.to(blend, { v: 0, duration: 0.6 * d }))
-      tw(gsap.to(el.phoneWrap, { attr: { opacity: 0 }, duration: 0.5 * d }))
-      tw(gsap.to(el.dawnsky, { attr: { opacity: 0 }, duration: 1.4 * d }))
-      tw(gsap.to(el.dim, { attr: { opacity: 0 }, duration: 2 * d, delay: 0.4 * d, ease: 'power1.inOut' }))
-      tw(
-        gsap.to(o, {
-          t: 1,
-          duration: 2.6 * d,
-          ease: 'power2.inOut',
-          onUpdate: () => scrub.set(o.t),
-          onComplete: () => {
-            scrub.set(1)
-            // the lamp comes back on with a little flicker
-            tw(
-              gsap
-                .timeline()
-                .to(lamp, { v: 0.7, duration: 0.06 * d })
-                .to(lamp, { v: 0.15, duration: 0.08 * d })
-                .to(lamp, { v: 1, duration: 0.35 * d, ease: 'power2.out' }),
-            )
-            sound.play('lampOn')
-            busy = false
-            goneOn = false
-            el.phone.setAttribute('tabindex', '-1')
-            showCounter()
-            ctx.complete()
-          },
-        }),
-      )
+      const tl = newMoment()
+      tl.set(el.bubble, { opacity: 0, scale: 0.4 })
+        .set(el.on, { opacity: 0 })
+        .fromTo(el.card, { opacity: 0, y: 70, scale: 0.55, rotate: -6 }, { opacity: 1, y: 0, scale: 1, rotate: -1.5, duration: 0.75 * D, ease: 'back.out(1.5)' })
+        .call(() => sound.play('pop'))
+        .to(el.bubble, { opacity: 1, scale: 1, duration: 0.55 * D, ease: 'back.out(2.4)' })
+        .call(() => {
+          const r = el.bubble.getBoundingClientRect()
+          fx.hearts?.(r.left + r.width * 0.85, r.top + r.height / 2, { count: 6 })
+        })
+        .to(el.on, { opacity: 0.9, duration: 0.4 * D }, reduced ? '>' : '+=0.6')
+        .addLabel('read')
+        .addLabel('out', reduced ? '+=0.8' : '+=2.6')
+        .to(el.card, { opacity: 0, y: 40, scale: 0.8, duration: 0.5 * D, ease: 'power2.in' }, 'out')
+        .call(() => {
+          el.card.hidden = true
+          dawn = false
+          root.classList.remove('living--dawn')
+          sound.play('whoosh')
+        })
+        .addLabel('spin')
+        .to(blend, { v: 0, duration: 0.6 * D }, 'spin')
+        .to(el.phoneWrap, { attr: { opacity: 0 }, duration: 0.5 * D }, 'spin')
+        .to(el.dawnsky, { attr: { opacity: 0 }, duration: 1.4 * D }, 'spin')
+        .to(el.dim, { attr: { opacity: 0 }, duration: 2 * D, ease: 'power1.inOut' }, `spin+=${0.4 * D}`)
+        .to(o, { t: 1, duration: 2.6 * D, ease: 'power2.inOut', onUpdate: () => scrub.set(o.t) }, 'spin')
+        // the lamp comes back on with a little flicker, then the counter
+        .call(() => {
+          scrub.set(1)
+          sound.play('lampOn')
+        })
+        .to(lamp, { v: 0.7, duration: 0.06 * D })
+        .to(lamp, { v: 0.15, duration: 0.08 * D })
+        .to(lamp, { v: 1, duration: 0.35 * D, ease: 'power2.out' })
+        .call(() => {
+          busy = false
+          el.counter.hidden = false
+          ctx.complete()
+        })
+        .fromTo(el.counter, { opacity: 0, y: 24, scale: 0.92 }, { opacity: 1, y: 0, scale: 1, duration: 0.7 * D, ease: 'back.out(1.8)' })
     }
 
-    function showCounter() {
-      el.counter.hidden = false
-      tw(gsap.fromTo(el.counter, { opacity: 0, y: 24, scale: 0.92 }, { opacity: 1, y: 0, scale: 1, duration: reduced ? 0.01 : 0.7, ease: 'back.out(1.8)' }))
+    // tapping the phone card skips the wait (only once the text has landed)
+    function goOn() {
+      const tl = moment
+      if (!busy || !tl || tl.labels.read === undefined) return
+      if (tl.time() >= tl.labels.read && tl.time() < tl.labels.out) tl.seek('out', false)
     }
 
     function hideCounter() {
@@ -464,6 +491,37 @@ export default {
       tw(gsap.to(el.counter, { opacity: 0, duration: 0.25, onComplete: () => (el.counter.hidden = true) }))
     }
 
+    // ── decorative things react when tapped ──
+    const art = root.querySelector('.lv-art')
+    const onPoke = (e) => {
+      const g = e.target.closest?.('[data-poke]')
+      if (!g) return
+      const kind = g.dataset.poke
+      gsap.killTweensOf(g)
+      sound.play('tap')
+      fx.sparkles?.(e.clientX, e.clientY, { count: 8 })
+      if (reduced) return
+      if (kind === 'squash') {
+        tw(
+          gsap
+            .timeline()
+            .to(g, { scaleY: 0.9, scaleX: 1.05, transformOrigin: '50% 100%', duration: 0.09, ease: 'power2.out' })
+            .to(g, { scaleY: 1, scaleX: 1, transformOrigin: '50% 100%', duration: 0.7, ease: 'elastic.out(1, 0.35)' }),
+        )
+      } else {
+        const origin = kind === 'top' ? '50% 0%' : '50% 100%'
+        const dir = Math.random() < 0.5 ? -1 : 1
+        tw(
+          gsap
+            .timeline()
+            .to(g, { rotation: 5 * dir, transformOrigin: origin, duration: 0.09, ease: 'power2.out' })
+            .to(g, { rotation: 0, transformOrigin: origin, duration: 0.9, ease: 'elastic.out(1.1, 0.3)' }),
+        )
+      }
+    }
+    art.addEventListener('pointerdown', onPoke)
+    offs.push(() => art.removeEventListener('pointerdown', onPoke))
+
     // ── input ──
     offs.push(
       onRotate(el.clock, {
@@ -471,18 +529,28 @@ export default {
         onStart() {
           if (busy) return false
           sound.unlock()
+          sound.play('tap')
           dragging = true
+          engaged = true
+          if (!dawn) stopNudge()
+          gsap.killTweensOf(nudge)
+          nudge.v = 0
           snap?.kill()
           scrub.fling(0)
           hideCounter()
           if (hintShown && !dawn) setHint(null)
           el.arc.classList.add('lv-hint-arc--gone')
+          // press: the clock gives a little under her finger
+          gsap.killTweensOf(el.clock, 'scale')
+          tw(gsap.to(el.clock, { scale: 0.965, svgOrigin: `${cx} ${cy}`, duration: 0.08, ease: 'power2.out' }))
         },
         onRotate(d) {
           scrub.angle(d)
         },
         onEnd(v) {
           dragging = false
+          gsap.killTweensOf(el.clock, 'scale')
+          tw(gsap.to(el.clock, { scale: 1, svgOrigin: `${cx} ${cy}`, duration: 0.7, ease: 'elastic.out(1, 0.4)' }))
           if (dawn) snapToStart()
           else scrub.fling(v)
         },
@@ -518,11 +586,16 @@ export default {
     offs.push(() => backBtn.removeEventListener('click', onBack))
 
     // ── run ──
-    // very wide screens (a phone turned sideways): keep the clock whole, let the floor crop instead
-    const art = root.querySelector('.lv-art')
+    // Fit the camera to the screen: always keep the clock, frames, sofa and phone
+    // (x 400–808, y 84–724) in view; show as much of the room as the shape allows.
     const fit = () => {
-      const wide = innerWidth / Math.max(1, innerHeight) > 1.7
-      art.setAttribute('preserveAspectRatio', wide ? 'xMidYMin slice' : 'xMidYMid slice')
+      const r = root.getBoundingClientRect()
+      if (!r.width || !r.height) return
+      const a = r.width / r.height
+      const h = Math.max(SAFE.h, Math.min(VIEW.h, VIEW.w / a), SAFE.w / a)
+      const w = h * a
+      const y0 = h >= VIEW.h ? VIEW.h / 2 - h / 2 : Math.min(SAFE.y, Math.max(SAFE.y + SAFE.h - h, VIEW.h / 2 - h / 2))
+      art.setAttribute('viewBox', `${(VIEW.w / 2 - w / 2).toFixed(1)} ${y0.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`)
     }
     fit()
     addEventListener('resize', fit)
@@ -530,8 +603,9 @@ export default {
 
     const stopLayer = sound.layer('clock')
     render()
-    if (!reduced) setHint(t('living.hint'), 0.9)
+    if (!reduced) tw(gsap.delayedCall(0.9, () => !engaged && !dawn && setHint(t('living.hint'))))
     else el.hint.style.opacity = '1'
+    armNudge()
 
     const stop = loop((dt) => {
       scrub.tick(dt)
@@ -567,9 +641,11 @@ export default {
       stop()
       stopLayer?.()
       offs.forEach((fn) => fn())
-      timers.forEach(clearTimeout)
+      stopNudge()
+      moment?.kill()
       tweens.forEach((x) => x.kill())
-      gsap.killTweensOf([el.dim, lamp, blend, el.dawnsky, el.phoneWrap, el.hint, el.card, el.bubble, el.counter, el.event, el.plate])
+      gsap.killTweensOf([el.dim, lamp, blend, nudge, el.dawnsky, el.phoneWrap, el.hint, el.card, el.bubble, el.on, el.counter, el.event, el.plate, el.clock, el.arc])
+      root.querySelectorAll('[data-poke]').forEach((g) => gsap.killTweensOf(g))
       el.frames.forEach((f) => gsap.killTweensOf(f.querySelector('[data-flip]')))
       if (window.__living) delete window.__living
     }

@@ -225,7 +225,7 @@ html[lang="bn"] .lv-event__date { font-family: var(--bn); letter-spacing: 0; tex
 .lv-phonecard[hidden] { display: none; }
 .lv-phonecard__phone {
   position: relative;
-  width: min(80vw, 330px);
+  width: min(80vw, 330px, 64dvh);
   padding: 0.9rem 0.7rem 1.7rem;
   background: var(--ink);
   border: 3px solid var(--ink);
@@ -273,7 +273,7 @@ html[lang="bn"] .lv-event__date { font-family: var(--bn); letter-spacing: 0; tex
 .lv-counter {
   position: absolute;
   left: 50%;
-  top: 64%;
+  bottom: max(4.5rem, 12dvh);
   translate: -50% 0;
   display: grid;
   gap: 0.7rem;
@@ -292,7 +292,23 @@ html[lang="bn"] .lv-event__date { font-family: var(--bn); letter-spacing: 0; tex
 .lv-counter__text { font-size: clamp(1.5rem, 6.4vw, 2rem); font-weight: 800; line-height: 1.1; }
 html[lang="bn"] .lv-counter__text { font-family: var(--bn); font-weight: 700; }
 
-@media (min-aspect-ratio: 1/1) {
-  .lv-event { top: 64%; }
-  .lv-counter { top: 62%; }
+.lv-counter .btn { min-height: 46px; }
+
+/* continuous progress round the rim: how far back she has wound */
+.lv-progress-track { fill: none; stroke: var(--ink); stroke-width: 5; opacity: 0.12; pointer-events: none; }
+.lv-progress { fill: none; stroke: var(--lamp); stroke-width: 5; stroke-linecap: butt; pointer-events: none; filter: drop-shadow(0 0 4px var(--lamp-glow)); }
+
+/* everything decorative can be poked */
+[data-poke] { cursor: pointer; }
+
+/* short landscape screens: smaller type so overlays fit */
+@media (max-height: 480px) {
+  .lv-event__line { font-size: 1.2rem; }
+  .lv-counter__text { font-size: 1.35rem; }
+  .lv-hint { font-size: 1.3rem; bottom: 0.6rem; }
+  .lv-bubble { font-size: 1.6rem; }
+  .lv-phonecard { gap: 0.5rem; }
 }
+
+/* at dawn the frames are empty — the last card floats there, clear of the phone */
+.living--dawn .lv-event { top: 46%; }
