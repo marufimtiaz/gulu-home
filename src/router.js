@@ -13,7 +13,7 @@ import * as fx from './fx/index.js'
 import { sound } from './sound/index.js'
 import { reduced } from './ui/motion.js'
 
-export const SCENES = ['door', 'house', ...state.ROOMS, 'finale']
+export const SCENES = ['door', 'house', ...state.ROOMS, 'finale', 'card']
 
 const loaders = import.meta.glob('./scenes/*/index.js')
 const load = async (id) => (await loaders[`./scenes/${id}/index.js`]()).default
@@ -29,6 +29,7 @@ export function resolve(id) {
   if (id !== 'door' && !s.doorSeen) return { id: 'door' }
   if (id === 'empty' && !state.emptyUnlocked()) return { id: 'house', toast: 'locked.empty' }
   if (id === 'finale' && !state.finaleUnlocked()) return { id: 'house', toast: 'locked.finale' }
+  if (id === 'card' && !state.isDone('finale')) return { id: 'house', toast: 'locked.card' }
   return { id }
 }
 

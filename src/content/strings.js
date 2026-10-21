@@ -20,6 +20,7 @@ const shared = {
   locked: {
     empty: 'not yet — light the others first',
     finale: 'not yet — the house isn\'t lit',
+    card: 'this one comes last ♥',
   },
   rooms: {
     living: 'the living room',

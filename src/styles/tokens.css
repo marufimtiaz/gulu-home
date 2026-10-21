@@ -26,6 +26,13 @@
   --star: #fff7e0;
   --firefly: #fff2a8;
 
+  /* the reception card (print) */
+  --card-ivory: #fbf6ec;
+  --card-rose: #e8b9b5;
+  --card-gold: #c9a96a;
+  --card-gold-hi: #f3e2b3;
+  --card-ink: #6b2b3a;
+
   /* type */
   --display: "Fraunces", "Cooper Black", Georgia, serif;
   --hand: "Caveat", "Bradley Hand", "Segoe Script", cursive;

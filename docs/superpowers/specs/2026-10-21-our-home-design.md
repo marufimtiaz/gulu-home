@@ -31,6 +31,7 @@ she hangs the nameplate on the door.
    Free roam. The living room is suggested first. The empty room is locked (taped window)
    until the other five are complete.
 4. **Finale** (`#/finale`) — unlocks when all six are complete.
+4b. **Reception card** (`#/card`) — unlocks with the finale; lives in the letterbox.
 5. **After tonight** — hub is the home screen; every room is replayable; door is skipped once
    seen (`?door` replays it; `?skip` jumps to the hub; `?reset` clears progress).
 
@@ -158,6 +159,55 @@ bday) over the roof, music swells to the chorus. Card: *"welcome home."* + `cont
 + *"come see the tree every year."* Button: *"back to our house"*. Finale completion is stored;
 hub then stays fully lit with the nameplate showing.
 
+### The reception card — "the card we never printed" (`#/card`)
+They never printed a traditional card. This scene is one: a real, formal Bangladeshi reception
+card that lives in the house's letterbox. It deliberately looks *printed*, not paper-craft —
+sharper, gilded, traditional — so it reads as a keepsake object inside the paper house.
+
+Availability: unlocks with the finale. After the "welcome home" card, the letterbox in the
+finale scene holds an ivory envelope (`[data-letterbox]`); afterwards the hub's front door
+shows the envelope peeking from the letterbox forever, tap → `#/card`. Not a room: does not
+count toward the six lights. Route guard: requires `done.finale` (toast `locked.card`).
+
+Flow:
+1. **Envelope** — ivory envelope, wax seal (berry), her name in `--card-script`. Tap/drag the
+   seal → it cracks (two halves), flap opens, the card slides up out of the envelope.
+2. **Gatefold** — the classic double-door, laser-cut card. Left and right doors meet in the
+   middle over a jali (lattice) cut-out pattern. Swipe outward (or tap) → each door swings open
+   on its hinge (CSS 3D, `rotateY`, shadowed edge). Doors' inner faces show a rose-vine border.
+3. **Card face** (centre panel, portrait ~ 5:7):
+   - top: optional invocation line (`card.invocation`, default none); a gold alpana medallion
+     that draws itself (SVG stroke reveal, ~2 s);
+   - headline: Bangla calligraphy (`card.titleBn`, `--card-bn-display`) and English caps
+     beneath (`card.titleEn`, `--card-caps`);
+   - host line (`card.hosts`), invitation line (`card.invite`), "to meet & bless the newlyweds";
+   - names: **Maruf** ❀ **Sneha** large in `--card-script`, inside an arch of rose vines and
+     lotus; the families' lines beneath (`card.groomOf`, `card.brideOf`);
+   - details block: date, time, venue (`card.date`, `card.time`, `card.venue`, `card.address`)
+     in `--card-serif` with small-caps labels;
+   - footer: "with best compliments from" + names (`card.compliments[]`).
+   Bangla and English are both on the card regardless of the site language (traditional cards
+   are bilingual); the site language only changes the surrounding UI.
+4. **Gold** — foil effect: a moving specular highlight across gold elements following pointer
+   position, and `deviceorientation` tilt on phones (with the iOS permission prompt only after
+   a tap, and silently skipped if denied). Reduced motion: static gold gradient.
+5. **Private touch** — under the card, in `--hand`: `card.note` (default *"we forgot to print
+   this. so I made it instead."*).
+6. **Save the card** — button renders the card face to a 1080×1512 PNG (SVG
+   `foreignObject` → canvas, with local fonts inlined as data URLs) and triggers download /
+   `navigator.share({ files })` where supported.
+7. Flip (tap "back of the card") → back side: map link (`card.mapUrl`, optional) and a small
+   alpana. 
+
+Palette (reception style, decided default): ivory `--card-ivory #fbf6ec`, dusty pink
+`--card-rose #e8b9b5`, champagne gold `--card-gold #c9a96a` / `--card-gold-hi #f3e2b3`, deep
+rose text `--card-ink #6b2b3a`. Ink outlines thin (1px gold), no pop shadows — print, not paper.
+Fonts (self-hosted): Galada, Tiro Bangla, Noto Serif Bengali, Pinyon Script, Cinzel,
+Cormorant Garamond.
+
+Content placeholders in `config.js` → `card` (event name, date, time, venue, hosts, families,
+compliments, invocation) are clearly marked `// ← fill in` until Maruf supplies them.
+
 ## Content & i18n
 
 - `src/content/config.js` — everything personal, English. `src/content/config.bn.js` — Bengali
@@ -208,7 +258,7 @@ src/
   photos.js          manifest, date parsing, queries
   content/           config.js · config.bn.js · strings.js · strings.bn.js
   scenes/<name>/     index.js (+ art.js, scene.css) for door, house, living, kitchen, garden,
-                     rooftop, desk, empty, finale
+                     rooftop, desk, empty, finale, card
   fx/                fireflies.js · stars.js · fireworks.js (from bday) · confetti.js · toast.js
   sound/             index.js (API + EFFECTS/LAYERS names) · engine.js · theme.js · layers.js
   ui/                drag.js (pointer drag/rotate/hold helpers) · polaroid.js

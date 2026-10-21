@@ -8,8 +8,8 @@ test('first visit lands on the door', async ({ page }) => {
 
 test('every scene mounts without errors', async ({ page }) => {
   const errors = collectErrors(page)
-  await open(page, 'house', { done: ROOMS })
-  for (const id of ['house', ...ROOMS, 'finale', 'door']) {
+  await open(page, 'house', { done: [...ROOMS, 'finale'] })
+  for (const id of ['house', ...ROOMS, 'finale', 'card', 'door']) {
     await page.evaluate((r) => window.__home.go(r), id)
     await expect(page.locator(`.scene[data-scene="${id}"]`)).toBeVisible()
   }
@@ -21,6 +21,8 @@ test('empty room and finale are guarded', async ({ page }) => {
   await page.evaluate(() => window.__home.go('empty'))
   await expect(page).toHaveURL(/#\/house$/)
   await page.evaluate(() => window.__home.go('finale'))
+  await expect(page).toHaveURL(/#\/house$/)
+  await page.evaluate(() => window.__home.go('card'))
   await expect(page).toHaveURL(/#\/house$/)
 })
 

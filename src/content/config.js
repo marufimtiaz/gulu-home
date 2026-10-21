@@ -158,6 +158,32 @@ export default {
     walls: ['#f6d78b', '#b9d8b4', '#f3b6cf', '#a9d6e5', '#fbf3e4'],
   },
 
+  // ── The reception card we never printed (in the letterbox, after the finale) ──
+  // Traditional cards are bilingual, so both languages are on the card itself.
+  card: {
+    invocation: null, // ← optional top line, e.g. 'বিসমিল্লাহির রাহমানির রাহিম' — null for none
+    titleBn: 'শুভ বৌভাত', // ← or 'ওয়ালিমা' / 'বিবাহোত্তর সংবর্ধনা'
+    titleEn: 'Wedding Reception',
+    hosts: 'Mr. & Mrs. ——', // ← fill in: who is inviting (usually the groom's parents)
+    hostsBn: 'জনাব ও জনাবা ——', // ← fill in
+    invite: 'request the pleasure of your company at the wedding reception of their son',
+    inviteBn: 'তাঁদের পুত্রের বিবাহোত্তর সংবর্ধনা অনুষ্ঠানে আপনার উপস্থিতি একান্ত কাম্য',
+    bless: 'to meet & bless the newlyweds',
+    groom: 'Maruf',
+    groomBn: 'মারুফ',
+    bride: 'Sneha',
+    brideBn: 'স্নেহা',
+    groomOf: 'son of Mr. & Mrs. ——', // ← fill in
+    brideOf: 'daughter of Mr. & Mrs. ——', // ← fill in
+    date: '2026-10-24', // ← fill in (YYYY-MM-DD)
+    time: '7:00 PM onwards', // ← fill in
+    venue: '——', // ← fill in: venue name
+    address: '——, Dhaka', // ← fill in
+    mapUrl: null, // ← optional Google Maps link, shown on the back of the card
+    compliments: ['——', '——'], // ← "with best compliments from" — family names
+    note: 'we forgot to print this. so I made it instead.',
+  },
+
   // ── Finale: the nameplate ──
   finale: {
     plate: '{myName} & {partnerName}',
