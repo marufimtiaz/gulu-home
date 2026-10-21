@@ -8,6 +8,14 @@ export const CLOCK = { x: 604, y: 214, r: 100 }
 export const PLANT = { x: 441, y: 662 }
 // what must always be on screen: clock (with its grab ring), plate, frames, sofa, phone
 export const SAFE = { x: 400, y: 84, w: 408, h: 640 }
+// narrow screens (crop starts right of the bookshelf): the shelf hangs small on the right wall
+// under the lamp, the mug table becomes a coffee table on the rug, the plant shrinks to fit
+// whole by the sofa arm. Each is `translate(to) scale(s) translate(-from)` (see index.js fit).
+export const COMPACT = {
+  shelf: { from: [180, 380], to: [726, 246], s: 0.4 },
+  mugs: { from: [905, 624], to: [702, 752], s: 0.85 },
+  plant: { from: [PLANT.x, 722], to: [PLANT.x + 26, 722], s: 0.72 },
+}
 // backdrop bounds (wall, floor, overlays) — well past the viewBox in every direction
 const X0 = -1200, Y0 = -700, BW = 3600, BH = 2400
 
@@ -42,7 +50,7 @@ function plant() {
     [x - 1, y, x - 18, 630, x - 48, 626],
     [x + 1, y, x + 18, 636, x + 40, 632],
   ]
-  return `<g class="lv-plant-wrap" data-poke="plant">
+  return `<g data-place="plant"><g class="lv-plant-wrap" data-poke="plant">
     <g class="lv-plant" data-plant>
       <g class="lv-plant__sway"><g class="lv-plant__rustle" data-rustle>
         ${stems.map(([a, b, c, d, e, f]) => `<path class="lv-stem" d="M${a} ${b} Q${c} ${d} ${e} ${f}"/>`).join('')}
@@ -57,7 +65,7 @@ function plant() {
     </g>
     <path class="lv-pot ink" d="M${x - 27} ${y + 2} L${x + 27} ${y + 2} L${x + 21} ${y + 60} L${x - 21} ${y + 60} Z"/>
     <rect class="lv-pot ink" x="${x - 31}" y="${y - 6}" width="62" height="13" rx="3"/>
-    <path class="lv-pot-band" d="M${x - 25} ${y + 22} L${x + 25} ${y + 22}"/></g>`
+    <path class="lv-pot-band" d="M${x - 25} ${y + 22} L${x + 25} ${y + 22}"/></g></g>`
 }
 
 function windowArt() {
@@ -209,6 +217,22 @@ function sofa() {
       </g></g>`
 }
 
+// the mug table sits after the sofa so, as a coffee table on narrow screens, it's on the rug
+function mugTable() {
+  return `
+    <g data-place="mugs"><g class="lv-table" data-poke="mugs">
+      <rect class="lv-pop" x="844" y="628" width="130" height="14" rx="4"/>
+      <rect class="lv-wood lv-wood--berry ink" x="840" y="624" width="130" height="14" rx="4"/>
+      <path class="lv-leg" d="M856 638 V718 M954 638 V718 M856 690 H954"/>
+      <g data-mug="0"><path class="lv-mug ink" d="M866 590 h30 v30 a6 6 0 0 1 -6 6 h-18 a6 6 0 0 1 -6 -6 Z"/>
+      <path class="lv-mug-handle" d="M896 598 q12 0 12 9 q0 9 -12 9"/>
+      <path class="lv-steam" d="M876 580 q-6 -10 0 -18 q6 -8 0 -16"/></g>
+      <g data-mug="1"><path class="lv-mug lv-mug--sage ink" d="M914 594 h28 v26 a6 6 0 0 1 -6 6 h-16 a6 6 0 0 1 -6 -6 Z"/>
+      <path class="lv-mug-handle" d="M914 602 q-11 0 -11 8 q0 8 11 8"/>
+      <path class="lv-steam" d="M928 584 q-6 -10 0 -18 q6 -8 0 -16"/></g>
+    </g></g>`
+}
+
 function extras() {
   // only seen on wide screens
   const books = [
@@ -216,7 +240,7 @@ function extras() {
   ]
   const books2 = [[196, 24, 'mustard'], [222, 30, 'sky'], [254, 22, 'berry'], [278, 26, 'sage']]
   return `
-    <g class="lv-shelf" data-poke="shelf">
+    <g data-place="shelf"><g class="lv-shelf" data-poke="shelf">
       <rect class="lv-pop" x="186" y="386" width="170" height="330" rx="4"/>
       <rect class="lv-wood lv-wood--mustard ink" x="180" y="380" width="170" height="330" rx="4"/>
       <rect class="lv-shelf-in ink-thin" x="190" y="390" width="150" height="310"/>
@@ -228,7 +252,7 @@ function extras() {
       ${leaf(226, 664, 34, 13, -26)}${leaf(226, 664, 38, 14, 18)}
       <rect class="lv-frame-paper ink" x="270" y="652" width="54" height="48" rx="3"/>
       <path class="lv-empty-heart" d="M297 680 c-5 -5 -11 -1.5 -11 3 c0 5 11 10 11 10 c0 0 11 -5 11 -10 c0 -4.5 -6 -8 -11 -3 z" transform="translate(0 -6)"/>
-    </g>
+    </g></g>
     <g class="lv-hoop" data-poke="hoop">
       <circle class="lv-pop" cx="904" cy="424" r="48"/>
       <circle class="lv-hoop-cloth ink" cx="900" cy="420" r="48"/>
@@ -237,17 +261,7 @@ function extras() {
       <path class="lv-thread" data-thread pathLength="100" d="M900 444 c-14 -12 -30 -22 -30 -36 c0 -10 8 -16 16 -16 c6 0 11 4 14 9 c3 -5 8 -9 14 -9 c8 0 16 6 16 16 c0 14 -16 24 -30 36 z"/>
       <rect class="lv-hoop-screw ink-thin" x="894" y="364" width="12" height="10" rx="2"/>
     </g>
-    <g class="lv-table" data-poke="mugs">
-      <rect class="lv-pop" x="844" y="628" width="130" height="14" rx="4"/>
-      <rect class="lv-wood lv-wood--berry ink" x="840" y="624" width="130" height="14" rx="4"/>
-      <path class="lv-leg" d="M856 638 V718 M954 638 V718 M856 690 H954"/>
-      <g data-mug="0"><path class="lv-mug ink" d="M866 590 h30 v30 a6 6 0 0 1 -6 6 h-18 a6 6 0 0 1 -6 -6 Z"/>
-      <path class="lv-mug-handle" d="M896 598 q12 0 12 9 q0 9 -12 9"/>
-      <path class="lv-steam" d="M876 580 q-6 -10 0 -18 q6 -8 0 -16"/></g>
-      <g data-mug="1"><path class="lv-mug lv-mug--sage ink" d="M914 594 h28 v26 a6 6 0 0 1 -6 6 h-16 a6 6 0 0 1 -6 -6 Z"/>
-      <path class="lv-mug-handle" d="M914 602 q-11 0 -11 8 q0 8 11 8"/>
-      <path class="lv-steam" d="M928 584 q-6 -10 0 -18 q6 -8 0 -16"/></g>
-    </g>`
+`
 }
 
 export function roomSVG() {
@@ -311,6 +325,7 @@ export function roomSVG() {
   <g class="lv-rug-g" data-poke="rug"><ellipse class="lv-rug ink" cx="600" cy="792" rx="252" ry="42"/>
   <ellipse class="lv-rug-in" cx="600" cy="792" rx="226" ry="31"/></g>
   ${sofa()}
+  ${mugTable()}
   ${plant()}
   ${clock()}
   <g class="lv-dust" data-dust></g>

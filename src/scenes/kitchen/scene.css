@@ -527,6 +527,15 @@ html[lang="bn"] .jar__label { font-size: 0.85rem; line-height: 1.2; }
   width: clamp(18px, 6vw, 30px);
   transform-origin: 50% 0%;
 }
+.k-tool::before { /* the art stays thin; the finger target is ≥44px wide */
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: max(100%, 44px);
+  translate: -50% 0;
+}
 .k-tool--ladle { left: 9%; }
 .k-tool--belon { right: 9%; }
 .tool__svg { display: block; width: 100%; height: auto; overflow: visible; }

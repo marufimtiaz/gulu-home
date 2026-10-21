@@ -87,13 +87,24 @@ export function parseDate(s) {
   return new Date(+m[1], +m[2] - 1, +m[3], +(m[4] ?? 0), +(m[5] ?? 0))
 }
 
+/** Bengali time-of-day word for an hour (0–23). */
+function bnDayPart(h) {
+  if (h < 4) return 'রাত'
+  if (h < 6) return 'ভোর'
+  if (h < 12) return 'সকাল'
+  if (h < 16) return 'দুপুর'
+  if (h < 18) return 'বিকেল'
+  if (h < 20) return 'সন্ধ্যা'
+  return 'রাত'
+}
+
 export function date(d, style = 'long') {
   d = parseDate(d)
   if (!d) return ''
   if (style === 'time') {
     const h = d.getHours() % 12 || 12
     const mm = String(d.getMinutes()).padStart(2, '0')
-    const ampm = current === 'bn' ? (d.getHours() < 12 ? 'ভোর' : 'সন্ধ্যা') : d.getHours() < 12 ? 'AM' : 'PM'
+    const ampm = current === 'bn' ? bnDayPart(d.getHours()) : d.getHours() < 12 ? 'AM' : 'PM'
     return current === 'bn' ? `${ampm} ${num(h)}:${num(mm)}` : `${h}:${mm} ${ampm}`
   }
   if (current === 'bn') return `${num(d.getDate())} ${MONTHS_BN[d.getMonth()]} ${num(d.getFullYear())}`

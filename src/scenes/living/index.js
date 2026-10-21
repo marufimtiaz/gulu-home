@@ -15,7 +15,7 @@ import { makeQuip } from './quip.js'
 import { scenery } from './scenery.js'
 import { parseDate } from '../../i18n.js'
 import { makeScrubber } from './clock.js'
-import { CLOCK, PLANT, SAFE, VIEW, roomSVG } from './art.js'
+import { CLOCK, COMPACT, PLANT, SAFE, VIEW, roomSVG } from './art.js'
 
 const TAU = Math.PI * 2
 const DAWN = 0.01 // first 1 % of the span
@@ -480,7 +480,9 @@ export default {
         })
         .to(el.on, { opacity: 0.9, duration: 0.4 * D }, '+=0.6')
         .addLabel('read')
-        .addLabel('out', `+=${T.linger + 0.4}`)
+        // she reads it for as long as she likes — "tap to go on" means it (goOn resumes)
+        .addPause()
+        .addLabel('out')
         .to(el.card, { opacity: 0, y: 40, scale: 0.8, duration: 0.5 * D, ease: 'power2.in' }, 'out')
         .call(() => {
           el.card.hidden = true
@@ -515,11 +517,11 @@ export default {
         })
     }
 
-    // tapping the phone card skips the wait (only once the text has landed)
+    // tapping the phone card goes on (only once the text has landed and it's waiting)
     function goOn() {
       const tl = moment
       if (!busy || !tl || tl.labels.read === undefined) return
-      if (tl.time() >= tl.labels.read && tl.time() < tl.labels.out) tl.seek('out', false)
+      if (tl.paused() && tl.time() >= tl.labels.read) tl.play()
     }
 
     function hideCounter() {
@@ -608,7 +610,15 @@ export default {
       const h = Math.max(SAFE.h, Math.min(VIEW.h, VIEW.w / a), SAFE.w / a)
       const w = h * a
       const y0 = h >= VIEW.h ? VIEW.h / 2 - h / 2 : Math.min(SAFE.y, Math.max(SAFE.y + SAFE.h - h, VIEW.h / 2 - h / 2))
-      art.setAttribute('viewBox', `${(VIEW.w / 2 - w / 2).toFixed(1)} ${y0.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`)
+      const x0 = VIEW.w / 2 - w / 2
+      art.setAttribute('viewBox', `${x0.toFixed(1)} ${y0.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`)
+      // too narrow for the bookshelf and mug table at the room's edges: bring them in
+      const compact = x0 > 170
+      for (const [k, { from, to, s }] of Object.entries(COMPACT)) {
+        const g = art.querySelector(`[data-place="${k}"]`)
+        if (compact) g.setAttribute('transform', `translate(${to[0]} ${to[1]}) scale(${s}) translate(${-from[0]} ${-from[1]})`)
+        else g.removeAttribute('transform')
+      }
     }
     fit()
     addEventListener('resize', fit)

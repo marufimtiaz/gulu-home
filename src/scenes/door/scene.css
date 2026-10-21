@@ -292,7 +292,8 @@
 /* ── "who's there?" — a paper speech bubble from behind the door ── */
 .who {
   position: absolute;
-  left: -1%;
+  /* -1% of the porch, but never closer than ~8px to the screen edge (tilt included) */
+  left: max(-1%, calc(12px - (100vw - var(--ph) * 440 / 640) / 2));
   top: 27%;
   padding: 0.18em 0.7em 0.28em;
   font-size: clamp(1.35rem, calc(var(--ph) * 0.048), 2.1rem);
