@@ -219,6 +219,11 @@ export function unlock() {
 }
 
 if (typeof window !== 'undefined') {
+  // Create the (suspended) context while the page is idle, so the first tap only has to
+  // resume() it — constructing an AudioContext inside the tap stalled it for ~0.5 s.
+  const warm = () => init()
+  if ('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 1500 })
+  else setTimeout(warm, 300)
   for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) {
     window.addEventListener(type, unlock, { capture: true, passive: true })
   }
