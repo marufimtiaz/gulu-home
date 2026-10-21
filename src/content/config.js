@@ -173,8 +173,10 @@ export default {
     invite: 'request the pleasure of your company at the Bou-bhat of their son',
     inviteBn: 'তাঁদের পুত্রের শুভ বৌভাত অনুষ্ঠানে আপনার সপরিবারে উপস্থিতি একান্ত কাম্য',
     bless: 'to meet & bless the newlyweds',
-    groom: 'Maruf', // ← full name for the card, e.g. 'Md. ____ Maruf'
+    groom: 'Maruf', // the big script name
     groomBn: 'মারুফ',
+    groomFull: 'Md. Maruf Imtiaz',
+    groomFullBn: 'মোঃ মারুফ ইমতিয়াজ',
     bride: 'Sneha', // the big script name
     brideBn: 'স্নেহা',
     brideFull: 'Jannatul Atika Rahman Sneha',
@@ -183,11 +185,13 @@ export default {
     brideOf: 'daughter of Md. Aminur Rahman & Mrs. Monju Manara Begum',
     brideOfBn: 'মোঃ আমিনুর রহমান ও মিসেস মঞ্জু মানারা বেগম-এর কন্যা', // ← check spelling
     date: '2026-10-23',
-    time: '——', // ← fill in, e.g. '7:00 PM onwards'
-    venue: '——', // ← fill in: venue name
-    address: '——', // ← fill in
+    time: '1:00 PM',
+    timeBn: 'দুপুর ১টা',
+    venue: 'Budhpara, Motihar, Rajshahi',
+    venueBn: 'বুধপাড়া, মতিহার, রাজশাহী',
+    address: null, // optional second line under the venue
     mapUrl: null, // ← optional Google Maps link, shown on the back of the card
-    compliments: ['——'], // ← "with best compliments from" — family names
+    compliments: null, // optional "with best compliments from" names — null hides the line
     note: null, // ← optional handwritten line under the card
   },
 

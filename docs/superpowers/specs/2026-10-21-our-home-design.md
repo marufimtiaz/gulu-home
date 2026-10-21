@@ -186,7 +186,9 @@ Flow:
      lotus; the families' lines beneath (`card.groomOf` — may be null when the host line already names his parents — and `card.brideFull` + `card.brideOf`);
    - details block: date, time, venue (`card.date`, `card.time`, `card.venue`, `card.address`; any field still `——` renders as a dotted blank line, like an unfilled form, never as dashes)
      in `--card-serif` with small-caps labels;
-   - footer: "with best compliments from" + names (`card.compliments[]`).
+   - footer: "with best compliments from" + names (`card.compliments[]`) — omitted when null.
+   - full names (`card.groomFull` / `card.brideFull`) sit in small caps under the big script
+     names; `address`, `mapUrl`, `groomOf` are optional — any `null` field is simply not rendered.
    Bangla and English are both on the card regardless of the site language (traditional cards
    are bilingual); the site language only changes the surrounding UI.
 4. **Gold** — foil effect: a moving specular highlight across gold elements following pointer
