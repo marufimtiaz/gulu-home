@@ -56,16 +56,21 @@
 .sky-constellations circle { fill: var(--star); }
 .scene--house[data-done~="rooftop"] .sky-constellations { opacity: 0.85; }
 
-/* ───────── house frame: both layers share one box, origin top-left for the zoom maths ───────── */
+/* ───────── house frame: both layers share one box, origin top-left for the zoom maths ─────────
+   The frame shows viewBox x 0‥400; the art (garden tree included) spans x −6‥426, so --fh fits
+   those 432 units to the width (or the height left over by the header) and viewBox x 210 sits
+   on the screen's centre line. --fh lives on .house so the sky can place itself around it. */
+.house {
+  --head: 5.5rem;
+  --fh: min(calc(100vw * 520 / 432), calc(100svh - var(--head)));
+}
 .house-frame {
   position: absolute;
   left: 50%;
-  --fh: min(130vw, calc(100svh - 5.5rem));
-  /* tall phones: lift the house off the bottom so it sits mid-screen on its lawn */
-  bottom: max(0px, calc((100svh - 130vw - 5.5rem) * 0.5));
+  bottom: max(0px, calc((100svh - var(--fh) - var(--head)) * 0.5));
   height: var(--fh);
   aspect-ratio: 400 / 520;
-  margin-left: calc(var(--fh) * -0.3846);
+  margin-left: calc(var(--fh) * -210 / 520);
 }
 .house-layer { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
 .house-svg { width: 100%; height: 100%; overflow: visible; }
@@ -116,7 +121,9 @@
 .h-spill { fill: url(#h-spill); opacity: 0.5; }
 .h-cat { fill: var(--ink); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
 .h-cat path:last-child { fill: none; }
-.h-rail, .h-fairy, .h-cat, .h-tank, .h-chimney, .h-smoke, .h-spill, .g-bush, .h-garden { pointer-events: none; }
+.h-rail, .h-fairy, .h-smoke, .h-spill, .g-bush, .h-garden { pointer-events: none; }
+/* scenery that answers a tap (poke) */
+.h-cat, .h-tank, .h-chimney, .h-garden .g-shroom, .g-bush--l { pointer-events: auto; cursor: pointer; }
 .st-glow-0 { stop-color: var(--butter); }
 .st-glow-1 { stop-color: var(--lamp); }
 .st-glow-2 { stop-color: var(--mustard); }
@@ -184,6 +191,9 @@
 /* desk done: an extra-warm reading lamp */
 .scene--house[data-done~="desk"] .win--desk .w-glow { opacity: 1; filter: saturate(1.25) brightness(1.06); }
 .scene--house[data-done~="desk"] .win--desk .w-halo { opacity: 0.9; }
+
+/* nudge: the next window glows a little brighter while it bounces */
+.win.nudge .w-halo, .h-plate.nudge .plate-halo { opacity: 0.8; }
 
 /* tapped: brighten as we fly in */
 .win--entering .w-glow { animation: none !important; opacity: 1 !important; transition: opacity 0.3s ease; }
@@ -337,3 +347,56 @@
 .house[data-reduced] .win[data-state="suggested"] .w-glow { opacity: 0.5; }
 .house[data-reduced] .win[data-state="suggested"] .w-halo { opacity: 0.25; }
 .house[data-reduced] .smoke circle:first-child { opacity: 0.5; }
+
+/* ───────── portrait (phones, tablets): the caption stands on the lawn under the house ─────────
+   Tall screens have more height than the house can use at full width. The spare height is split
+   evenly between the sky (moon, constellations) and the lawn, and the caption moves down onto the
+   lawn — so neither is dead, and it stays clear of the toasts that drop in under the chips. */
+@media (max-aspect-ratio: 3/4) {
+  .house {
+    --head: 7.2rem;
+    /* width-fit, unless that leaves less than ~8rem of sky above the roof (roof = 354/520 of --fh) */
+    --fh: min(calc(100vw * 520 / 432), calc((100svh - var(--head) - 8rem) * 520 / 354));
+    --lawn: max(var(--head), calc((100svh - 3.6rem - var(--fh) * 354 / 520) / 2));
+    --roof: calc(100svh - var(--lawn) - var(--fh) * 354 / 520);
+    --moon-w: clamp(84px, min(30vw, calc(var(--roof) - 3.6rem - 1.5rem)), 150px);
+  }
+  .house-frame { bottom: calc(var(--lawn) - var(--fh) * 80 / 520); } /* ground line at the top of the lawn band */
+  .house-head {
+    top: auto;
+    bottom: max(0.9rem, calc((var(--lawn) - 6rem) / 2), calc(env(safe-area-inset-bottom) + 0.5rem));
+  }
+  .sky-moon {
+    width: var(--moon-w);
+    right: max(4%, calc(50% - 13rem));
+    top: calc((3.4rem + var(--roof)) / 2 - var(--moon-w) / 2);
+  }
+  .sky-constellations { top: calc(3.6rem + (var(--roof) - 3.6rem) * 0.2); }
+}
+
+/* ───────── landscape phones: house scaled to the height on the left, words + moon on the right ───────── */
+@media (orientation: landscape) and (max-height: 520px) {
+  .house {
+    /* viewBox y 180‥596 (smoke to the first stepping stones) fills the height */
+    --fh: calc(100svh * 520 / 416);
+  }
+  .house-frame {
+    left: 40%;
+    bottom: auto;
+    top: calc(var(--fh) * -60 / 520);
+  }
+  .house-head {
+    top: 58%;
+    left: auto;
+    right: 0;
+    width: 36%;
+    translate: 0 -50%;
+  }
+  .house-caption { font-size: clamp(1.6rem, 4.6vw, 2rem); }
+  .sky-moon {
+    width: clamp(72px, 22svh, 96px);
+    right: calc(18% - clamp(72px, 22svh, 96px) / 2);
+    top: 3.6rem;
+  }
+  .sky-constellations { width: clamp(90px, 13vw, 120px); left: 3%; top: 12svh; }
+}

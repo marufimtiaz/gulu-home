@@ -6,13 +6,14 @@
 import { gsap } from 'gsap'
 import './scene.css'
 import { DOOR, VIEW, WINDOWS, farSVG, houseSVG, skyArt, windowCenter } from './art.js'
+import { nudge, poke, press } from '../../ui/feel.js'
 
 const ROOMS = ['living', 'kitchen', 'garden', 'rooftop', 'desk', 'empty']
 const ZOOM = 2.6
 
 let ctx = null
 let tl = null
-let timers = []
+let settle = null // fallback when a guard bounces us straight back to the house
 
 export default {
   id: 'house',
@@ -62,6 +63,10 @@ export default {
     plate.setAttribute('aria-label', t('house.plate'))
     if (ctx.reduced) house.dataset.reduced = ''
 
+    // idle guidance: the next window (or the nameplate) bounces after ~4 s of stillness
+    const guide = nudge([])
+    ctx.onCleanup(() => guide.stop())
+
     // ── state → art ──
     const paint = () => {
       const s = state.get()
@@ -104,6 +109,7 @@ export default {
         tag.style.top = `${((b.y - lift - VIEW.y) / VIEW.h) * 100}%`
         tag.firstElementChild.textContent = text
       }
+      guide.set(at === 'door' ? plate : at ? wins[at] : [])
     }
     paint()
     ctx.onCleanup(state.subscribe(paint))
@@ -161,7 +167,6 @@ export default {
     const enter = (id) => {
       if (busy) return
       if (id === 'empty' && wins.empty.dataset.state === 'locked') {
-        ctx.sound.play('tap')
         ctx.fx.toast(t('locked.empty'))
         if (!ctx.reduced) {
           const tape = wins.empty.querySelector('[data-tape]')
@@ -170,21 +175,22 @@ export default {
         return
       }
       busy = true
-      ctx.sound.play(id === 'card' ? 'paper' : 'tap')
+      guide.set([])
+      if (id === 'card') ctx.sound.play('paper') // press() already gave the tap
       const room = id === 'door' ? 'finale' : id
       const node = id === 'door' ? plate : id === 'card' ? letter : wins[id]
       node.classList.add('win--entering')
       const go = () => {
         ctx.go(room)
         // if a guard bounced us straight back, settle the house again
-        timers.push(
-          setTimeout(() => {
-            if (!root.isConnected || root.classList.contains('scene--leaving')) return
-            node.classList.remove('win--entering')
-            busy = false
-            if (!ctx.reduced) zoomOut(id === 'card' ? 'door' : id, ZOOM, 0.6)
-          }, 1600),
-        )
+        settle?.kill()
+        settle = gsap.delayedCall(1.6, () => {
+          if (!root.isConnected || root.classList.contains('scene--leaving')) return
+          node.classList.remove('win--entering')
+          busy = false
+          paint()
+          if (!ctx.reduced) zoomOut(id === 'card' ? 'door' : id, ZOOM, 0.6)
+        })
       }
       if (ctx.reduced) go()
       else zoomIn(id === 'card' ? 'door' : id).then(go)
@@ -217,6 +223,13 @@ export default {
       house.removeEventListener('pointerdown', onFirst)
     })
 
+    // ── feel: everything she can tap squashes under her finger; scenery answers back ──
+    for (const el of [...Object.values(wins), plate, letter]) {
+      gsap.set(el, { transformOrigin: '50% 60%' })
+      ctx.onCleanup(press(el, { scale: 0.95 }))
+    }
+    for (const el of root.querySelectorAll('.h-cat, .h-tank, .h-chimney, .g-shroom, .g-bush--l')) ctx.onCleanup(poke(el))
+
     // ── ambient ──
     ctx.onCleanup(ctx.fx.starfield(root.querySelector('[data-starfield]'), { count: 50, shooting: false }))
     const count = ctx.raw().ambient?.fireflies ?? 7
@@ -228,9 +241,9 @@ export default {
 
   unmount() {
     kill()
-    timers.forEach(clearTimeout)
-    timers = []
-    if (ctx?.root) gsap.killTweensOf(ctx.root.querySelectorAll('.house-layer, .house-sky, .house-head, [data-tag], [data-tape]'))
+    settle?.kill()
+    settle = null
+    if (ctx?.root) gsap.killTweensOf(ctx.root.querySelectorAll('.house-layer, .house-sky, .house-head, [data-tag], [data-tape], .win, [data-nameplate], [data-letterbox], .h-cat, .h-tank, .h-chimney, .g-shroom, .g-bush--l'))
     delete window.__house
     ctx = null
   },
