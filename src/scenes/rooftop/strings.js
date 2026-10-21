@@ -3,7 +3,7 @@ export default {
   label: 'the rooftop at night — join the bright stars',
   kicker: 'the rooftop',
   title: 'our night sky',
-  prompt: 'tap the brightest stars to join them up',
+  prompt: 'join up the brightest stars',
   left: '{n} more stars…',
   leftOne: 'one more star…',
   finish: 'finish this one first ✦',
