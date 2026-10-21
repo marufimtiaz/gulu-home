@@ -108,6 +108,15 @@ function sky() {
       <circle class="moon-crater" cx="10" cy="6" r="4.2"/>
       <circle class="moon-crater" cx="-4" cy="13" r="2.8"/>
       <path class="moon-shine" d="M-21 -12 A24 24 0 0 1 -6 -24"/>
+      <g class="moon-face" data-moon-face opacity="0">
+        <circle class="moon-blush" cx="-14" cy="8" r="4.5" opacity="0"/>
+        <circle class="moon-blush" cx="14" cy="8" r="4.5" opacity="0"/>
+        <g class="moon-eye" data-eye="l"><ellipse cx="-8" cy="-1" rx="2.4" ry="3.2"/></g>
+        <g class="moon-eye" data-eye="r"><ellipse cx="8" cy="-1" rx="2.4" ry="3.2"/></g>
+        <path class="moon-happy" d="M-11 -1 q3 -4 6 0 M5 -1 q3 -4 6 0" opacity="0"/>
+        <path class="moon-smile" d="M-5 9 q5 5 10 0"/>
+      </g>
+      <circle class="moon-hit" r="46"/>
     </g></g>
   </g>`
 }
@@ -387,7 +396,7 @@ function house() {
     <rect class="p-wall-outline" x="18" y="288" width="264" height="14" rx="2"/>
 
     <g class="h-roof">
-      <g class="h-chimney" data-chimney>
+      <g class="h-chimney pokeable" data-chimney data-poke="chimney">
         <rect class="ink-shadow" x="248" y="230" width="18" height="62"/>
         <rect class="p-brick" x="244" y="226" width="18" height="64"/>
         <path class="ink-faint" d="M244 238 H262 M244 250 H262 M244 262 H262 M244 274 H262 M253 226 V238 M249 238 V250 M257 250 V262 M251 262 V274"/>
@@ -395,10 +404,12 @@ function house() {
       </g>
       <g class="h-tank pokeable" data-poke="tank">
         <path class="ink-line" d="M182 290 V262 M214 290 V262 M182 276 L214 290 M214 276 L182 290"/>
-        <rect class="ink-shadow" x="180" y="232" width="40" height="32" rx="6"/>
-        <rect class="p-tank" x="176" y="228" width="40" height="32" rx="6"/>
-        <path class="ink-faint" d="M176 240 H216 M176 250 H216"/>
-        <rect class="p-tank-lid" x="186" y="222" width="20" height="7" rx="2"/>
+        <g class="tank-body" data-tank-body>
+          <rect class="ink-shadow" x="180" y="232" width="40" height="32" rx="6"/>
+          <rect class="p-tank" x="176" y="228" width="40" height="32" rx="6"/>
+          <path class="ink-faint" d="M176 240 H216 M176 250 H216"/>
+        </g>
+        <rect class="p-tank-lid" data-tank-lid x="186" y="222" width="20" height="7" rx="2"/>
       </g>
       ${rooftopWindow()}
       <g class="h-rail">
@@ -406,7 +417,22 @@ function house() {
         <rect class="p-rail" x="20" y="260" width="260" height="6" rx="2"/>
         <rect class="p-rail" x="20" y="284" width="260" height="5" rx="1"/>
       </g>
-      <path class="h-cat pokeable" data-poke="cat" transform="translate(4 -30)" d="M128 290 q-2 -14 4 -20 l-1 -8 l5 5 q3 -1 6 0 l5 -5 l-1 8 q6 6 4 20 Z M148 288 q12 2 10 -10"/>
+      <g class="h-cat pokeable" data-poke="cat">
+        <g class="cat-walk" transform="translate(4 -30)">
+          <path class="cat-tail" data-cat-tail d="M148 288 q12 2 10 -10"/>
+          <path class="cat-body" d="M128 290 q-2 -12 5 -18 h14 q7 6 5 18 Z"/>
+          <g class="cat-head" data-cat-head>
+            <path class="cat-skull" d="M132 274 q-2 -6 1 -9 l-1 -8 l5 5 q3 -1.2 6 0 l5 -5 l-1 8 q3 3 1 9 q-8 4 -16 0 Z"/>
+            <g class="cat-eyes" data-cat-eyes opacity="0">
+              <ellipse class="cat-eye" cx="137" cy="268.6" rx="1.9" ry="2.3"/>
+              <ellipse class="cat-eye" cx="143.4" cy="268.6" rx="1.9" ry="2.3"/>
+              <ellipse class="cat-pupil" cx="137" cy="268.6" rx="0.6" ry="1.8"/>
+              <ellipse class="cat-pupil" cx="143.4" cy="268.6" rx="0.6" ry="1.8"/>
+            </g>
+          </g>
+          <rect class="hit" x="120" y="250" width="44" height="44"/>
+        </g>
+      </g>
     </g>
 
     ${fairyLights()}
@@ -443,12 +469,13 @@ function door() {
 function letterbox() {
   return `
   <defs><clipPath id="fh-slot-clip" clipPathUnits="userSpaceOnUse"><rect x="128" y="470" width="44" height="70.5"/></clipPath></defs>
+  <ellipse class="mail__halo" data-mail-halo cx="150" cy="525" rx="32" ry="27" opacity="0"/>
   <g clip-path="url(#fh-slot-clip)">
     <g class="mail" data-mail>
-      <g transform="translate(150 540) rotate(-7)">
-        <rect class="mail__paper" x="-8" y="-12" width="16" height="11" rx="1"/>
-        <path class="mail__flap" d="M-8,-12 L0,-6 L8,-12"/>
-        <circle class="mail__seal" cx="0" cy="-6" r="1.8"/>
+      <g transform="translate(150 540) rotate(-6)">
+        <rect class="mail__paper" x="-19" y="-28" width="38" height="26" rx="2"/>
+        <path class="mail__flap" d="M-19,-28 L0,-14 L19,-28"/>
+        <circle class="mail__seal" cx="0" cy="-14" r="3.8"/>
       </g>
     </g>
   </g>
@@ -463,7 +490,12 @@ function letterbox() {
 function mat() {
   let fringe = ''
   for (let x = 129; x <= 171; x += 3) fringe += `M${x} 575.5 v2.5 `
-  return `<g class="mat pokeable" data-poke="mat">
+  // under the mat tonight: the key the door scene never had (she won't need it)
+  const key = (x, y) =>
+    `M${x - 4},${y} a2.6,2.6 0 1 0 5.2,0 a2.6,2.6 0 1 0 -5.2,0 Z M${x + 1.2},${y - 0.7} H${x + 10} V${y + 0.7} H${x + 9} V${y + 2.2} H${x + 7.6} V${y + 0.7} H${x + 6.4} V${y + 1.8} H${x + 5} V${y + 0.7} H${x + 1.2} Z`
+  return `<path class="mat-key" data-mat-key d="${key(156, 571.5)}"/>
+  <g class="mat pokeable" data-poke="mat">
+    <rect class="hit" x="124" y="560" width="52" height="22"/>
     <path class="mat__fringe" d="${fringe}"/>
     <rect class="mat__base" x="127" y="565" width="46" height="11" rx="2"/>
     <rect class="mat__stripe" x="130" y="567" width="40" height="7" rx="1"/>

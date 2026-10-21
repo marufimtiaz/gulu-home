@@ -91,6 +91,49 @@
 .fin-svg .h-porch-bulb { fill: var(--lamp); filter: drop-shadow(0 0 4px var(--lamp)); }
 .fin-svg .h-porch-glow { fill: url(#fh-halo); opacity: 0.9; }
 .fin-svg .h-cat { fill: var(--ink); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.fin-svg .h-cat .cat-walk { filter: drop-shadow(0 0 0.9px color-mix(in oklab, var(--indigo) 50%, var(--moon))); }
+.fin-svg .h-cat .cat-tail { fill: none; stroke-width: 2.6; stroke-linecap: round; }
+.fin-svg .h-cat .cat-eye { fill: var(--lamp); stroke: none; filter: drop-shadow(0 0 1.5px var(--lamp)); }
+.fin-svg .h-cat .cat-pupil { fill: var(--ink); stroke: none; }
+.fin-svg .hit, .fin-svg .moon-hit { fill: transparent; stroke: none; }
+.fin-svg .moon-face { pointer-events: none; }
+.fin-svg .moon-eye ellipse { fill: var(--ink); }
+.fin-svg .moon-happy, .fin-svg .moon-smile { fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; }
+.fin-svg .moon-blush { fill: var(--pink); }
+.fin-svg .mat-key { fill: var(--mustard); stroke: var(--ink); stroke-width: 0.6; }
+.fin-svg .h-drop { fill: color-mix(in oklab, var(--sky) 60%, var(--paper)); stroke: var(--ink); stroke-width: 0.8; }
+.fin-svg .h-petal { fill: var(--pink); stroke: var(--ink); stroke-width: 0.6; }
+.fin-svg .h-firefly { fill: var(--lamp); filter: drop-shadow(0 0 3px var(--lamp)) drop-shadow(0 0 6px var(--lamp-glow)); }
+/* a handwritten remark by whatever she touched (screen-positioned) */
+.fin-say {
+  position: absolute;
+  z-index: 6;
+  translate: -50% -100%;
+  pointer-events: none;
+  white-space: nowrap;
+  padding: 0.04em 0.6em 0.14em;
+  font-family: var(--hand);
+  font-size: clamp(1.05rem, 4vw, 1.35rem);
+  line-height: 1.1;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--line-thin);
+  border-radius: 9px;
+  box-shadow: var(--pop-sm);
+}
+.lang-bn .fin-say { font-family: var(--bn); font-size: clamp(0.95rem, 3.6vw, 1.15rem); }
+/* a rocket she sends up into the sky (fireworks answer her taps) */
+.fin-rocket {
+  position: absolute;
+  z-index: 5;
+  width: 3px;
+  height: 18px;
+  margin: -9px 0 0 -1.5px;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, var(--butter), transparent);
+  filter: drop-shadow(0 0 4px var(--lamp));
+  pointer-events: none;
+}
 
 /* windows: all lit */
 .fin-svg .w-pane { fill: var(--h-pane); filter: drop-shadow(0 0 10px var(--lamp-glow)); }
@@ -147,9 +190,10 @@
 /* the letterbox + the envelope in it */
 .fin-svg .flap { transform-box: fill-box; transform-origin: 50% 0; }
 .fin-svg .mail { opacity: 0; }
-.fin-svg .mail__paper { fill: var(--card-ivory); stroke: var(--ink); stroke-width: 0.9; }
-.fin-svg .mail__flap { fill: none; stroke: var(--card-gold); stroke-width: 0.8; stroke-linejoin: round; }
-.fin-svg .mail__seal { fill: var(--berry); stroke: var(--ink); stroke-width: 0.5; }
+.fin-svg .mail__paper { fill: var(--card-ivory); stroke: var(--ink); stroke-width: 1.1; }
+.fin-svg .mail__flap { fill: none; stroke: var(--card-gold); stroke-width: 1.2; stroke-linejoin: round; }
+.fin-svg .mail__seal { fill: var(--berry); stroke: var(--ink); stroke-width: 0.7; }
+.fin-svg .mail__halo { fill: url(#fh-halo); }
 
 /* fairy lights */
 .fin-svg .h-fairy-wire { fill: none; stroke: var(--ink); stroke-width: 1.1; opacity: 0.85; }
@@ -199,8 +243,8 @@
 html[lang="bn"] .fin-plate .plate__names { font-family: var(--bn); }
 
 /* ── the HELLO-my-name-is slip ── */
-.fin-slip { position: absolute; visibility: hidden; } /* placed + sized by index.js from art.js */
-.fin-sticker { width: 100%; height: 100%; will-change: transform; touch-action: none; cursor: grab; outline: none; filter: drop-shadow(0 5px 0 var(--shade)); }
+.fin-slip { position: absolute; visibility: hidden; pointer-events: none; } /* placed + sized by index.js from art.js; only the sticker itself takes taps */
+.fin-sticker { pointer-events: auto; width: 100%; height: 100%; will-change: transform; touch-action: none; cursor: grab; outline: none; filter: drop-shadow(0 5px 0 var(--shade)); }
 .fin-sticker svg { width: 100%; height: 100%; overflow: visible; }
 .fin-sticker.is-held { cursor: grabbing; filter: drop-shadow(0 16px 9px var(--shade)); }
 .fin-sticker.sticker--stuck { cursor: default; filter: drop-shadow(0 2px 0 var(--shade)); }
@@ -301,29 +345,35 @@ html[lang="bn"] .fin-card__names { font-family: var(--bn); }
   -webkit-tap-highlight-color: transparent;
 }
 .fin-mail__hit { width: 56px; height: 56px; flex: none; border-radius: 50%; }
+/* the tag sits on the lawn below the step (placed by index.js), its tail reaching up-left to the
+   envelope; a tap on it opens the post too, so it's a full-size target */
 .fin-mail__tag {
-  position: relative;
-  padding: 0.05em 0.6em 0.14em;
-  font-size: 1.2rem;
+  position: absolute;
+  left: var(--tag-x, 60px);
+  top: var(--tag-y, 40px);
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.7em 0.08em;
+  font-size: 1.25rem;
   line-height: 1.1;
   white-space: nowrap;
   background: var(--card-ivory);
   border: var(--line-thin);
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: var(--pop-sm);
   rotate: -3deg;
 }
-.fin-mail__tag::before { /* tail, pointing at the letterbox */
+.fin-mail__tag::before { /* tail, reaching up to the letterbox */
   content: "";
   position: absolute;
-  left: -6px;
-  top: 50%;
+  left: 12px;
+  top: -6px;
   width: 10px;
   height: 10px;
-  margin-top: -5px;
   background: var(--card-ivory);
   border-left: var(--line-thin);
-  border-bottom: var(--line-thin);
+  border-top: var(--line-thin);
   rotate: 45deg;
 }
 .fin-mail:focus-visible .fin-mail__tag { outline: 3px solid var(--butter); }

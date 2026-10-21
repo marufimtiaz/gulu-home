@@ -18,6 +18,11 @@ export function heart(cx, cy, s) {
   return `M${p(0, 7)} C${p(-3, 4)} ${p(-10, 0)} ${p(-10, -4.5)} C${p(-10, -9)} ${p(-5, -11)} ${p(0, -6)} C${p(5, -11)} ${p(10, -9)} ${p(10, -4.5)} C${p(10, 0)} ${p(3, 4)} ${p(0, 7)} Z`
 }
 
+/** A key lying flat, bow centred on (x, y): the dust-free patch under the mat. */
+function keyPath(x, y) {
+  return `M${x - 13},${y} a9,9 0 1 0 18,0 a9,9 0 1 0 -18,0 Z M${x - 8},${y} a4,4 0 1 1 8,0 a4,4 0 1 1 -8,0 Z M${x + 4},${y - 2.6} H${x + 36} V${y + 2.6} H${x + 32} V${y + 7.5} H${x + 27} V${y + 2.6} H${x + 23} V${y + 6} H${x + 18} V${y + 2.6} H${x + 4} Z`
+}
+
 /** A four-point paper star. */
 const sparkle = (cx, cy, s) =>
   `M${cx},${cy - s} Q${cx + s * 0.18},${cy - s * 0.18} ${cx + s},${cy} Q${cx + s * 0.18},${cy + s * 0.18} ${cx},${cy + s} Q${cx - s * 0.18},${cy + s * 0.18} ${cx - s},${cy} Q${cx - s * 0.18},${cy - s * 0.18} ${cx},${cy - s} Z`
@@ -36,7 +41,7 @@ function flower(x, y, r, cls) {
   let petals = ''
   for (let i = 0; i < 5; i++) {
     const a = (i / 5) * Math.PI * 2 - Math.PI / 2
-    petals += `<circle class="${cls}" cx="${r1(x + Math.cos(a) * r)}" cy="${r1(y + Math.sin(a) * r)}" r="${r1(r * 0.78)}"/>`
+    petals += `<circle class="${cls} petal" cx="${r1(x + Math.cos(a) * r)}" cy="${r1(y + Math.sin(a) * r)}" r="${r1(r * 0.78)}"/>`
   }
   return `${petals}<circle class="fl-eye" cx="${x}" cy="${y}" r="${r1(r * 0.55)}"/>`
 }
@@ -86,10 +91,12 @@ export function skySVG() {
     .map(([x, y, s]) => `<svg class="pstar" style="left:${x}%;top:${y}%" width="${s * 2 + 4}" height="${s * 2 + 4}" viewBox="${-s - 2} ${-s - 2} ${s * 2 + 4} ${s * 2 + 4}" aria-hidden="true"><path d="${sparkle(0, 0, s)}"/></svg>`)
     .join('')}
   <svg class="moon" viewBox="0 0 80 80" aria-hidden="true">
-    <circle class="moon__halo" cx="40" cy="40" r="38"/>
-    <path class="moon__body" d="M52,12 A30,30 0 1 0 66,52 A24,24 0 1 1 52,12 Z"/>
-    <circle class="moon__pit" cx="30" cy="50" r="3"/>
-    <circle class="moon__pit" cx="40" cy="62" r="2"/>
+    <g class="moon__swing">
+      <circle class="moon__halo" cx="40" cy="40" r="38"/>
+      <path class="moon__body" d="M52,12 A30,30 0 1 0 66,52 A24,24 0 1 1 52,12 Z"/>
+      <circle class="moon__pit" cx="30" cy="50" r="3"/>
+      <circle class="moon__pit" cx="40" cy="62" r="2"/>
+    </g>
   </svg>`
 }
 
@@ -123,6 +130,13 @@ export function porchSVG() {
     <path class="trim" d="M54,116 H80 L54,146 Z"/>
     <path class="trim" d="M386,116 H360 L386,146 Z"/>
   </g>
+  <g class="vent-cat" data-vent>
+    <circle class="hit" cx="220" cy="68" r="28"/>
+    <g class="vent-cat__eyes" data-vent-eyes opacity="0">
+      <g class="vent-cat__eye"><ellipse class="vent-cat__iris" cx="213" cy="69" rx="3.2" ry="3.6"/><ellipse class="vent-cat__pupil" cx="213" cy="69" rx="0.9" ry="2.7"/></g>
+      <g class="vent-cat__eye"><ellipse class="vent-cat__iris" cx="227" cy="69" rx="3.2" ry="3.6"/><ellipse class="vent-cat__pupil" cx="227" cy="69" rx="0.9" ry="2.7"/></g>
+    </g>
+  </g>
 
   <g class="casing" filter="url(#door-lift)">
     <path class="trim" fill-rule="evenodd" d="M92,566 V240 A128,128 0 0 1 348,240 V566 Z M110,548 V240 A110,110 0 0 1 330,240 V548 Z"/>
@@ -133,15 +147,18 @@ export function porchSVG() {
   <g class="lamp" transform="translate(392,232) scale(1.3)">
     <rect class="iron" x="-31" y="2" width="10" height="38" rx="4"/>
     <path class="iron-arm" d="M-21,16 H-6 Q0,16 0,10 V6"/>
-    <circle class="iron" cx="0" cy="5" r="3"/>
-    <g class="lamp__light" data-lamp>
-      <path class="lamp__glass" d="M-11,22 H11 L8,56 H-8 Z"/>
-      <ellipse class="lamp__bulb" cx="0" cy="40" rx="4.5" ry="6.5"/>
+    <rect class="hit" x="-34" y="0" width="56" height="70"/>
+    <g class="lamp__lantern">
+      <circle class="iron" cx="0" cy="5" r="3"/>
+      <g class="lamp__light" data-lamp>
+        <path class="lamp__glass" d="M-11,22 H11 L8,56 H-8 Z"/>
+        <ellipse class="lamp__bulb" cx="0" cy="40" rx="4.5" ry="6.5"/>
+      </g>
+      <path class="lamp__bars" d="M0,22 V56 M-5.5,22 L-4,56 M5.5,22 L4,56"/>
+      <path class="iron" d="M-14,22 H14 L7,9 H-7 Z"/>
+      <rect class="iron" x="-11" y="55" width="22" height="5" rx="2"/>
+      <circle class="iron" cx="0" cy="64" r="2.6"/>
     </g>
-    <path class="lamp__bars" d="M0,22 V56 M-5.5,22 L-4,56 M5.5,22 L4,56"/>
-    <path class="iron" d="M-14,22 H14 L7,9 H-7 Z"/>
-    <rect class="iron" x="-11" y="55" width="22" height="5" rx="2"/>
-    <circle class="iron" cx="0" cy="64" r="2.6"/>
   </g>
 
   <g class="step" filter="url(#door-lift-sm)">
@@ -149,7 +166,11 @@ export function porchSVG() {
     <rect class="stone" x="84" y="545" width="272" height="11" rx="3"/>
   </g>
 
+  <g class="mat-key" data-key-shadow aria-hidden="true">
+    <path class="mat-key__ghost" d="${keyPath(254, 594)}"/>
+  </g>
   <g class="mat" filter="url(#door-lift-sm)">
+    <rect class="hit" x="124" y="570" width="192" height="44"/>
     <path class="mat__fringe" d="${fringe}"/>
     <rect class="mat__base" x="134" y="576" width="172" height="32" rx="6"/>
     <rect class="mat__stripe" x="142" y="582" width="156" height="20" rx="3"/>
@@ -159,18 +180,31 @@ export function porchSVG() {
   <path class="spill" data-spill d="M110,548 H330 L436,640 H4 Z" fill="url(#door-spill)"/>
 
   <g class="plant" filter="url(#door-lift)">
-    ${leaves}
+    <rect class="hit" x="4" y="390" width="104" height="176"/>
+    <g class="plant__leaves">${leaves}</g>
     <path class="pot" d="M28,520 L84,520 L78,566 L34,566 Z"/>
     <rect class="pot-rim" x="22" y="510" width="68" height="13" rx="3"/>
   </g>
 
   <g class="flowers" filter="url(#door-lift)">
-    ${flowers}
-    ${blooms}
-    ${leaf(380, 532, -40, 26, 7, 'lf')}${leaf(400, 532, 38, 22, 6, 'lf-lo')}
+    <rect class="hit" x="356" y="440" width="70" height="128"/>
+    <g class="flowers__top">
+      ${flowers}
+      ${blooms}
+      ${leaf(380, 532, -40, 26, 7, 'lf')}${leaf(400, 532, 38, 22, 6, 'lf-lo')}
+    </g>
     <path class="pot" d="M364,532 L414,532 L409,566 L369,566 Z"/>
     <rect class="pot-rim" x="360" y="524" width="58" height="11" rx="3"/>
   </g>
+
+  ${[0, 1, 2]
+    .map(
+      (i) => `<g class="moth" data-moth="${i}" transform="translate(60,470)" opacity="0">
+    <g class="moth__wings"><path class="moth__wing" d="M0,0 C-8,-8 -13,-1 -9,5 C-6,7 -2,3 0,0 Z"/><path class="moth__wing" d="M0,0 C8,-8 13,-1 9,5 C6,7 2,3 0,0 Z"/></g>
+    <ellipse class="moth__body" cx="0" cy="1" rx="1.6" ry="4"/>
+  </g>`,
+    )
+    .join('')}
 </svg>`
 }
 
@@ -200,7 +234,7 @@ export function leafSVG() {
     })
     .join(' ')
   return `<svg class="leaf-art" viewBox="0 0 220 418" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-  <path class="leaf__face" d="M0,418 V110 A110,110 0 0 1 220,110 V418 Z"/>
+  <path class="leaf__face" data-knock d="M0,418 V110 A110,110 0 0 1 220,110 V418 Z"/>
   <path class="leaf__hi" d="M10,418 V110 A100,100 0 0 1 60,23"/>
   <path class="fan" data-fan d="M28,112 A82,82 0 0 1 192,112 Z"/>
   <path class="fan__bars" d="${mull}"/>
@@ -212,6 +246,7 @@ export function leafSVG() {
     <circle class="brass" cx="110" cy="136" r="3.5"/>
     <rect class="plate__board" x="68" y="150" width="84" height="30" rx="8"/>
     <rect class="plate__edge" x="73" y="155" width="74" height="20" rx="5"/>
+    <text class="plate__pencil" data-plate-pencil x="110" y="170.5"></text>
   </g>
 
   <circle class="leaf__recess" cx="110" cy="277" r="86"/>
@@ -221,8 +256,12 @@ export function leafSVG() {
   <rect class="panel__bevel" x="26" y="373" width="72" height="26" rx="4"/>
   <rect class="panel__bevel" x="122" y="373" width="72" height="26" rx="4"/>
 
-  <circle class="brass knob" cx="205" cy="272" r="8"/>
-  <circle class="knob__hi" cx="202.5" cy="269.5" r="2.4"/>
+  <g class="knob" data-knob>
+    <circle class="hit" cx="203" cy="272" r="20"/>
+    <circle class="brass" cx="205" cy="272" r="8"/>
+    <g class="knob__turn" data-knob-turn><path class="knob__notch" d="M205,265.6 V278.4"/></g>
+    <circle class="knob__hi" cx="202.5" cy="269.5" r="2.4"/>
+  </g>
   <rect class="brass-lo" x="8" y="408" width="204" height="9" rx="2"/>
 </svg>`
 }
