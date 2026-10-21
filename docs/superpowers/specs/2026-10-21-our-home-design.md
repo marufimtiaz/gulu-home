@@ -239,10 +239,14 @@ shared code and tests, not taste.
 **3. Feels alive under her finger** (`src/ui/feel.js`)
 - `press()` on everything interactive: visible squash + tap sound + haptic within 100 ms
   (`pressLatency` test helper).
-- `poke()` on decorative objects: tapping scenery always does something small (hop, sparkle).
+- Scenery reacts **like what it is**, via `react(el, kind, { steps })` from `src/ui/react.js`
+  (sway · tip · spin · ripple · flutter · flicker · ring · squish · knock), each with its own
+  material sound. Repeat taps escalate through `steps`, ideally to a payoff (a joke, a nickname,
+  a callback). The generic hop (`poke()`) is retired.
 - `wobble()` on draggable things so they look draggable.
-- `nudge()` guides her: after ~4 s idle, the next thing to touch bounces and glows; it stops
-  the moment she engages and retargets as the room progresses.
+- `nudge()` guides her in the room's own language (`style`: glow, glint, rattle, sway, twinkle,
+  or a custom timeline — not a generic bounce), with a hand-drawn arrow (`arrow: true`) only when
+  she's really stuck; it stops the moment she engages and retargets as the room progresses.
 - Long gestures show continuous progress; released objects settle with springs
   (`EASE.spring`, `EASE.wobble`), never a linear stop.
 

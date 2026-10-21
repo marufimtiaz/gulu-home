@@ -157,6 +157,37 @@ export const EFFECT_FNS = {
     bell(ac, b, hz(n + 12), 0.1, { dur: 1.2, gain: 0.07 })
     bell(ac, b, hz(n + 7), 0.18, { dur: 1.2, gain: 0.06 })
   },
+
+  // scenery reactions (ui/react.js): one sound per material
+  knock: (ac, b) => {
+    tone(ac, b, 190, 0, { type: 'triangle', dur: 0.09, gain: 0.3, to: 120, wet: 0.1 })
+    noise(ac, b, 0, { dur: 0.05, filterHz: 900, q: 1.2, gain: 0.1 })
+  },
+  squish: (ac, b) => {
+    noise(ac, b, 0, { dur: 0.22, filterHz: 400, to: 260, q: 0.7, gain: 0.14, type: 'lowpass', attack: 0.3 })
+    tone(ac, b, 160, 0, { dur: 0.18, gain: 0.08, to: 110, wet: 0 })
+  },
+  drip: (ac, b) => pluck(ac, b, 1400, 0, { dur: 0.18, gain: 0.14, to: 2600, wet: 0.5 }),
+  rustle: (ac, b) => {
+    noise(ac, b, 0, { dur: 0.35, filterHz: 3200, to: 5200, q: 0.5, gain: 0.07, attack: 0.4 })
+    noise(ac, b, 0.12, { dur: 0.25, filterHz: 2600, q: 0.6, gain: 0.05, attack: 0.3 })
+  },
+  slosh: (ac, b) => {
+    noise(ac, b, 0, { dur: 0.5, filterHz: 500, to: 900, q: 0.9, gain: 0.14, type: 'lowpass', attack: 0.25 })
+    pluck(ac, b, 300, 0.12, { dur: 0.2, gain: 0.06, to: 520, wet: 0.3 })
+  },
+  buzz: (ac, b) => tone(ac, b, 100, 0, { type: 'sawtooth', dur: 0.4, gain: 0.03, attack: 0.02, wet: 0 }),
+  meow: (ac, b) => {
+    sweep(ac, b, 520, 880, 0, { dur: 0.22, gain: 0.07, type: 'triangle', vibrato: 12, rate: 7, lowpass: 2400, attack: 0.1 })
+    sweep(ac, b, 880, 460, 0.2, { dur: 0.42, gain: 0.07, type: 'triangle', vibrato: 18, rate: 6, lowpass: 2000, attack: 0.02 })
+  },
+  // a wooden xylophone bar on the pentatonic scale (opts.i) — fence pickets play tunes
+  xylo: (ac, b, o = {}) => {
+    const i = Math.abs(Math.floor(Number(o.i) || 0)) % PENTA.length
+    pluck(ac, b, hz(PENTA[i] - 12), 0, { dur: 0.45, gain: 0.2, wet: 0.35 })
+    tone(ac, b, hz(PENTA[i] + 7), 0, { dur: 0.08, gain: 0.04, wet: 0 })
+  },
+  spores: (ac, b) => [0, 0.05, 0.11].forEach((t, i) => pluck(ac, b, 2200 + i * 500, t, { dur: 0.12, gain: 0.04, wet: 0.6 })),
 }
 
 /* ── mode ── */

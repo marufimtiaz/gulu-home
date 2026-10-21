@@ -19,6 +19,7 @@ export const EFFECTS = [
   'chain', 'paper', 'scratch', 'stamp',                            // desk
   'roller', 'marker',                                              // empty room
   'hang', 'peel', 'firework',                                      // finale
+  'knock', 'squish', 'drip', 'rustle', 'slosh', 'buzz', 'meow', 'xylo', 'spores', // scenery (ui/react.js)
 ]
 export const LAYERS = ['clock', 'kettle', 'crickets', 'wind', 'pen', 'room']
 
