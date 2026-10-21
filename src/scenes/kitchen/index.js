@@ -15,14 +15,16 @@
  */
 import { gsap } from 'gsap'
 import './scene.css'
-import { BROTH, jarSVG, plateSVG, potSVG } from './art.js'
+import { BROTH, belonSVG, jarSVG, ladleSVG, plateSVG, potSVG, tapSVG } from './art.js'
 import { hit, onDrag, onRotate } from '../../ui/drag.js'
 import { loop } from '../../ui/motion.js'
+import { haptic, nudge } from '../../ui/feel.js'
+import { makeQuip } from './quip.js'
+import { scenery } from './scenery.js'
 
 const TURNS = 3
 const MIX = 0.4 // each ingredient pulls the broth 40% toward its colour
 const ROW = 4 // jars per shelf
-const IDLE = 4 // seconds before nudging the next thing to touch
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch])
 
@@ -71,7 +73,7 @@ export default {
         <div class="k-shelves">
           ${rows
             .map(
-              (row) => `
+              (row, r) => `
             <div class="shelf">
               ${row
                 .map(
@@ -84,7 +86,8 @@ export default {
                 </div>`,
                 )
                 .join('')}
-              <div class="shelf__plank" aria-hidden="true"></div>
+              <div class="shelf__plank" data-plank aria-hidden="true"></div>
+              ${r === rows.length - 1 ? `<span class="k-tool k-tool--ladle" data-tool="ladle" aria-hidden="true">${ladleSVG()}</span><span class="k-tool k-tool--belon" data-tool="belon" aria-hidden="true">${belonSVG()}</span>` : ''}
             </div>`,
             )
             .join('')}
@@ -93,6 +96,7 @@ export default {
           <div class="k-note" data-note aria-live="polite"></div>
           <div class="k-pot" data-pot role="img" aria-label="${esc(t('kitchen.pot'))}">${potSVG()}</div>
         </div>
+        <div class="k-tap" data-tap aria-hidden="true">${tapSVG()}</div>
         <div class="k-counter" aria-hidden="true"><span class="knob" data-knob></span><span class="knob" data-knob></span></div>
         <div class="k-plate" data-plate hidden>
           <p class="k-plate__kicker hand">${esc(t('kitchen.special'))}</p>
@@ -148,12 +152,21 @@ export default {
       offs.push(() => el.removeEventListener(type, fn, opts))
     }
 
-    // ── face moods (state only; no tweens) ──
+    // ── face moods (state only; the CSS swaps eyes/mouths/brows) ──
+    // '' · o · happy · squeeze · giggle · annoyed · dizzy · hot
     let moodReset = null
+    let hot = false // the stove knob is turned right up
+    const baseMood = () => (stage === 'cooking' ? 'squeeze' : stage === 'served' ? 'happy' : hot ? 'hot' : '')
     const mood = (m, hold = 0.7) => {
       potWrap.dataset.mood = m
       moodReset?.kill()
-      if (hold) moodReset = G.later(hold, () => (potWrap.dataset.mood = stage === 'cooking' ? 'squeeze' : ''))
+      if (hold) moodReset = G.later(hold, () => (potWrap.dataset.mood = baseMood()))
+    }
+    const quip = makeQuip(kitchen)
+    offs.push(() => quip.kill())
+    const line = (key, k) => {
+      const list = t(`kitchen.${key}`)
+      return Array.isArray(list) ? list[k % list.length] : list
     }
 
     // ── prompt / notes ──
@@ -172,23 +185,32 @@ export default {
       noteHide = G.later(2.8, () => note.classList.remove('is-on'))
     }
 
-    // ── idle nudges: after IDLE s of nothing, point at the next thing to touch ──
-    let idleCall = null
-    const clearNudge = () => {
-      kitchen.classList.remove('kitchen--nudge')
-      jars.forEach((j) => j.classList.remove('jar--nudge'))
+    // ── idle guidance (ui/feel nudge), in the kitchen's own language:
+    //    adding   → the next jar's lid rattles, as if something inside wants out (+ arrow if stuck)
+    //    stirring → the spoon takes a little turn round the pot and the stir arc shows
+    //    served   → the back button glows
+    const lidRattle = (jar) => {
+      const lid = jar.querySelector('.jar__lidg')
+      return G.tl()
+        .to(lid, { keyframes: { rotation: [0, -9, 8, -7, 6, -3, 0], y: [0, -3, 0, -2, 0, -1, 0] }, transformOrigin: '50% 100%', duration: 0.5, ease: 'none' })
+        .to(lid, { keyframes: { rotation: [0, -6, 5, -3, 0] }, transformOrigin: '50% 100%', duration: 0.32, ease: 'none' }, '+=0.15')
     }
-    const nudge = () => {
-      if (stage === 'adding') jars.find((_, i) => !used[i])?.classList.add('jar--nudge')
-      else if (stage === 'stirring' || stage === 'served') kitchen.classList.add('kitchen--nudge')
+    const spoonNudge = { a: 0 }
+    const stirHint = () => {
+      kitchen.classList.add('kitchen--nudge')
+      return G.tl()
+        .to(spoonNudge, { a: 1.1, duration: 0.6, ease: 'sine.inOut', onUpdate: () => placeSpoon(shownSpoon + spoonNudge.a) })
+        .to(spoonNudge, { a: 0, duration: 0.7, ease: 'elastic.out(1, 0.5)', onUpdate: () => placeSpoon(shownSpoon + spoonNudge.a) })
     }
-    const poke = () => {
-      clearNudge()
-      idleCall?.kill()
-      idleCall = G.later(IDLE, nudge)
-    }
-    on(root, 'pointerdown', poke, true)
-    poke()
+    const nextJar = () => jars.find((_, i) => !used[i])
+    // the jars are the main action of the first phase: the hand-drawn arrow may come if she's stuck
+    const guide = nudge(nextJar(), { style: lidRattle, arrow: true })
+    offs.push(() => guide.stop())
+    // stirring has its own arrow (the arc round the pot), so its nudge brings no second one
+    let stirGuide = null
+    offs.push(() => stirGuide?.stop())
+    const clearNudge = () => kitchen.classList.remove('kitchen--nudge')
+    on(root, 'pointerdown', clearNudge, true)
 
     // ── pot geometry in client coords ──
     const brothPoint = () => {
@@ -236,8 +258,8 @@ export default {
       const jar = jars[i]
       const ing = ingredients[i]
       jar.classList.add('jar--flying')
-      jar.classList.remove('jar--nudge')
       jar.disabled = true
+      guide.set(nextJar() ?? [])
       gsap.killTweensOf(jar)
       const jr = jar.getBoundingClientRect()
       const target = brothPoint()
@@ -248,12 +270,16 @@ export default {
       const from = { rgb: null }
       const mix = { t: 0 }
 
+      const lid = jar.querySelector('.jar__lidg')
       const tl = G.tl()
       tl.call(() => {
-        sound.play('pop')
+        sound.play('tap')
         if (!fromDrag) mood('o', 0)
       })
         .to(jar, { x: x0 + dx, y: y0 + dy - 70 * target.s, rotation: -24, scale: 0.92, duration: T(0.34), ease: 'power2.out' })
+        // at the top of the arc the lid pops off, then it pours
+        .call(() => sound.play('pop'), null, `<${T(0.22)}`)
+        .to(lid, { y: -46, x: 26, rotation: 70, opacity: 0, transformOrigin: '50% 50%', duration: T(0.4), ease: 'power2.out' }, '<')
         .to(jar, { rotation: 140, duration: T(0.12), ease: 'power1.in' })
         .to(jar, { y: y0 + dy + 10, scale: 0.2, opacity: 0, duration: T(0.14), ease: 'power2.in' })
         .addLabel('land')
@@ -294,13 +320,14 @@ export default {
             moved = false
             gsap.killTweensOf(jar)
             jar.classList.add('jar--held')
-            G.to(jar, { scale: 1.14, duration: 0.1, ease: 'power2.out' }) // instant press response
+            G.to(jar, { scale: 1.1, rotation: -4, duration: 0.1, ease: 'power2.out' }) // lifted off the shelf, at once
             sound.play('tap')
           },
           onMove(p) {
             if (Math.hypot(p.dx, p.dy) > 8) moved = true
             const tilt = Math.max(-28, Math.min(28, p.vx / 45))
             gsap.set(jar, { x: p.dx, y: p.dy, rotation: tilt })
+            look(p.x, p.y)
             const over = hit(potWrap, p.x, p.y, 24)
             if (over !== potWrap.classList.contains('k-pot--hungry')) {
               potWrap.classList.toggle('k-pot--hungry', over)
@@ -308,6 +335,7 @@ export default {
             }
           },
           onEnd(p) {
+            look(null)
             jar.classList.remove('jar--held')
             potWrap.classList.remove('k-pot--hungry')
             if (!moved) return add(i)
@@ -326,6 +354,8 @@ export default {
       if (stage !== 'adding') return
       stage = 'stirring'
       kitchen.classList.add('kitchen--stir', 'kitchen--nudge') // show the stir arrow straight away
+      guide.stop()
+      stirGuide = nudge(potWrap, { style: stirHint })
       spoon.dataset.on = ''
       placeSpoon(spoonAngle)
       G.fromTo(spoon, { y: -80, opacity: 0 }, { y: 0, opacity: 1, duration: T(0.6), ease: 'bounce.out', onComplete: () => {
@@ -342,6 +372,7 @@ export default {
     }
 
     let lastBubbleSound = 0
+    let dizzied = false
     function stir(d) {
       if (stage !== 'stirring') return
       stirAbs += Math.abs(d)
@@ -356,6 +387,10 @@ export default {
         lastBubbleSound = now
         sound.play('bubble')
       }
+      if (!dizzied && p >= 0.45) {
+        dizzied = true
+        quip.say(t('kitchen.dizzy'), potWrap)
+      }
       if (p < 1) setPrompt(t(p > 0.72 ? 'kitchen.almost' : 'kitchen.stirring'))
       else cook()
     }
@@ -365,39 +400,124 @@ export default {
         center: () => brothPoint(),
         onStart: () => {
           if (stage !== 'stirring') return false
-          mood('happy', 0)
+          mood('dizzy', 0) // round and round: spiral eyes
         },
         onRotate: (d) => stir(d),
         onEnd: () => {
-          if (stage === 'stirring') potWrap.dataset.mood = ''
+          if (stage === 'stirring') mood('happy', 0.8)
         },
       }),
     )
 
-    // ── tapping around: the pot, the knobs ──
+    // ── the pot is a little character: it looks at the jar she carries, and has moods when
+    //    poked — tickled → giggles → "hey." → annoyed (brows, huffs of steam, a word for her);
+    //    left alone for a few seconds it forgives her. Served, it's full: hearts and a burp.
+    //    (bespoke reaction, documented: data-react="face")
+    const look = (x, y) => {
+      const eyes = potWrap.querySelector('[data-look]')
+      if (x == null || reduced) return G.to(eyes, { x: 0, y: 0, duration: 0.3, overwrite: true })
+      const r = potSvg.getBoundingClientRect()
+      const s = r.width / 260
+      const dx = (x - (r.left + 130 * s)) / s
+      const dy = (y - (r.top + 126 * s)) / s
+      const d = Math.hypot(dx, dy) || 1
+      gsap.set(eyes, { x: (dx / d) * Math.min(5, d / 20), y: (dy / d) * Math.min(4, d / 20) })
+    }
+    const puffs = potWrap.querySelector('[data-puffs]')
+    function huff() {
+      if (reduced) return
+      for (const [x, dir] of [[14, -1], [246, 1]]) {
+        const c = document.createElementNS(SVGNS, 'circle')
+        c.setAttribute('cx', x)
+        c.setAttribute('cy', 104)
+        c.setAttribute('r', 7)
+        c.classList.add('puff')
+        puffs.append(c)
+        G.tl({ onComplete: () => c.remove() })
+          .to(c, { attr: { cx: x + dir * 34, cy: 86, r: 15 }, duration: 0.55, ease: 'power2.out' })
+          .to(c, { opacity: 0, duration: 0.3 }, '-=0.25')
+      }
+    }
+    // speak from just above the face (the plate may cover the rim once served)
+    const faceAt = () => {
+      const r = potSvg.getBoundingClientRect()
+      return { x: r.left + r.width / 2, y: r.top + r.height * 0.42 }
+    }
+    let pokes = 0
+    let giggles = 0
+    let huffs = 0
+    let burps = 0
+    let fullTaps = 0
+    let forgive = null
+    potWrap.dataset.react = 'face'
     on(potWrap, 'pointerdown', () => {
-      if (stage === 'adding') {
+      if (stage === 'served') {
+        haptic(4)
         sound.play('bubble')
-        mood('happy', 0.6)
-        G.fromTo(potWrap, { rotation: -5 }, { rotation: 0, duration: T(0.7), ease: 'elastic.out(1.2, 0.3)', transformOrigin: '50% 92%', overwrite: 'auto' })
-      } else if (stage === 'stirring') {
-        sound.play('tap')
-      } else if (stage === 'served') {
-        sound.play('pop')
+        mood('happy', 0)
         const b = brothPoint()
         fx.hearts(b.x, b.y - 60 * b.s, { count: 4 })
         G.fromTo(steam, { scale: 1.15 }, { scale: 1, svgOrigin: '130 -40', duration: T(0.6), ease: 'back.out(3)', overwrite: 'auto' })
+        if (++fullTaps % 2 === 1) quip.say(line('full', burps++), faceAt())
+        return
+      }
+      if (stage !== 'adding') return
+      haptic(5)
+      pokes++
+      forgive?.kill()
+      forgive = G.later(3.2, () => {
+        if (pokes >= 5 && stage === 'adding') {
+          mood('happy', 1.2)
+          quip.say(t('kitchen.calm'), potWrap)
+        }
+        pokes = 0
+      })
+      const origin = { transformOrigin: '50% 92%' }
+      if (pokes === 1) {
+        // tickled: a squirm
+        sound.play('bubble')
+        mood('squeeze', 0.9)
+        G.tl().to(potWrap, { keyframes: { rotation: [0, -4, 4, -3, 2, 0] }, ...origin, duration: T(0.45), ease: 'none', overwrite: 'auto' })
+      } else if (pokes <= 3) {
+        // giggles: shaking with laughter
+        sound.play('bubble')
+        G.later(0.14, () => sound.play('bubble'))
+        mood('giggle', 1.2)
+        G.tl().to(potWrap, { keyframes: { y: [0, -5, 0, -4, 0, -3, 0, -1, 0], rotation: [0, 2, -2, 2, -2, 1, -1, 0, 0] }, ...origin, duration: T(0.7), ease: 'none', overwrite: 'auto' })
+        if (pokes === 3) quip.say(line('giggle', giggles++), potWrap)
+      } else if (pokes === 4) {
+        // a warning look
+        sound.play('tap')
+        mood('o', 1.4)
+        G.fromTo(potWrap, { scaleY: 1.04 }, { scaleY: 1, ...origin, duration: T(0.5), ease: 'back.out(3)', overwrite: 'auto' })
+        quip.say(t('kitchen.hey'), potWrap)
+      } else {
+        // annoyed: brows down, a huff of steam from both handles, turns a shoulder
+        sound.play('slosh')
+        mood('annoyed', 3.2)
+        huff()
+        G.tl()
+          .to(potWrap, { scaleY: 1.06, scaleX: 0.97, ...origin, duration: T(0.14), ease: 'power2.out', overwrite: 'auto' })
+          .to(potWrap, { scaleY: 1, scaleX: 1, rotation: 3, duration: T(0.5), ease: 'elastic.out(1, 0.4)' })
+          .to(potWrap, { rotation: 0, duration: T(0.6), ease: 'sine.inOut' }, '+=1.4')
+        if (pokes === 5 || pokes % 3 === 2) quip.say(line('annoyed', huffs++), potWrap)
       }
     })
-    knobs.forEach((k) => {
-      let turned = 0
-      on(k, 'pointerdown', () => {
-        sound.play('tap')
-        turned += 90
-        G.to(k, { rotation: turned, duration: T(0.35), ease: 'back.out(2.5)', overwrite: 'auto' })
-        G.fromTo(flames, { scaleY: 1.7 }, { scaleY: 1, svgOrigin: '130 226', duration: T(0.8), ease: 'elastic.out(1, 0.35)', overwrite: 'auto' })
-      })
-    })
+
+    // ── the rest of the room: knobs, tools, the tap, the shelves (scenery.js) ──
+    offs.push(
+      scenery(root, ctx, {
+        quip,
+        line,
+        flames,
+        setHot(v) {
+          hot = v
+          if (!potWrap.dataset.mood || ['', 'hot'].includes(potWrap.dataset.mood)) potWrap.dataset.mood = baseMood()
+        },
+        potWrap,
+        G,
+      }),
+    )
 
     // ── the end: one timeline — lid lands, rattles, pops; steam heart; plate; complete ──
     function cook() {
@@ -409,7 +529,8 @@ export default {
       potWrap.dataset.mood = 'squeeze'
       const heart = steam.querySelector('.heart')
       const heartFill = steam.querySelector('.heart-fill')
-      const tl = G.tl({ onComplete: () => poke() })
+      stirGuide?.stop()
+      const tl = G.tl({ onComplete: () => offs.push(nudge(backBtn).stop) })
       tl.to(spoon, { y: -70, opacity: 0, duration: T(0.35), ease: 'power2.in' })
         .call(() => delete spoon.dataset.on)
         .call(() => sound.play('tap'))
