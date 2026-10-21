@@ -1,1 +1,402 @@
-.scene--card .stub { display: grid; gap: 1rem; justify-items: center; color: var(--paper); }
+/*
+ * The reception card — print, not paper craft. Ivory stock, dusty pink, champagne gold foil.
+ * The card is laid out ONCE at its design size (360 × 504 px, 5:7) and scaled to the screen
+ * with --s, so its typography is identical (and can never reflow or collide) at every size.
+ */
+.scene--card,
+.cf,
+.cb {
+  --gold-deep: color-mix(in srgb, var(--card-gold) 58%, var(--card-ink));
+  --gold-mid: color-mix(in srgb, var(--card-gold) 82%, var(--card-ink));
+  --gold-white: color-mix(in srgb, var(--card-gold-hi) 35%, var(--card-ivory));
+  --gold-wash: color-mix(in srgb, var(--card-gold-hi) 40%, transparent);
+  --rose-deep: color-mix(in srgb, var(--card-rose) 72%, var(--card-ink));
+  --rose-light: color-mix(in srgb, var(--card-rose) 62%, var(--card-ivory));
+  --ink-soft: color-mix(in srgb, var(--card-ink) 78%, var(--card-ivory));
+  --env-paper: color-mix(in srgb, var(--card-ivory) 94%, var(--card-gold));
+  --env-paper-hi: var(--card-ivory);
+  --env-shade: color-mix(in srgb, var(--card-gold) 30%, var(--card-ivory));
+  --env-edge: color-mix(in srgb, var(--card-gold) 55%, var(--card-ivory));
+  --fx: 50%;
+  --fy: 40%;
+}
+
+/* ── the room around it: night, one warm light on the card ── */
+.cs {
+  --s: 1;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: calc(max(0.7rem, env(safe-area-inset-top)) + 3.2rem) 12px max(12px, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(ellipse 55% 45% at 50% 44%, color-mix(in srgb, var(--lamp-glow) 34%, transparent), transparent 72%),
+    radial-gradient(ellipse 120% 80% at 50% 110%, var(--indigo), transparent 60%),
+    linear-gradient(to bottom, var(--night-deep), var(--night));
+  overflow: hidden;
+}
+.cs--side {
+  flex-direction: row;
+  gap: 12px;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+}
+.cs-sky { position: absolute; inset: 0; pointer-events: none; opacity: 0.7; }
+
+/* the card's box on screen (scaled size); the world inside is the design size */
+.cs-fit {
+  position: relative;
+  flex: none;
+  width: calc(360px * var(--s));
+  height: calc(504px * var(--s));
+  z-index: 2;
+  touch-action: none;
+}
+.cs-stage { position: relative; z-index: 2; display: grid; place-items: center; flex: none; }
+.cs--side .cs-stage { flex: 1 1 auto; align-self: stretch; }
+.cs-world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 360px;
+  height: 504px;
+  transform: scale(var(--s));
+  transform-origin: 0 0;
+}
+.cs-rig {
+  position: absolute;
+  inset: 0;
+  perspective: 1500px;
+  perspective-origin: 50% 50%;
+}
+
+/* ── envelope ── */
+.env { position: absolute; }
+.env-back, .env-pocket, .env-flap { left: -16px; top: -14px; width: 392px; }
+.env-back { height: 536px; z-index: 1; border-radius: 5px; box-shadow: 0 20px 34px -10px color-mix(in srgb, var(--night-deep) 80%, transparent); }
+.env-pocket { height: 536px; z-index: 3; }
+.env-back svg, .env-pocket svg { width: 100%; height: 100%; }
+.env-flap { height: 302px; z-index: 4; transform-style: preserve-3d; pointer-events: none; }
+.env-flap__face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.env-flap__face svg { width: 100%; height: 100%; }
+.env-flap__in { transform: rotateX(180deg); }
+.env-to {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 372px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  color: var(--card-ink);
+  pointer-events: auto;
+}
+.env-to__for { font: 500 10px/1 var(--card-caps); letter-spacing: 0.4em; text-transform: uppercase; color: var(--gold-deep); padding-left: 0.4em; }
+.env-to__name { font: 400 54px/1.1 var(--card-script); padding: 0 0.3em; }
+
+.seal {
+  left: 136px;
+  top: 236px;
+  width: 88px;
+  height: 88px;
+  padding: 0;
+  z-index: 5;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  touch-action: none;
+  filter: drop-shadow(0 3px 3px color-mix(in srgb, var(--berry-deep) 60%, transparent));
+}
+.seal__half { position: absolute; inset: 10px; display: block; pointer-events: none; }
+.seal__half svg { width: 100%; height: 100%; }
+.seal.nudge { filter: drop-shadow(0 0 12px var(--lamp-glow)) drop-shadow(0 3px 3px color-mix(in srgb, var(--berry-deep) 60%, transparent)); }
+
+/* ── the card leaf (front, back, doors) ── */
+.leaf {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  transform-style: preserve-3d;
+}
+.cf, .cb {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: var(--card-ink);
+  background-color: var(--card-ivory);
+  background-image:
+    var(--grain, none),
+    radial-gradient(ellipse 80% 70% at 50% 42%, transparent 55%, color-mix(in srgb, var(--card-gold) 14%, transparent) 100%);
+  border-radius: 1.5px;
+  box-shadow:
+    0 0 0 0.5px color-mix(in srgb, var(--card-gold) 45%, transparent),
+    0 26px 44px -16px color-mix(in srgb, var(--night-deep) 92%, transparent),
+    0 4px 10px color-mix(in srgb, var(--night-deep) 40%, transparent);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  text-align: center;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+}
+.cb { transform: rotateY(180deg); }
+.cf-frame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.cf [data-draw], .cb [data-draw] { stroke-dasharray: 1; }
+
+/* foil: gold text with a specular band that follows --fx */
+.foil {
+  color: var(--card-gold);
+  background-image: linear-gradient(105deg,
+    var(--gold-deep) 0%, var(--gold-deep) 36%, var(--gold-mid) 43%, var(--card-gold-hi) 49%, var(--gold-white) 50%,
+    var(--card-gold-hi) 51%, var(--gold-mid) 57%, var(--gold-deep) 64%, var(--gold-deep) 100%);
+  background-size: 300% 100%;
+  background-position: var(--fx) 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── the face: four groups spaced evenly down the card ── */
+.cf-body {
+  position: absolute;
+  inset: 16px 24px 23px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+.cf-body > * { width: 100%; flex: none; }
+.cf .nowrap, .cb .nowrap { white-space: nowrap; }
+.cf-head { display: grid; justify-items: center; }
+.cf-bism {
+  font: 400 15.5px/1.4 var(--card-arabic);
+  padding: 0 0.4em;
+  margin-bottom: -2px;
+}
+.cf-alpana { width: 37px; height: 37px; margin-top: 1px; }
+.cf-alpana svg, .cb-alpana svg { width: 100%; height: 100%; overflow: visible; }
+.cf-title-bn {
+  margin-top: 1px;
+  font: 400 28px/1.17 var(--card-bn-display);
+  color: var(--card-ink);
+}
+.cf-title-en {
+  margin-top: -1px;
+  font: 600 12.5px/1.35 var(--card-caps);
+  letter-spacing: 0.36em;
+  padding-left: 0.36em;
+  text-transform: uppercase;
+}
+.cf-sub {
+  font: 500 7.5px/1.5 var(--card-caps);
+  letter-spacing: 0.32em;
+  padding-left: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.cf-invite { display: grid; justify-items: center; }
+.cf-divider { width: 112px; height: 8px; margin-bottom: 3px; overflow: visible; }
+.cf-hosts-bn { font: 400 12px/1.5 var(--card-bn); }
+.cf-hosts {
+  font: 600 9.5px/1.4 var(--card-caps);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.cf-invite__bn {
+  margin-top: 3px;
+  max-width: 290px;
+  font: 400 11px/1.5 var(--card-bn);
+  color: var(--ink-soft);
+  text-wrap: balance;
+}
+.cf-invite__en {
+  margin-top: 1px;
+  max-width: 296px;
+  font: italic 400 12.5px/1.22 var(--card-serif);
+  color: var(--ink-soft);
+  text-wrap: balance;
+}
+
+/* names under the arch of rose vines */
+.cf-couple {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  padding-top: 32px;
+}
+.cf-arch { position: absolute; left: 50%; top: 0; width: 300px; height: 96px; transform: translateX(-50%); overflow: visible; pointer-events: none; }
+.cf-couple__names {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  height: 53px;
+}
+.cf-name {
+  font: 400 43px/1.2 var(--card-script);
+  padding: 0.04em 0.24em 0.1em;
+  white-space: nowrap;
+}
+.cf-knot { width: 16px; height: 16px; flex: none; margin: 6px -2px 0; overflow: visible; }
+.cf-couple__full {
+  position: relative;
+  width: 100%;
+  margin-top: 3px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+  align-items: start;
+}
+.cf-full {
+  font: 600 7.4px/1.4 var(--card-caps);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.cf-full-bn { font: 400 9.5px/1.5 var(--card-bn); color: var(--ink-soft); }
+
+.cf-family { display: grid; justify-items: center; }
+.cf-of { font: italic 400 11.5px/1.2 var(--card-serif); color: var(--ink-soft); }
+.cf-of-bn { font: 400 10px/1.5 var(--card-bn); color: var(--ink-soft); }
+
+/* date · time · venue */
+.cf-when {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1.16fr 0.62fr 1.16fr;
+  width: 300px;
+  justify-self: center;
+  align-items: start;
+  padding-top: 6px;
+  background: linear-gradient(to right, transparent, var(--card-gold) 18%, var(--card-gold) 82%, transparent) top center / 100% 0.6px no-repeat;
+}
+.cf-when__item { display: grid; justify-items: center; align-content: start; gap: 0; padding: 0 2px; position: relative; }
+.cf-when__item + .cf-when__item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 0.5px;
+  background: color-mix(in srgb, var(--card-gold) 80%, transparent);
+}
+.cf-when dd { margin: 0; }
+.cf-when__label {
+  font: 600 7px/1.4 var(--card-caps);
+  letter-spacing: 0.3em;
+  padding-left: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  margin-bottom: 1px;
+}
+.cf-when__value { font: 600 14.6px/1.12 var(--card-serif); color: var(--card-ink); text-wrap: balance; }
+.cf-when__day { display: block; font-weight: 400; font-style: italic; }
+.cf-when__bn { margin-top: 1px; font: 400 10px/1.45 var(--card-bn); color: var(--ink-soft); text-wrap: balance; }
+.cf-when__addr { font: italic 400 11px/1.3 var(--card-serif); color: var(--ink-soft); }
+
+.cf-compl { display: grid; justify-items: center; gap: 1px; }
+.cf-compl__label { font: italic 400 10.5px/1.3 var(--card-serif); color: var(--ink-soft); }
+.cf-compl__names { font: 600 8px/1.4 var(--card-caps); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* a field still marked "——": a dotted blank, like an unfilled form */
+.cf-blank {
+  display: inline-block;
+  width: 7em;
+  max-width: 100%;
+  height: 0.9em;
+  vertical-align: baseline;
+  border-bottom: 1px dotted var(--ink-soft);
+}
+
+/* ── the back ── */
+.cb-body {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+}
+.cb-alpana { width: 168px; height: 168px; }
+.cb-title { margin-top: 22px; font: 400 26px/1.2 var(--card-bn-display); color: var(--card-ink); }
+.cb .cf-divider { margin: 10px 0 2px; }
+.cb-names { display: flex; align-items: center; gap: 2px; font: 400 36px/1.2 var(--card-script); }
+.cb-names .foil { padding: 0.06em 0.22em 0.12em; }
+.cb-names .cf-knot { width: 14px; height: 14px; margin: 5px -2px 0; }
+.cb-date { margin-top: 6px; font: 600 10.5px/1 var(--card-caps); letter-spacing: 0.36em; padding-left: 0.36em; color: var(--gold-deep); }
+.cb-map { margin-top: 18px; font-size: 13px; }
+
+/* ── gatefold doors ── */
+.door {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 180px;
+  transform-style: preserve-3d;
+  touch-action: none;
+  cursor: grab;
+  outline: none;
+}
+.door--left { left: 0; }
+.door--right { right: 0; }
+.door.open { cursor: default; pointer-events: none; }
+.door__face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.door--left .door__out { border-radius: 1.5px 0 0 1.5px; box-shadow: -1px 22px 40px -14px color-mix(in srgb, var(--night-deep) 92%, transparent); }
+.door--right .door__out { border-radius: 0 1.5px 1.5px 0; box-shadow: 1px 22px 40px -14px color-mix(in srgb, var(--night-deep) 92%, transparent); }
+.door__in { transform: rotateY(180deg); background: var(--card-ivory); box-shadow: 0 0 0 0.5px color-mix(in srgb, var(--card-gold) 45%, transparent); }
+.door__art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.door__mono { font: 400 34px/1 var(--card-script); }
+.door__shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--shade, 0);
+}
+.door--left .door__out .door__shade { background: linear-gradient(to left, color-mix(in srgb, var(--night-deep) 70%, transparent), transparent 80%); }
+.door--right .door__out .door__shade { background: linear-gradient(to right, color-mix(in srgb, var(--night-deep) 70%, transparent), transparent 80%); }
+.door__in .door__shade { background: color-mix(in srgb, var(--night-deep) 40%, transparent); opacity: calc(var(--shade, 0) * 0.6); }
+.door.nudge { filter: none; }
+.door.nudge .door__out { filter: drop-shadow(0 0 10px var(--lamp-glow)); }
+
+/* ── controls under (or beside) the card: the site's paper chrome, not the print ── */
+.cs-ui {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: min(100%, 28rem);
+  text-align: center;
+}
+.cs--side .cs-ui { flex: none; width: clamp(200px, 30vw, 280px); }
+.cs-hint {
+  min-height: 1.3em;
+  font-size: 1.3rem;
+  line-height: 1.15;
+  color: var(--butter);
+  text-shadow: 0 1px 0 var(--night-deep);
+}
+.cs-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.cs--side .cs-actions { flex-direction: column; align-items: stretch; width: 100%; }
+/* GSAP owns these buttons' transform (press feedback): a CSS transition would lag it */
+.cs-btn { transition: box-shadow var(--t-fast) ease; min-height: 44px; justify-content: center; font-size: 0.98rem; padding: 0.5em 1em 0.55em; white-space: nowrap; }
+.cs-btn[aria-busy="true"] { opacity: 0.8; }
+.cs-note { font-size: 1.35rem; line-height: 1.2; color: var(--card-gold-hi); max-width: 22rem; }
+
+.cs--zoomed .cs-fit { z-index: 5; cursor: zoom-out; }
+.cs--zoomed .cs-hint {
+  padding: 0.25em 0.9em 0.35em;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--night-deep) 82%, transparent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--night-deep) 60%, transparent);
+}
+.cs[data-stage="open"] .cf { cursor: zoom-in; }
+.cs--zoomed .cf { cursor: grab; }
