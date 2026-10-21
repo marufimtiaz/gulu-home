@@ -1,0 +1,54 @@
+/* fixed corner controls: back-to-house (top-left), language + sound (top-right) */
+.chrome { position: fixed; inset: 0; z-index: var(--z-chrome); pointer-events: none; }
+.chrome > * { pointer-events: auto; }
+.chip {
+  position: absolute;
+  top: max(0.7rem, env(safe-area-inset-top));
+  height: 2.4rem;
+  min-width: 2.4rem;
+  padding: 0 0.8em;
+  display: grid;
+  place-items: center;
+  font: 700 0.95rem/1 var(--body);
+  color: var(--ink);
+  background: var(--butter);
+  border: var(--line);
+  border-radius: 999px;
+  box-shadow: var(--pop-sm);
+  transition: transform var(--t-fast) ease, opacity var(--t-med) ease;
+}
+.chip:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.chip[hidden] { display: none; }
+.chip--home { left: max(0.7rem, env(safe-area-inset-left)); }
+.chip--sound { right: max(0.7rem, env(safe-area-inset-right)); padding: 0; }
+.chip--lang { right: calc(max(0.7rem, env(safe-area-inset-right)) + 3rem); font-family: var(--bn); }
+
+.toasts {
+  position: fixed;
+  left: 50%;
+  bottom: max(1.2rem, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  pointer-events: none;
+  width: min(92vw, 26rem);
+}
+.toast {
+  padding: 0.5em 1.1em 0.55em;
+  font-family: var(--hand);
+  font-weight: 700;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--line);
+  border-radius: 14px;
+  box-shadow: var(--pop-sm);
+  animation: toastIn var(--t-med) var(--bounce) both;
+}
+.toast--out { animation: toastOut var(--t-med) ease both; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(12px) scale(0.92); } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(8px); } }
