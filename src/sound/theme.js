@@ -31,32 +31,34 @@ export function parse(src) {
     })
 }
 
+// Pitches follow a published letter-note transcription (B♭ major, here transposed up a tone
+// to C); rhythms are arranged so every chord gets six quavers.
 // ── verse: three passes of C Am G F (two original bars per chord) ──
 export const VERSE = parse(`
-  -:1 E5:1 F5:1      G5:3               ~ heart beats | fast
-  E5:1 D5:1 C5:1     D5:1 E5:1 C5:1     ~ colours and | promises
-  -:1 B4:1 C5:1      D5:1 B4:2          ~ how to | be brave
-  C5:1 C5:1 D5:1     C5:1.5 A4:.5 B4:.5 C5:.5   ~ how can I | love when I'm a-
-  E5:2 D5:1          C5:3               ~ fraid to | fall
-  -:1 A5:1 G5:1      E5:3               ~ (music box)
-  B4:1 D5:1 D5:1     E5:1 D5:1 B4:1     ~ but watching | you stand a-
-  C5:3               -:1 C5:1 D5:1      ~ lone | all of
-  E5:1 G5:2          E5:1 E5:1 D5:1     ~ my doubt | suddenly
-  E5:1 D5:1 C5:1     D5:1 C5:2          ~ goes away | somehow
-  B4:1 C5:1 D5:1     D5:3               ~ one step clo- | ser
-  A4:1 C5:1 D5:1     C5:3               ~ (breath)
+  -:1 C5:1 C5:1      C5:3               ~ heart beats | fast
+  E5:1 D5:1 C5:1     C5:1 C5:1 C5:1     ~ colours and | promises
+  G5:1 F5:1 E5:1     C5:2 A4:1          ~ how to be | brave, how
+  G5:1 F5:1 E5:1     D5:.5 E5:.5 B4:1 C5:1  ~ can I love | when I'm afraid to fall
+  -:1 C5:1 C5:1      C5:3               ~ but watching | you stand alone
+  E5:1 D5:1 C5:1     C5:1 C5:1 C5:1     ~ all of my | doubt suddenly
+  G5:1 F5:1 E5:1     C5:2 A4:1          ~ goes away | somehow
+  G5:1 F5:1 E5:1     D5:.5 E5:.5 B4:1 C5:.5 A4:.5  ~ (and the line falls home)
+  -:1 E5:1 D5:1      C5:3               ~ (music box)
+  -:3                A4:1 B4:1 C5:1     ~ | one step clo-
+  B4:3               -:3                ~ ser |
+  -:1 A4:1 C5:1      C5:3               ~ (breath)
 `.replace(/~[^\n]*/g, ''))
 
-// ── chorus: two passes of C Am G F, a little higher ──
+// ── chorus: two passes of C Am G F ──
 export const CHORUS = parse(`
-  -:1 E5:1 F5:1      G5:2 G5:.5 A5:.5   ~ I have | died every
-  G5:2 E5:.5 E5:.5   D5:1 C5:2          ~ day, waiting | for you
-  D5:2 E5:1          D5:1 D5:1 E5:1     ~ darling | don't be a-
-  C5:2 C5:.5 D5:.5   E5:1.5 D5:.5 C5:.5 D5:.5   ~ fraid, I have | loved you for a
-  E5:1 A5:1 G5:1     G5:3               ~ thousand | years
-  E5:1 E5:1 D5:1     C5:1 D5:1 E5:1     ~ I'll love you | for a thou-
-  D5:1 C5:2          B4:1 D5:1 G5:1     ~ sand more | (music box)
-  A5:1 G5:1 F5:1     C5:3               ~ (home)
+  -:1 E5:1 G5:1      E5:2 E5:.5 G5:.5   ~ I have | died, every
+  E5:2 A5:1          G5:1 D5:1 C5:1     ~ day, | waiting for you
+  -:1 E5:1 G5:1      E5:2 E5:.5 G5:.5   ~ darling | don't be a-
+  E5:2 A5:1          G5:1 D5:1 C5:1     ~ fraid, I have | loved you for a
+  -:1 C5:1 D5:1      F5:1 E5:2          ~ thou- | sand
+  A4:3               -:1 C5:1 C5:1      ~ years | I'll love
+  D5:1 C5:.5 D5:.5 F5:1  E5:1 G5:2      ~ you for a thou- | sand more
+  -:1 A4:1 C5:1      C5:3               ~ (home)
 `.replace(/~[^\n]*/g, ''))
 
 // I–vi–V–IV, Canon-style close voicings around middle C (bass, triad)
