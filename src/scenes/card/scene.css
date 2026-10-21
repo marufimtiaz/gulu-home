@@ -96,6 +96,8 @@
 .env-to__for { font: 500 10px/1 var(--card-caps); letter-spacing: 0.4em; text-transform: uppercase; color: var(--gold-deep); padding-left: 0.4em; }
 .env-to__name { font: 400 54px/1.1 var(--card-script); padding: 0 0.3em; }
 .env-to { cursor: pointer; }
+/* once the envelope has let the card go it never takes a tap again (it falls away over the doors) */
+.cs:is([data-stage="gate"], [data-stage="open"]) :is(.env, .env *) { pointer-events: none; }
 /* a pencilled nickname over her name (tap the name): graphite, a little crooked */
 .env-to__nick {
   position: absolute;
@@ -180,7 +182,7 @@
 /* ── the face: four groups spaced evenly down the card ── */
 .cf-body {
   position: absolute;
-  inset: 16px 24px 23px;
+  inset: 16px 22px 31px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -192,23 +194,23 @@
 .cf-bism {
   font: 400 15.5px/1.4 var(--card-arabic);
   padding: 0 0.4em;
-  margin-bottom: -2px;
+  margin-bottom: -3px;
 }
-.cf-alpana { width: 37px; height: 37px; margin-top: 1px; }
+.cf-alpana { width: 30px; height: 30px; margin-top: 0; }
 .cf-alpana svg, .cb-alpana svg { width: 100%; height: 100%; overflow: visible; }
 /* title: English is engraved caps in foil, Bengali is calligraphy in ink */
 .cf-title {
   margin-top: 1px;
-  font: 600 19px/1.3 var(--card-caps);
+  font: 600 18px/1.25 var(--card-caps);
   letter-spacing: 0.3em;
   padding-left: 0.3em;
   text-transform: uppercase;
 }
-.cf--bn .cf-title { font: 400 29px/1.17 var(--card-bn-display); letter-spacing: 0; padding-left: 0; text-transform: none; color: var(--card-ink); }
+.cf--bn .cf-title { font: 400 27px/1.12 var(--card-bn-display); letter-spacing: 0; padding-left: 0; text-transform: none; color: var(--card-ink); }
 .cf-sub {
-  font: 500 7.5px/1.5 var(--card-caps);
-  letter-spacing: 0.32em;
-  padding-left: 0.32em;
+  font: 500 10.2px/1.4 var(--card-caps);
+  letter-spacing: 0.24em;
+  padding-left: 0.24em;
   text-transform: uppercase;
   color: var(--ink-soft);
 }
@@ -219,39 +221,39 @@
   position: relative;
   display: grid;
   justify-items: center;
-  padding-top: 30px;
+  padding-top: 22px;
 }
-.cf-arch { position: absolute; left: 50%; top: 0; width: 300px; height: 96px; transform: translateX(-50%); overflow: visible; pointer-events: none; }
+.cf-arch { position: absolute; left: 50%; top: 0; width: 288px; height: 84px; transform: translateX(-50%); overflow: visible; pointer-events: none; }
 .cf-couple__names {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0;
-  height: 53px;
+  height: 48px;
 }
 .cf-name {
-  font: 400 43px/1.2 var(--card-script);
+  font: 400 40px/1.2 var(--card-script);
   padding: 0.04em 0.24em 0.1em;
   white-space: nowrap;
 }
-.cf--bn .cf-name { font: 400 33px/1.3 var(--card-bn-display); padding: 0.1em 0.3em 0.12em; }
+.cf--bn .cf-name { font: 400 31px/1.25 var(--card-bn-display); padding: 0.1em 0.3em 0.12em; }
 .cf-knot { width: 16px; height: 16px; flex: none; margin: 6px -2px 0; overflow: visible; }
 
 /* the letter: salutation, greeting, the invitation itself */
-.cf-letter { display: grid; justify-items: center; gap: 1px; }
-.cf-salute, .cf-greet { font: italic 400 12.5px/1.3 var(--card-serif); color: var(--ink-soft); }
+.cf-letter { display: grid; justify-items: center; gap: 0; }
+.cf-salute, .cf-greet { font: italic 400 14.6px/1.25 var(--card-serif); color: var(--ink-soft); }
 .cf-text {
-  margin-top: 3px;
-  max-width: 300px;
-  font: 400 12.2px/1.42 var(--card-serif);
+  margin-top: 2px;
+  max-width: 316px;
+  font: 400 14.6px/1.3 var(--card-serif);
   color: var(--card-ink);
   text-wrap: pretty;
   hyphens: manual;
 }
 .cf-text strong { font-weight: 700; color: var(--card-ink); }
-.cf--bn .cf-salute, .cf--bn .cf-greet { font: 400 11.5px/1.5 var(--card-bn); font-style: normal; }
-.cf--bn .cf-text { font: 400 11.2px/1.62 var(--card-bn); max-width: 304px; }
+.cf--bn .cf-salute, .cf--bn .cf-greet { font: 400 14px/1.4 var(--card-bn); font-style: normal; }
+.cf--bn .cf-text { font: 400 14px/1.5 var(--card-bn); max-width: 316px; }
 .cf--bn .cf-text strong { font-weight: 600; }
 
 /* the details: date · (day) · time · venue */
@@ -259,7 +261,7 @@
   margin: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr)); /* set per card by index.js (the venue gets more room) */
-  width: 304px;
+  width: 316px;
   justify-self: center;
   align-items: start;
   padding-top: 6px;
@@ -277,26 +279,26 @@
 }
 .cf-when dd { margin: 0; }
 .cf-when__label {
-  font: 600 7px/1.4 var(--card-caps);
-  letter-spacing: 0.3em;
-  padding-left: 0.3em;
+  font: 600 9.6px/1.4 var(--card-caps);
+  letter-spacing: 0.22em;
+  padding-left: 0.22em;
   text-transform: uppercase;
   color: var(--gold-deep);
   margin-bottom: 1px;
 }
-.cf-when__value { font: 600 12.8px/1.15 var(--card-serif); color: var(--card-ink); text-wrap: balance; }
+.cf-when__value { font: 600 14.6px/1.15 var(--card-serif); color: var(--card-ink); text-wrap: balance; }
 .cf-when__day { display: block; font-weight: 400; font-style: italic; }
 .cf-when__addr { font: italic 400 11px/1.3 var(--card-serif); color: var(--ink-soft); }
-.cf--bn .cf-when__label { font: 600 10px/1.5 var(--card-bn); letter-spacing: 0; padding-left: 0; }
-.cf--bn .cf-when__value { font: 600 11.5px/1.45 var(--card-bn); }
+.cf--bn .cf-when__label { font: 600 11px/1.4 var(--card-bn); letter-spacing: 0; padding-left: 0; }
+.cf--bn .cf-when__value { font: 600 14px/1.35 var(--card-bn); }
 
 /* signed at the bottom by the hosts (the groom's parents), as real cards are */
 .cf-sign { display: grid; justify-items: center; gap: 0; }
-.cf-closing { font: italic 400 12px/1.3 var(--card-serif); color: var(--ink-soft); }
-.cf-hosts { font: 600 9.5px/1.5 var(--card-caps); letter-spacing: 0.07em; text-transform: uppercase; }
+.cf-closing { font: italic 400 14.6px/1.25 var(--card-serif); color: var(--ink-soft); }
+.cf-hosts { font: 600 12.3px/1.35 var(--card-caps); letter-spacing: 0; text-transform: uppercase; }
 .cf-compl { font: italic 400 10.5px/1.3 var(--card-serif); color: var(--ink-soft); }
-.cf--bn .cf-closing { font: 400 11px/1.5 var(--card-bn); font-style: normal; }
-.cf--bn .cf-hosts { font: 600 12px/1.5 var(--card-bn); letter-spacing: 0; text-transform: none; }
+.cf--bn .cf-closing { font: 400 14px/1.4 var(--card-bn); font-style: normal; }
+.cf--bn .cf-hosts { font: 600 14px/1.4 var(--card-bn); letter-spacing: 0; text-transform: none; }
 
 /* a field still marked "——": a dotted blank, like an unfilled form */
 .cf-blank {
