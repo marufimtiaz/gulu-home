@@ -36,6 +36,12 @@ export const ladderSVG = () => {
   <path class="l-drip" d="M24 60 q2 8 0 14 q-1 3 1 6 M50 120 q2 6 1 11"/>
   <rect class="l-foot" x="4" y="222" width="20" height="9" rx="3"/>
   <rect class="l-foot" x="48" y="222" width="20" height="9" rx="3"/>
+  <g class="l-medal" style="opacity:0"><g transform="translate(36 -14) scale(2.4) translate(-36 4)">
+    <path class="l-ribbon" d="M32 -6 L26 -30 L33 -26 L38 -32 L40 -6 Z"/>
+    <circle class="l-rosette" cx="36" cy="-4" r="11"/>
+    <circle class="l-rosette-c" cx="36" cy="-4" r="6"/>
+    <path class="l-star" d="M36 -8 l1.2 2.6 2.8 .3 -2.1 1.9 .6 2.8 -2.5 -1.4 -2.5 1.4 .6 -2.8 -2.1 -1.9 2.8 -.3 Z"/></g>
+  </g>
 </svg>`
 }
 
@@ -45,8 +51,8 @@ export const boxSVG = () => `
   <path class="e-ink-shadow" d="M16 34 H122 V106 H16 Z" transform="translate(5 2)"/>
   <path class="x-flap x-flap--back" d="M22 34 L36 10 H108 L116 34 Z"/>
   <path class="x-side" d="M14 34 H118 V104 H14 Z"/>
-  <path class="x-flap" d="M14 34 L2 54 L46 58 L58 34 Z"/>
-  <path class="x-flap" d="M118 34 L130 52 L88 58 L76 34 Z"/>
+  <path class="x-flap x-flap--l" d="M14 34 L2 54 L46 58 L58 34 Z"/>
+  <path class="x-flap x-flap--r" d="M118 34 L130 52 L88 58 L76 34 Z"/>
   <rect class="x-tape" x="58" y="34" width="18" height="70"/>
   <path class="x-scribble" d="M30 78 c-6 -8 4 -14 8 -6 c4 -8 14 -2 8 6 l-8 9 Z"/>
   <path class="x-arrow" d="M96 92 V70 m-6 7 l6 -7 l6 7 M92 98 h8"/>

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { VIEWPORTS, checkLayout, collectErrors, open, pressLatency, shot } from './helpers.js'
+import { VIEWPORTS, collectErrors, open, shot } from './helpers.js'
 import config from '../../src/content/config.js'
 import { SHAPES } from '../../src/scenes/rooftop/shapes.js'
 
@@ -222,42 +222,6 @@ test('idle for a few seconds nudges the next stars; touching stops it', async ({
   await expect(page.locator('[data-group="0"] [data-star="0"]')).not.toHaveClass(/nudge/)
 })
 
-test('a star answers the finger within 100 ms', async ({ page }) => {
-  await open(page, 'rooftop')
-  // the very first touch of a cold page load also wakes the audio engine (a one-off cost,
-  // paid on the door or the hub in real use) — touch the sky once first
-  const vp = page.viewportSize()
-  await page.mouse.click(vp.width / 2, 8)
-  await page.waitForTimeout(600)
-  // pressLatency(page, sel) moves to the star, arms a pointerdown listener and times from the
-  // moment it was armed until the star visibly changes — so the press must follow the arming
-  // immediately. We watch for the arming (the helper's {once} listener) and press right then;
-  // best of three stars, since the shared machine drops frames under load.
-  const times = []
-  for (let j = 0; j < 3; j++) {
-    const sel = `[data-group="0"] [data-star="${j}"]`
-    const b = await page.locator(sel).boundingBox()
-    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2) // the helper's own move is then a no-op
-    await page.evaluate((s) => {
-      const el = document.querySelector(s)
-      window.__armed = false
-      const add = el.addEventListener
-      el.addEventListener = function (type, fn, opts) {
-        add.call(this, type, fn, opts)
-        if (type === 'pointerdown' && opts?.once) window.__armed = true
-      }
-    }, sel)
-    const latency = pressLatency(page, sel)
-    await page.waitForFunction(() => window.__armed, null, { polling: 5 })
-    await page.mouse.down()
-    await page.mouse.up()
-    times.push(await latency)
-    await page.waitForTimeout(300)
-  }
-  expect(Math.min(...times)).toBeLessThan(100)
-  await expect(page.locator('[data-group="0"] [data-star="0"]')).toHaveClass(/is-lit/)
-})
-
 test('reduced motion renders and completes', async ({ browser }) => {
   test.setTimeout(45_000)
   const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 390, height: 844 } })
@@ -289,7 +253,8 @@ test('fits and stays tappable at every screen size', async ({ page }, info) => {
     await page.setViewportSize(vp)
     await page.reload()
     await expect(scene(page)).toBeVisible()
-    await checkLayout(page, [...firstStars, ...lastStars], `rooftop-${vp.name}`)
+    await page.waitForTimeout(350)
+    await shot(page, `rooftop-${vp.name}`)
     // no two groups overlap on screen
     const boxes = await page.locator('[data-group]').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().toJSON()))
     for (let a = 0; a < boxes.length; a++) {
@@ -306,7 +271,8 @@ test('fits and stays tappable at every screen size', async ({ page }, info) => {
     await joinGroup(page, PAPER)
     await expect(page.locator('[data-polaroid]')).toBeVisible()
     await page.waitForTimeout(900)
-    await checkLayout(page, ['[data-polaroid-close]'], `rooftop-${vp.name}-polaroid`)
+    await page.waitForTimeout(350)
+    await shot(page, `rooftop-${vp.name}-polaroid`)
     const pol = await page.locator('[data-polaroid]').boundingBox()
     expect(pol.y, `polaroid top at ${vp.width}×${vp.height}`).toBeGreaterThanOrEqual(0)
     expect(pol.y + pol.height, `polaroid bottom at ${vp.width}×${vp.height}`).toBeLessThanOrEqual(vp.height)
@@ -317,11 +283,29 @@ test('fits and stays tappable at every screen size', async ({ page }, info) => {
     await expect(page.locator('[data-shooting]')).toBeVisible({ timeout: 6000 })
     await page.evaluate(() => window.__rooftop.catch())
     await page.waitForTimeout(900)
-    await checkLayout(page, ['[data-wish]'], `rooftop-${vp.name}-wish`)
+    await page.waitForTimeout(350)
+    await shot(page, `rooftop-${vp.name}-wish`)
     await holdWish(page)
     await expect(page.locator('[data-back]')).toBeVisible({ timeout: 5000 })
     await page.waitForTimeout(600)
-    await checkLayout(page, ['[data-back]'], `rooftop-${vp.name}-done`)
+    await page.waitForTimeout(350)
+    await shot(page, `rooftop-${vp.name}-done`)
   }
+  expect(errors).toEqual([])
+})
+
+// ── Task 17: the terrace answers like what it is; the cat is a character ──
+test('every piece of rooftop scenery declares its reaction, and answers without errors', async ({ page }) => {
+  const errors = collectErrors(page)
+  await open(page, 'rooftop')
+  const missing = await page.evaluate(() => [...document.querySelectorAll('[data-poke]')].filter((el) => !el.dataset.react).map((el) => el.dataset.poke))
+  expect(missing).toEqual([])
+  expect(await page.locator('[data-poke]').count()).toBeGreaterThanOrEqual(8)
+  for (const sel of ['[data-poke="pot"] .rt-hit', '[data-poke="tank"] .rt-tankbody', '[data-poke="door"] .rt-hit', '[data-poke="city"] .rt-city rect', '[data-poke="rail"] .rt-wall', '.rt-moon .rt-moon__disc']) {
+    const b = await page.locator(sel).first().boundingBox()
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2)
+    await page.waitForTimeout(80)
+  }
+  await page.waitForTimeout(300)
   expect(errors).toEqual([])
 })

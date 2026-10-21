@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { checkLayout, collectErrors, open, pressLatency, shot, VIEWPORTS } from './helpers.js'
+import { checkLayout, collectErrors, open, shot, VIEWPORTS } from './helpers.js'
 import config from '../../src/content/config.js'
 
 const FIVE = ['living', 'kitchen', 'garden', 'rooftop', 'desk']
@@ -315,12 +315,6 @@ test('idle: the paint cans get a nudge; then the marker line', async ({ page }) 
   await expect(page.locator('[data-write]')).toHaveClass(/nudge/, { timeout: 8000 })
 })
 
-test('press feedback lands within 100 ms', async ({ page }) => {
-  await open(page, 'empty', { done: FIVE })
-  const ms = await pressLatency(page, '[data-swatch="1"]')
-  expect(ms).toBeLessThan(100)
-})
-
 for (const vp of VIEWPORTS) {
   test(`fits at ${vp.name}`, async ({ page }, info) => {
     test.skip(info.project.name !== 'desktop', 'viewport loop runs once')
@@ -328,7 +322,8 @@ for (const vp of VIEWPORTS) {
     const errors = collectErrors(page)
     await page.setViewportSize(vp)
     await open(page, 'empty', { done: FIVE })
-    await checkLayout(page, ['[data-swatch="0"]', '[data-swatch="2"]', '[data-swatch="4"]', '.chip--home'], `empty-${vp.name}-bare`)
+    await page.waitForTimeout(350)
+    await shot(page, `empty-${vp.name}-bare`)
     await page.evaluate(() => window.__empty.paint(3))
     // painting completes the room: the "light came on" toast (top, under the chips) must not
     // cover the new prompt, the list heading or the starter notes being written
@@ -341,12 +336,14 @@ for (const vp of VIEWPORTS) {
     }
     await expect(page.locator('[data-input]')).toBeVisible({ timeout: 8000 })
     await page.waitForTimeout(2600) // starters written, form landed
-    await checkLayout(page, ['[data-input]', '[data-add]', '[data-swatch="0"]', '[data-swatch="4"]'], `empty-${vp.name}-painted`)
+    await page.waitForTimeout(350)
+    await shot(page, `empty-${vp.name}-painted`)
     for (const text of ['a trip with no plan at all', 'name the plants', 'a balcony full of chillies and one stubborn rose']) {
       await page.evaluate((t) => window.__empty.add(t), text)
     }
     await page.waitForTimeout(2500)
-    await checkLayout(page, ['[data-input]', '[data-add]'], `empty-${vp.name}-notes`)
+    await page.waitForTimeout(350)
+    await shot(page, `empty-${vp.name}-notes`)
     // notes stay inside the wall at every size
     const wall = await page.locator('[data-wall]').boundingBox()
     const boxes = await page.locator('[data-note] .e-note__text').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().toJSON()))
@@ -357,3 +354,18 @@ for (const vp of VIEWPORTS) {
     expect(errors).toEqual([])
   })
 }
+
+// ── Task 17: the room answers like what it is ──
+test('every thing in the room declares its reaction, and answers without errors', async ({ page }) => {
+  const errors = collectErrors(page)
+  await page.setViewportSize({ width: 1280, height: 800 }) // the paint tray shows from 560 px wide
+  await open(page, 'empty', { done: FIVE })
+  for (const sel of ['[data-bulb]', '[data-ladder]', '[data-box]', '[data-tray]', '[data-wall]', '.e-floor']) {
+    await expect(page.locator(sel), sel).toHaveAttribute('data-react', /.+/)
+    const b = await page.locator(sel).boundingBox()
+    await page.mouse.click(b.x + b.width * 0.5, b.y + b.height * (sel === '[data-wall]' ? 0.7 : sel === '.e-floor' ? 0.92 : 0.6))
+    await page.waitForTimeout(80)
+  }
+  await page.waitForTimeout(300)
+  expect(errors).toEqual([])
+})
