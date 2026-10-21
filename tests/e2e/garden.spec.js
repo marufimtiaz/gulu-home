@@ -202,6 +202,14 @@ for (const vp of VIEWPORTS) {
     await shot(page, `garden-future-${vp.name}`)
     await page.evaluate(() => { window.__garden.seek('after+=1') })
     await checkLayout(page, ['[data-future]', '[data-back]', '[data-can]'], `garden-after-${vp.name}`)
+    // the "light came on" toast (top, under the chips) arrives with the closing line: it must not cover it
+    await expect(page.locator('.toast')).toBeVisible()
+    const toast = await page.locator('.toast').boundingBox()
+    for (const sel of ['.g-after', '[data-back]']) {
+      const b = await page.locator(sel).boundingBox()
+      const apart = b.y >= toast.y + toast.height || b.x >= toast.x + toast.width || b.x + b.width <= toast.x
+      expect(apart, `${sel} clear of the toast at ${vp.name}`).toBe(true)
+    }
   })
 }
 

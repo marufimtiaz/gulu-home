@@ -71,7 +71,8 @@
   max-width: 22rem;
 }
 .g-prompt:empty { min-height: 0; margin: 0; }
-.g-end { display: grid; justify-items: center; gap: 0.55rem; margin-top: 0.45rem; }
+/* the closing line arrives with the "light came on" toast (top, under the chips): keep it below */
+.g-end { display: grid; justify-items: center; gap: 0.55rem; margin-top: 1rem; }
 .g-after {
   padding: 0.3em 0.9em 0.38em;
   font-size: 1.35rem;
@@ -125,14 +126,28 @@
 .g-stage {
   /* phones: a little wider than the screen (the edges are scenery) so the garden fills it */
   --sh: min(100cqh, 141cqw);
+  /*
+   * Anchored from the bottom. When the canvas fits the height it bleeds 4% past the bottom.
+   * On tall phones it is width-bound, so it rises to sit just under the header (measured from
+   * the viewport, so the garden doesn't shift when the header grows at the end) and the art's
+   * deep foreground (below the canvas) fills the ground under it.
+   */
+  --lift: max(-4cqh, 100dvh - 9.5rem - var(--sh) - 2rem);
   position: absolute;
   left: 50%;
-  top: 54%;
+  bottom: var(--lift);
   height: var(--sh);
   width: calc(var(--sh) * 400 / 520);
-  translate: -50% -50%;
+  translate: -50% 0;
   container-type: size;
 }
+/* the sapling grows from its base; tall phones see it bigger (the grown tree keeps its size: its
+   year-five canopy already reaches the top of the canvas) */
+.g-grow { transform-box: view-box; transform-origin: 200px 434px; transform: scale(var(--grow, 1)); }
+/* the name tag hangs from the sapling's tip, so it rises with it (tip is 82 units up; tag 42 tall) */
+.g-tag { translate: 0 calc((1 - var(--grow, 1)) * 82 / 42 * 100%); }
+@container (max-aspect-ratio: 10 / 14) { .g-stage { --grow: 1.15; } }
+@container (max-aspect-ratio: 10 / 16) { .g-stage { --grow: 1.3; } }
 .g-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .g-back { z-index: 0; }
 .g-front { z-index: 2; pointer-events: none; }
@@ -230,6 +245,8 @@
 .g-lawn--1 { fill: color-mix(in oklab, var(--sage) 36%, var(--night-deep)); }
 .g-lawn--2 { fill: color-mix(in oklab, var(--sage) 28%, var(--night-deep)); }
 .g-lawn--3 { fill: color-mix(in oklab, var(--sage) 21%, var(--night-deep)); }
+.g-lawn--4 { fill: color-mix(in oklab, var(--sage) 14%, var(--night-deep)); }
+.g-stone { fill: color-mix(in oklab, var(--g-paper-dim) 70%, var(--night-deep)); }
 .g-mound { fill: color-mix(in oklab, var(--g-soil) 80%, var(--sage)); stroke: var(--ink); stroke-width: 1.6; }
 .g-tuft { fill: color-mix(in oklab, var(--sage) 52%, var(--night)); stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; }
 
@@ -433,14 +450,14 @@
   .g-title { font-size: 1.6rem; }
   .g-prompt { font-size: 1.15rem; margin-top: 0.15rem; }
   .g-after { font-size: 1.15rem; }
-  .g-end { gap: 0.4rem; margin-top: 0.3rem; }
+  .g-end { gap: 0.4rem; margin-top: 1.5rem; }
 }
 
 /* ── landscape phones: the garden on the left at full height, words on the right ── */
 @media (orientation: landscape) and (max-height: 560px) {
   .garden { flex-direction: row; padding: 0; }
   .g-world { order: 1; height: 100%; }
-  .g-stage { top: 50%; --sh: min(100cqh, 130cqw); }
+  .g-stage { top: 50%; bottom: auto; translate: -50% -50%; --sh: min(100cqh, 130cqw); }
   .g-head {
     order: 2;
     flex: 0 0 auto;
