@@ -311,9 +311,36 @@ export default {
     }
 
     // ── 3. the time-lapse: one timeline, a year at a time, then back to today ──
-    const parts = (k) => $$(`.tree .br[data-st="${k}"], .tree .cr-shadow[data-st="${k}"], .tree .cr[data-st="${k}"]`)
+    // Branches draw out from the trunk; every crown and its shadow grow from the crown's centre
+    // (svgOrigin), so nothing floats loose mid-animation and overlapping crowns never cross-fade.
+    const branchesAt = (k) => $$(`.tree .br[data-st="${k}"]`)
+    const crownsAt = (k) => $$(`.tree .cr[data-st="${k}"], .tree .cr-shadow[data-st="${k}"]`)
+    const originOf = (el) => `${el.dataset.cx} ${el.dataset.cy}`
+    function growParts(tl, k, at) {
+      branchesAt(k).forEach((br, j) => {
+        const strokes = br.querySelectorAll('path')
+        tl.set(br, { opacity: 1 }, at)
+        tl.fromTo(strokes, { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.6, ease: 'power2.out' }, `${at}+=${j * 0.05}`)
+      })
+      crownsAt(k).forEach((el) => {
+        const i = +el.dataset.i
+        tl.set(el, { opacity: 1 }, `${at}+=0.25`)
+        tl.fromTo(el, { scale: 0 }, { scale: 1, svgOrigin: originOf(el), duration: 0.7, ease: EASE.spring, immediateRender: false }, `${at}+=${0.25 + (i % 5) * 0.04}`)
+      })
+    }
+    function shrinkLater(tl, keep, at) {
+      const later = (sel) => $$(sel).filter((el) => +el.dataset.st > keep)
+      later('.tree .cr, .tree .cr-shadow').forEach((el) => {
+        tl.to(el, { scale: 0, svgOrigin: originOf(el), duration: 0.7, ease: 'power2.in' }, at)
+        tl.set(el, { opacity: 0 }, `${at}+=0.7`)
+      })
+      later('.tree .br').forEach((br) => {
+        tl.to(br.querySelectorAll('path'), { strokeDashoffset: 1, duration: 0.6, ease: 'power2.in' }, `${at}+=0.3`)
+        tl.set(br, { opacity: 0 }, `${at}+=0.9`)
+      })
+      tl.to(later('.tree .swing, .tree .chairs, .tree .tree-lanterns'), { opacity: 0, duration: 0.5 }, at)
+    }
     const blossomsUpTo = (k) => $$('.tree .bl').filter((b) => +b.dataset.st <= k)
-    const later = (k) => $$('.tree [data-st]').filter((el) => +el.dataset.st > k)
     const swing = $('.tree .swing')
     const chairs = $('.tree .chairs')
     const treeLanterns = $('.tree .tree-lanterns')
@@ -360,7 +387,7 @@ export default {
           tl.to(tree, { opacity: 1, duration: 0.5 }, `${L}+=0.2`)
         }
         tl.to(treeScale, { scale: s, duration: 1.1, ease: EASE.spring, svgOrigin: ORIGIN }, `${L}+=0.2`)
-        tl.fromTo(parts(k), { opacity: 0, scale: 0.2 }, { opacity: 1, scale: 1, transformOrigin: '50% 50%', duration: 0.7, ease: EASE.spring, stagger: 0.05 }, `${L}+=0.3`)
+        growParts(tl, k, `${L}+=0.3`)
         tl.call(() => (shownStage = k), null, `${L}+=0.3`)
         // spring: blossoms burst, then a few petals fall
         const bls = blossomsUpTo(k)
@@ -390,7 +417,7 @@ export default {
       tl.to(moon, { x: 0, y: 0, duration: 1.5, ease: EASE.inOut }, 'back')
       const keepBlossoms = age.anniversaryWeek ? blossomsUpTo(current) : []
       tl.to(blossomsUpTo(5).filter((b) => !keepBlossoms.includes(b)), { opacity: 0, duration: 0.6 }, 'back')
-      tl.to(later(current), { opacity: 0, duration: 0.8 }, 'back')
+      shrinkLater(tl, current, 'back')
       tl.to(treeScale, { scale: STAGE_SCALE[current], duration: 1.5, ease: EASE.inOut, svgOrigin: ORIGIN }, 'back')
       if (current === 0) {
         tl.to(tree, { opacity: 0, duration: 0.6 }, 'back+=0.9')

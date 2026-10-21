@@ -381,15 +381,17 @@ const BRANCHES = [
   ['M199 262 C186 236 168 214 150 186', 3],
   ['M202 250 C220 222 240 196 262 168', 4],
   ['M196 334 C170 326 140 322 104 318', 5], // the swing branch
-  ['M204 330 C232 318 270 300 306 262', 5],
+  ['M204 330 C232 318 268 292 300 250', 5], // tip inside its crown (318,228)
 ]
 
 export function treeSVG(stage = 0, { blossoms = false } = {}) {
   const rand = rng(53)
   const hidden = (k) => (k > stage ? ' style="opacity:0"' : '')
-  const branches = BRANCHES.map(([d, k]) => `<g class="br" data-st="${k}"${hidden(k)}><path class="br-ink" d="${d}"/><path class="br-wood" d="${d}"/></g>`).join('')
-  const shadows = CROWN.map(([x, y, r, k]) => `<circle class="cr-shadow" data-st="${k}" cx="${x + 5}" cy="${y + 6}" r="${r}"${hidden(k)}/>`).join('')
-  const crown = CROWN.map(([x, y, r, k], i) => `<g class="cr cr--${i % 3}" data-st="${k}"${hidden(k)}><circle cx="${x}" cy="${y}" r="${r}"/><path class="cr-hi" d="M${x - r * 0.62} ${y - r * 0.25} a${r * 0.7} ${r * 0.7} 0 0 1 ${r * 0.5} ${-r * 0.48}"/></g>`).join('')
+  // pathLength=1 lets the time-lapse draw each branch out from the trunk (stroke-dashoffset 1 → 0)
+  const branches = BRANCHES.map(([d, k]) => `<g class="br" data-st="${k}"${hidden(k)}><path class="br-ink" pathLength="1" d="${d}"/><path class="br-wood" pathLength="1" d="${d}"/></g>`).join('')
+  // data-cx/cy: the crown's centre — its shadow grows from the same point so the two stay together
+  const shadows = CROWN.map(([x, y, r, k], i) => `<circle class="cr-shadow" data-st="${k}" data-i="${i}" data-cx="${x}" data-cy="${y}" cx="${x + 5}" cy="${y + 6}" r="${r}"${hidden(k)}/>`).join('')
+  const crown = CROWN.map(([x, y, r, k], i) => `<g class="cr cr--${i % 3}" data-st="${k}" data-i="${i}" data-cx="${x}" data-cy="${y}"${hidden(k)}><circle cx="${x}" cy="${y}" r="${r}"/><path class="cr-hi" d="M${x - r * 0.62} ${y - r * 0.25} a${r * 0.7} ${r * 0.7} 0 0 1 ${r * 0.5} ${-r * 0.48}"/></g>`).join('')
   let bl = ''
   CROWN.forEach(([x, y, r, k]) => {
     for (let j = 0; j < 3; j++) {
