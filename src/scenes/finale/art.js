@@ -469,12 +469,13 @@ function door() {
 function letterbox() {
   return `
   <defs><clipPath id="fh-slot-clip" clipPathUnits="userSpaceOnUse"><rect x="128" y="470" width="44" height="70.5"/></clipPath></defs>
+  <ellipse class="mail__halo" data-mail-halo cx="150" cy="525" rx="32" ry="27" opacity="0"/>
   <g clip-path="url(#fh-slot-clip)">
     <g class="mail" data-mail>
-      <g transform="translate(150 540) rotate(-7)">
-        <rect class="mail__paper" x="-8" y="-12" width="16" height="11" rx="1"/>
-        <path class="mail__flap" d="M-8,-12 L0,-6 L8,-12"/>
-        <circle class="mail__seal" cx="0" cy="-6" r="1.8"/>
+      <g transform="translate(150 540) rotate(-6)">
+        <rect class="mail__paper" x="-19" y="-28" width="38" height="26" rx="2"/>
+        <path class="mail__flap" d="M-19,-28 L0,-14 L19,-28"/>
+        <circle class="mail__seal" cx="0" cy="-14" r="3.8"/>
       </g>
     </g>
   </g>

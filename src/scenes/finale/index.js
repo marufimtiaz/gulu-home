@@ -28,7 +28,7 @@ const STUCK = { ...cu(178, 518), scale: 0.36, rotation: 9 } // stuck on the plat
 const SLIP = { w: 140, h: 110 } // the sticker's box (px in the art box)
 const TOP = 58 // room for the corner chips
 const REDUCED = 6 // reduced motion: the finale's long moments play at 6× (choreo's default is 4×)
-const MIN_DOOR = 1.4 // px per hub unit while she's hanging things: the plate stays a fair target
+const MIN_DOOR = 1.25 // px per hub unit while she's hanging things: the plate stays a fair target
 // the windows flare one by one, in the order she actually lit them (state.litOrder())
 const STEP = 0.22 // between flares
 
@@ -89,6 +89,7 @@ export default {
     const homeBtn = $('[data-home]')
     const mailBtn = $('[data-letterbox]')
     const mailEnv = $('[data-mail]')
+    const mailHalo = $('[data-mail-halo]')
     const flap = $('[data-flap]')
     const cap = $('[data-cap]')
     const chimney = $('[data-chimney]')
@@ -126,35 +127,49 @@ export default {
     fitText(engraved[1], 128)
 
     // ── the camera: fit a focus band of the canvas into the free part of the screen ──
-    // phase 'door': she's hanging things — the whole lit house, door big. 'home': pulled back,
-    // room left for the card (below in portrait, beside in landscape) and for fireworks above.
+    // phase 'door': she's hanging things — the whole lit house edge to edge with clean margins
+    // (the fairy-light drops whole), door on the centre line, down to the mat.
+    // 'party': the crescendo — house + garden fill the width, sat low on a thin strip of lawn,
+    // the whole sky above them free for the fireworks.
+    // 'home': the card has landed — the same wide framing lifted above the card (portrait) or
+    // beside it (landscape), with a strip of lawn under the door for the "one more thing" tag.
     let phase = 'door'
     let frame = { s: 1, x: 0, y: 0 }
 
+    const BANDS = {
+      door: { x0: 8, x1: 292, y0: 194, y1: 592 },
+      party: { x0: 4, x1: 424, y0: 196, y1: 598 },
+      home: { x0: 4, x1: 424, y0: 196, y1: 620 },
+    }
     const frameFor = (ph) => {
       const W = fin.clientWidth
       const H = fin.clientHeight
       const side = W / H >= 1.15
+      if (side && ph === 'party') ph = 'home' // the card goes beside the house: one framing for both
       let region
+      let low = false // sit the band on the region's floor instead of centring it
       if (side) {
         const panel = Math.round(Math.min(480, Math.max(300, W * 0.4)))
         const short = H < 560
         const y = ph === 'home' ? Math.max(short ? 36 : TOP, H * 0.16) : short ? 4 : TOP * 0.6
         region = { x: 8, y, w: W - panel - 16, h: H - y - (short ? 4 : 8), panel }
+        low = ph === 'home'
       } else if (ph === 'home') {
-        // the letterbox must stay clear above the card: the envelope comes out of it
-        region = { x: 0, y: TOP, w: W, h: H - TOP - card.offsetHeight - 46 }
+        // the letterbox (and its tag) must stay clear above the card: the envelope comes out of it
+        region = { x: 0, y: TOP, w: W, h: H - TOP - card.offsetHeight - 26 }
+        low = true
+      } else if (ph === 'party') {
+        region = { x: 0, y: TOP, w: W, h: H - TOP - Math.max(48, prompt.offsetHeight) - 22 }
+        low = true
       } else {
         region = { x: 0, y: TOP, w: W, h: H - TOP - Math.max(48, prompt.offsetHeight) - 26 }
       }
-      // focus bands in hub units. door: the whole house, door on the centre line, down to the mat.
-      // home: house + garden + the moon, pulled back for the fireworks.
-      const b = ph === 'home' ? { x0: -12, x1: 432, y0: 136, y1: side ? 596 : 552 } : { x0: 12, x1: 288, y0: 194, y1: 592 }
+      const b = BANDS[ph]
       let k = Math.min(region.w / (b.x1 - b.x0), region.h / (b.y1 - b.y0)) // px per hub unit
       k = Math.max(k, ph === 'door' ? MIN_DOOR : 0.5)
-      // centre the band; if it can't fit, keep its bottom (door, mat) on screen and crop the roof
+      // centre the band (or sit it low); if it can't fit, keep its bottom (door, mat) on screen
       const bandH = (b.y1 - b.y0) * k
-      const top = bandH <= region.h ? region.y + (region.h - bandH) / 2 : region.y + region.h - bandH
+      const top = bandH <= region.h && !low ? region.y + (region.h - bandH) / 2 : region.y + region.h - bandH
       const s = k / U
       return {
         s,
@@ -174,10 +189,18 @@ export default {
       return { x: p.x - (p.x - f.x) * k, y: p.y - (p.y - f.y) * k, s: f.s * k }
     }
 
+    // the envelope's tap target is centred on the envelope; its tag sits on the strip of lawn
+    // below the step, to the right of the stepping stones — under the kitchen window, short of
+    // the garden fence, never on anything (the camera's 'home' band leaves that strip free)
     function placeMail(f = frame) {
-      const p = toScreen(f, SLOT.x, SLOT.y - 6 * U)
-      mailBtn.style.left = `${Math.round(p.x - 28)}px`
-      mailBtn.style.top = `${Math.round(p.y - 28)}px`
+      const p = toScreen(f, SLOT.x, SLOT.y - 15 * U)
+      const tag = toScreen(f, 172 * U, 566 * U)
+      const x = Math.round(p.x - 28)
+      const y = Math.round(p.y - 28)
+      mailBtn.style.left = `${x}px`
+      mailBtn.style.top = `${y}px`
+      mailBtn.style.setProperty('--tag-x', `${Math.round(tag.x - x)}px`)
+      mailBtn.style.setProperty('--tag-y', `${Math.round(tag.y - y)}px`)
     }
 
     function layout() {
@@ -190,8 +213,9 @@ export default {
       frame = g
       gsap.killTweensOf(art, 'x,y,scale') // a camera move in flight jumps to where it was going
       gsap.set(art, { x: g.x, y: g.y, scale: g.s })
-      const home = frameFor('home')
-      fw.style.height = `${Math.max(120, Math.round(toScreen(home, 0, cu(0, 262).y).y))}px`
+      // the fireworks fill the sky above the roof as the crescendo frames it
+      const party = frameFor('party')
+      fw.style.height = `${Math.max(120, Math.round(toScreen(party, 0, cu(0, 214).y).y))}px`
       placeMail(g)
     }
     gsap.set(art, { transformOrigin: '0 0' })
@@ -479,6 +503,7 @@ export default {
       sticker.setAttribute('tabindex', '-1')
       gsap.killTweensOf(sticker)
       gsap.set(sticker, { transformOrigin: '50% 50%' })
+      const party = () => frameFor('party')
       const home = () => frameFor('home')
 
       tl?.kill()
@@ -497,15 +522,16 @@ export default {
       tl.fromTo(plate, { rotation: 4 }, { rotation: 0, duration: T.moment * 0.7, ease: EASE.wobble }, 'stuck')
       tl.call(() => setPrompt(c('finale.stickerNote')), null, 'stuck+=0.15')
 
-      // the swell: music turns to the chorus, the camera pulls back to take in the whole house
+      // the swell: music turns to the chorus, the camera pulls back to take in house + garden,
+      // sat low on the lawn, the whole sky above them left for the fireworks
       tl.addLabel('swell', `stuck+=${T.linger * 0.5}`) // the note gets a moment to be read
       tl.call(() => {
-        phase = 'home'
+        phase = 'party'
         fin.dataset.phase = 'home'
       }, null, 'swell')
       tl.set(art, { willChange: 'transform' }, 'swell')
-      tl.to(art, { x: () => home().x, y: () => home().y, scale: () => home().s, duration: T.moment, ease: EASE.inOut }, 'swell')
-      tl.call(() => (frame = home()), null, '>')
+      tl.to(art, { x: () => party().x, y: () => party().y, scale: () => party().s, duration: T.moment, ease: EASE.inOut }, 'swell')
+      tl.call(() => (frame = party()), null, '>')
       tl.set(art, { willChange: 'auto' }, '>') // re-raster crisp at the new scale
 
       // 1. every window flares, one at a time, one bell each
@@ -575,6 +601,12 @@ export default {
       tl.addLabel('card', 'fireworks+=2.8') // a couple of bursts on their own first
       tl.to(prompt, { autoAlpha: 0, duration: T.quick }, 'card-=0.25')
       tl.call(() => fx.confetti({ duration: 3200 }), null, 'card')
+      // the house rises to make room for the card (beside it in landscape: it barely moves)
+      tl.call(() => (phase = 'home'), null, 'card')
+      tl.set(art, { willChange: 'transform' }, 'card')
+      tl.to(art, { x: () => home().x, y: () => home().y, scale: () => home().s, duration: T.reveal, ease: EASE.inOut }, 'card')
+      tl.call(() => (frame = home()), null, '>')
+      tl.set(art, { willChange: 'auto' }, '>')
       beat(tl, 'chime', 'card')
       tl.fromTo(card, { autoAlpha: 0, y: 48, rotation: -5, scale: 0.9 }, { autoAlpha: 1, y: 0, rotation: -1.2, scale: 1, duration: T.reveal, ease: EASE.spring }, 'card')
       tl.fromTo(cardBits.slice(0, 4), { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: T.quick * 1.6, ease: EASE.out, stagger: 0.3 }, `card+=${T.reveal * 0.5}`)
@@ -585,11 +617,20 @@ export default {
       tl.addLabel('mail', `>+=${T.linger * 0.8}`)
       beat(tl, 'paper', 'mail')
       tl.to(flap, { scaleY: -1.4, duration: T.tap, ease: EASE.out }, 'mail')
-      tl.fromTo(mailEnv, { opacity: 1, y: 14 }, { y: 0, duration: T.move, ease: EASE.spring }, 'mail+=0.05')
+      tl.fromTo(mailEnv, { opacity: 1, y: 30 }, { y: 0, duration: T.move, ease: EASE.spring }, 'mail+=0.05')
       tl.call(() => placeMail(), null, '<')
-      tl.fromTo(mailBtn, { autoAlpha: 0, scale: 0.6, transformOrigin: '28px 50%' }, { autoAlpha: 1, scale: 1, duration: T.quick * 1.6, ease: EASE.spring }, '>-0.1')
+      // a warm glow comes up behind it, and keeps breathing (like the lamp it came in under)
+      tl.fromTo(mailHalo, { opacity: 0, scale: 0.5, transformOrigin: '50% 50%' }, { opacity: 0.9, scale: 1, duration: T.reveal, ease: EASE.out }, '<')
+      tl.call(() => {
+        if (ctx.reduced) return
+        breathe?.kill()
+        breathe = gsap.to(mailHalo, { opacity: 0.45, scale: 0.8, duration: 1.2, ease: 'sine.inOut', yoyo: true, repeat: -1 })
+      }, null, '>')
+      tl.fromTo(mailBtn, { autoAlpha: 0, scale: 0.6, transformOrigin: '28px 50%' }, { autoAlpha: 1, scale: 1, duration: T.quick * 1.6, ease: EASE.spring }, '<-0.4')
       tl.call(() => guide.set(mailBtn), null, '>')
     }
+    let breathe = null
+    add(() => breathe?.kill())
 
     // ── leaving ──
     let leaving = false
@@ -918,7 +959,7 @@ export default {
       chase?.kill()
       show?.stop()
       cleanups.forEach((fn) => fn())
-      gsap.killTweensOf([art, plate, sticker, slip, prompt, card, ...cardBits, mailBtn, mailEnv, flap, cap, aura, lampGlow, engrave, twineSlack, twineTaut, ...engraved, ...bulbs])
+      gsap.killTweensOf([art, plate, sticker, slip, prompt, card, ...cardBits, mailBtn, mailEnv, mailHalo, flap, cap, aura, lampGlow, engrave, twineSlack, twineTaut, ...engraved, ...bulbs])
       for (const w of wins) gsap.killTweensOf(w.querySelectorAll('[data-glow], [data-halo]'))
     }
   },
