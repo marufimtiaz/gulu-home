@@ -20,7 +20,7 @@ describe('i18n', () => {
     expect(i18n.lang()).toBe('bn')
     expect(i18n.c('finale.plate')).toBe('মারুফ & স্নেহা')
     // not translated yet → English
-    expect(i18n.c('kitchen.dishNote')).toBe('serves 2. forever.')
+    expect(i18n.c('card.titleEn')).toBe('Bou-bhat') // no Bengali override → English
     expect(i18n.num(2026)).toBe('২০২৬')
     expect(i18n.date('2022-04-20')).toBe('২০ এপ্রিল ২০২২')
     i18n.init('?lang=en')
