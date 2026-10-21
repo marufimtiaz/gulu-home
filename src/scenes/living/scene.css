@@ -1,1 +1,298 @@
-.scene--living .stub { display: grid; gap: 1rem; justify-items: center; color: var(--paper); }
+/* Living room — the clock. Tokens only (src/styles/tokens.css). */
+.scene--living { background: var(--night-deep); }
+.lv { position: absolute; inset: 0; overflow: hidden; }
+.lv-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* ── shared strokes ── */
+.lv-art .ink { stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.lv-art .ink-thin { stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.lv-pop { fill: var(--ink); }
+.lv-hit { fill: transparent; pointer-events: all; }
+
+/* ── wall, floor, light ── */
+.lv-wall { fill: var(--paper-2); }
+.lv-dot { fill: var(--dusk); opacity: 0.16; }
+.lv-grain { opacity: 0.05; mix-blend-mode: multiply; }
+.lv-night { fill: var(--night); opacity: 0.44; }
+.lv-lampglow { mix-blend-mode: screen; }
+.lv-stop-lamp { stop-color: var(--lamp); }
+.lv-stop-dusk { stop-color: var(--dusk); }
+.lv-rail { stroke: var(--ink); stroke-width: 2.5; }
+.lv-rail-shadow { stroke: var(--ink); stroke-width: 3; opacity: 0.12; }
+.lv-floor { fill: var(--mustard); }
+.lv-plank { stroke: var(--ink); stroke-width: 2; fill: none; opacity: 0.45; }
+.lv-floor-shade { fill: var(--night); opacity: 0.62; }
+.lv-skirting { fill: var(--paper); }
+.lv-vignette { pointer-events: none; }
+.lv-stop-night { stop-color: var(--night-deep); }
+.lv-rug { fill: var(--blush); }
+.lv-rug-in { fill: none; stroke: var(--berry); stroke-width: 3; stroke-dasharray: 2 9; stroke-linecap: round; }
+
+/* ── window ── */
+.lv-frame-paper { fill: var(--paper); }
+.lv-frame-in { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+.lv-sky--base { fill: var(--indigo); }
+.lv-sky--spring { fill: var(--dusk); }
+.lv-sky--monsoon { fill: var(--ink-soft); }
+.lv-sky--winter { fill: var(--night-deep); }
+.lv-stars circle { fill: var(--star); }
+.lv-moon { fill: var(--moon); }
+.lv-moon-bite { fill: var(--indigo); }
+.lv-city { fill: var(--night-deep); }
+.lv-city-lights rect { fill: var(--lamp); }
+.lv-branch { fill: none; stroke: var(--night-deep); stroke-width: 3; stroke-linecap: round; }
+.lv-blossoms circle { fill: var(--pink); }
+.lv-rain path { stroke: var(--sky); stroke-width: 1.4; stroke-linecap: round; opacity: 0.8; }
+.lv-muntin { stroke: var(--ink); stroke-width: 3; fill: none; }
+.lv-valance { fill: var(--berry); }
+.lv-dawnsky { pointer-events: none; }
+
+/* ── lamp ── */
+.lv-lamp-arm { fill: none; stroke: var(--ink); stroke-width: 4; stroke-linecap: round; }
+.lv-shade { fill: var(--butter); }
+.lv-shade-line { stroke: var(--mustard); stroke-width: 2.5; }
+.lv-bulb { fill: var(--lamp); }
+.lv-motes circle { fill: var(--lamp); opacity: 0.7; animation: lvMote 7s ease-in-out infinite alternate; transform-box: fill-box; }
+.lv-motes circle:nth-child(2n) { animation-duration: 9s; animation-delay: -3s; }
+.lv-motes circle:nth-child(3n) { animation-duration: 11s; animation-delay: -6s; }
+@keyframes lvMote {
+  0% { transform: translate(0, 0); opacity: 0.2; }
+  50% { opacity: 0.8; }
+  100% { transform: translate(-14px, -26px); opacity: 0.3; }
+}
+.living--dawn .lv-motes { opacity: 0; transition: opacity 1s; }
+
+/* ── frames ── */
+.lv-string { fill: none; stroke: var(--ink); stroke-width: 1.4; opacity: 0.7; }
+.lv-nailhead { fill: var(--ink); }
+.lv-wood--mustard { fill: var(--mustard); }
+.lv-wood--berry { fill: var(--berry); }
+.lv-wood--sage { fill: var(--sage); }
+.lv-mat { fill: var(--paper); }
+.lv-photo-edge { fill: none; stroke: var(--ink); stroke-width: 1.2; opacity: 0.5; }
+.lv-empty-frame { opacity: 0; transition: opacity 0.3s; }
+.lv-photo-frame--empty .lv-empty-frame { opacity: 1; }
+.lv-photo-frame--empty .lv-photo-edge { opacity: 0; }
+.lv-empty-dash { fill: none; stroke: var(--ink-soft); stroke-width: 1.4; stroke-dasharray: 4 5; opacity: 0.55; }
+.lv-empty-heart { fill: none; stroke: var(--berry); stroke-width: 1.8; opacity: 0.6; }
+
+/* ── sofa ── */
+.lv-sofa-back, .lv-sofa-arm, .lv-cushion { fill: var(--berry); }
+.lv-sofa-base { fill: var(--berry-deep); }
+.lv-seam { stroke: var(--berry-deep); stroke-width: 2.5; }
+.lv-tuft { stroke: var(--berry-deep); stroke-width: 6; stroke-linecap: round; }
+.lv-leg { stroke: var(--ink); stroke-width: 6; stroke-linecap: round; fill: none; }
+.lv-pillow { fill: var(--mustard); }
+.lv-pillow--sage { fill: var(--sage); }
+.lv-pillow-heart { fill: var(--berry); }
+.lv-pillow-stripe { stroke: var(--paper); stroke-width: 3; opacity: 0.7; }
+
+/* ── plant ── */
+.lv-pot { fill: var(--tomato); }
+.lv-pot-band { stroke: var(--paper); stroke-width: 3; stroke-dasharray: 1 7; stroke-linecap: round; }
+.lv-leaf { fill: var(--sage); }
+.lv-rib { stroke: var(--ink); stroke-width: 1.2; opacity: 0.5; fill: none; }
+.lv-stem { fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; }
+.lv-plant__sway { transform-box: view-box; transform-origin: 441px 662px; animation: lvSway 6s ease-in-out infinite alternate; }
+@keyframes lvSway { from { transform: rotate(-1.4deg); } to { transform: rotate(1.6deg); } }
+
+/* ── wide-screen extras ── */
+.lv-shelf-in { fill: var(--berry-deep); }
+.lv-shelf-board { stroke: var(--ink); stroke-width: 5; }
+.lv-book--berry { fill: var(--berry); }
+.lv-book--sage { fill: var(--sage); }
+.lv-book--sky { fill: var(--sky); }
+.lv-book--butter { fill: var(--butter); }
+.lv-book--pink { fill: var(--pink); }
+.lv-book--mustard { fill: var(--mustard); }
+.lv-hoop-cloth { fill: var(--paper); }
+.lv-hoop-ring { fill: none; stroke: var(--mustard); stroke-width: 6; }
+.lv-hoop-screw { fill: var(--mustard); }
+.lv-stitch { fill: none; stroke: var(--berry); stroke-width: 3; stroke-dasharray: 5 4; }
+.lv-mug { fill: var(--paper); }
+.lv-mug--sage { fill: var(--sage); }
+.lv-mug-handle { fill: none; stroke: var(--ink); stroke-width: 3; }
+.lv-steam { fill: none; stroke: var(--paper); stroke-width: 2.5; stroke-linecap: round; opacity: 0.45; animation: lvSteam 3.5s ease-in-out infinite; transform-box: fill-box; }
+@keyframes lvSteam {
+  0% { transform: translateY(4px); opacity: 0; }
+  40% { opacity: 0.5; }
+  100% { transform: translateY(-10px); opacity: 0; }
+}
+
+/* ── clock ── */
+.lv-clock { cursor: grab; touch-action: none; outline: none; }
+.lv-clock:active { cursor: grabbing; }
+.lv-clock:focus-visible .lv-rim { stroke: var(--lamp); }
+.lv-rim { fill: var(--mustard); }
+.lv-rim-in { fill: none; stroke: var(--ink); stroke-width: 1.2; opacity: 0.35; }
+.lv-face { fill: var(--paper); }
+.lv-tick { stroke: var(--ink); stroke-width: 1.4; opacity: 0.55; }
+.lv-tick--big { stroke-width: 3.2; opacity: 1; stroke-linecap: round; }
+.lv-num { font-family: var(--display); font-weight: 700; font-size: 21px; fill: var(--ink); text-anchor: middle; font-variation-settings: "SOFT" 100, "WONK" 1; }
+.lv-face-heart { fill: var(--blush); stroke: var(--berry); stroke-width: 1.4; }
+.lv-hand--hour { fill: var(--ink); }
+.lv-hand--minute { fill: var(--berry); }
+.lv-hand-heart { fill: var(--berry); }
+.lv-cap { fill: var(--mustard); }
+.lv-trail { fill: none; stroke: var(--lamp); stroke-width: 7; stroke-dasharray: 3 14; stroke-linecap: round; filter: drop-shadow(0 0 6px var(--lamp)); pointer-events: none; }
+.lv-hint-arc { fill: none; stroke: var(--butter); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 7 7; opacity: 0.85; animation: lvArc 1.6s linear infinite; transition: opacity 0.5s; }
+.lv-hint-arc--gone { opacity: 0; animation: none; }
+@keyframes lvArc { to { stroke-dashoffset: 28; } }
+.lv-chain { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 3 2; }
+.lv-plate__card { fill: var(--paper); }
+.lv-date { font-family: var(--display); font-weight: 700; font-size: 20px; fill: var(--ink); text-anchor: middle; font-variation-settings: "SOFT" 100, "WONK" 1; }
+.lv-time { font-family: var(--hand); font-weight: 700; font-size: 17px; fill: var(--berry); text-anchor: middle; }
+html[lang="bn"] .lv-date { font-family: var(--bn); font-size: 18px; }
+html[lang="bn"] .lv-time { font-family: "Atma", var(--bn); font-size: 14px; }
+.lv-dust circle { fill: var(--lamp); }
+.lv-dust { pointer-events: none; filter: drop-shadow(0 0 3px var(--lamp)); }
+
+/* ── dawn ── */
+.lv-dim { fill: var(--night-deep); pointer-events: none; }
+.lv-phone { pointer-events: none; outline: none; }
+.lv-phone--on { pointer-events: auto; cursor: pointer; outline: none; }
+.lv-phone-glow { transform-box: fill-box; transform-origin: center; animation: lvGlow 2.4s ease-in-out infinite alternate; }
+@keyframes lvGlow { from { transform: scale(0.85); opacity: 0.65; } to { transform: scale(1.12); opacity: 1; } }
+.lv-phone-body { fill: var(--ink); }
+.lv-phone-screen { fill: var(--moon); }
+.lv-phone-heart { fill: var(--berry); }
+
+/* ── HTML overlay ── */
+.lv-ui { position: absolute; inset: 0; pointer-events: none; }
+.lv-hint {
+  position: absolute;
+  left: 50%;
+  bottom: max(1.4rem, calc(env(safe-area-inset-bottom) + 0.8rem));
+  transform: translateX(-50%);
+  margin: 0;
+  width: max-content;
+  max-width: 88vw;
+  text-align: center;
+  font-size: clamp(1.45rem, 5.4vw, 1.9rem);
+  line-height: 1.1;
+  color: var(--butter);
+  text-shadow: 0 2px 0 var(--ink), 0 0 18px var(--night-deep);
+  opacity: 0;
+}
+.living--dawn .lv-hint { color: var(--lamp); text-shadow: 0 0 16px var(--lamp-glow), 0 2px 0 var(--ink); }
+
+.lv-event {
+  position: absolute;
+  left: 50%;
+  top: 63%;
+  translate: -50% 0;
+  display: grid;
+  gap: 0.1rem;
+  justify-items: center;
+  width: max-content;
+  max-width: min(84vw, 23rem);
+  padding: 0.7rem 1.1rem 0.75rem;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--line);
+  border-radius: 6px;
+  box-shadow: var(--pop-sm);
+  text-align: center;
+}
+.lv-event[hidden] { display: none; }
+.lv-event::before {
+  content: "";
+  position: absolute;
+  top: -0.7rem;
+  left: 50%;
+  width: 4.2rem;
+  height: 1.3rem;
+  translate: -50% 0;
+  rotate: 3deg;
+  background: var(--butter);
+  border: var(--line-thin);
+  opacity: 0.9;
+}
+.lv-event__date { font: 700 0.78rem/1.2 var(--body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--berry); }
+.lv-event__line { font-size: 1.45rem; line-height: 1.15; }
+html[lang="bn"] .lv-event__date { font-family: var(--bn); letter-spacing: 0; text-transform: none; }
+
+.lv-phonecard {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 1.2rem;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.lv-phonecard[hidden] { display: none; }
+.lv-phonecard__phone {
+  position: relative;
+  width: min(80vw, 330px);
+  padding: 0.9rem 0.7rem 1.7rem;
+  background: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: 28px;
+  box-shadow: 0 0 0 5px var(--night), 0 0 70px 18px var(--lamp-glow), var(--pop);
+}
+.lv-phonecard__phone::after {
+  content: "";
+  position: absolute;
+  bottom: 0.55rem;
+  left: 50%;
+  width: 3.4rem;
+  height: 0.3rem;
+  translate: -50% 0;
+  border-radius: 99px;
+  background: var(--ink-soft);
+}
+.lv-phonecard__top {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 0.5rem 0.5rem;
+  font: 700 0.9rem/1 var(--body);
+  color: var(--paper);
+}
+.lv-phonecard__time { color: var(--lamp); }
+.lv-phonecard__shot { width: 100%; height: auto; border-radius: 12px; }
+.lv-bubble {
+  position: relative;
+  width: max-content;
+  max-width: 92%;
+  margin: -1.6rem 0 0 -1.4rem;
+  padding: 0.35rem 1.1rem 0.45rem;
+  font-size: clamp(1.9rem, 8vw, 2.4rem);
+  line-height: 1.05;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--line);
+  border-radius: 20px 20px 20px 4px;
+  box-shadow: var(--pop-sm);
+  transform-origin: 10% 100%;
+}
+.lv-bubble::after { content: " ♥"; color: var(--berry); }
+.lv-phonecard__on { margin: 0; font-size: 1.25rem; color: var(--butter); opacity: 0.9; }
+
+.lv-counter {
+  position: absolute;
+  left: 50%;
+  top: 64%;
+  translate: -50% 0;
+  display: grid;
+  gap: 0.7rem;
+  justify-items: center;
+  width: min(82vw, 22rem);
+  padding: 0.9rem 1.1rem 1rem;
+  background: var(--paper);
+  border: var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--pop), 0 0 50px var(--lamp-glow);
+  color: var(--ink);
+  text-align: center;
+  pointer-events: auto;
+}
+.lv-counter[hidden] { display: none; }
+.lv-counter__text { font-size: clamp(1.5rem, 6.4vw, 2rem); font-weight: 800; line-height: 1.1; }
+html[lang="bn"] .lv-counter__text { font-family: var(--bn); font-weight: 700; }
+
+@media (min-aspect-ratio: 1/1) {
+  .lv-event { top: 64%; }
+  .lv-counter { top: 62%; }
+}
