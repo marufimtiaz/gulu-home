@@ -484,3 +484,71 @@ html[lang="bn"] .stamp__press { font-size: 1.1rem; }
 /* reduced motion: no idle loops */
 .study--still .mote, .study--still .wstar, .study--still .stamp__face svg, .study--still .stamp__press, .study--still .nib--writing svg { animation: none; }
 .study--still .mote { opacity: 0; }
+
+/* ── scenery bits (scenery.js) ── */
+.d-hit { fill: transparent; stroke: none; }
+.pot-ink { fill: var(--night-deep); stroke: none; }
+.d-drawer__gap { fill: var(--ink); }
+.d-drop { fill: var(--indigo); stroke: var(--ink); stroke-width: 1; }
+.d-blot { fill: var(--indigo); opacity: 0.75; }
+/* mood lighting: the heart of light the lamp throws on the wall (above the room's darkness) */
+.study__heart {
+  position: absolute;
+  z-index: 6;
+  left: calc(90 / 400 * 100%);
+  top: calc(18 / 340 * 100%);
+  width: calc(84 / 400 * 100%);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  filter: blur(2px) drop-shadow(0 0 14px var(--lamp));
+}
+.study__heart svg { display: block; width: 100%; height: 100%; fill: var(--lamp-glow); overflow: visible; }
+/* the stamp's ink, left on the paper beside each P.S. */
+.l-imprint {
+  position: absolute;
+  width: 1.5rem;
+  height: 1.5rem;
+  pointer-events: none;
+  fill: var(--berry);
+  opacity: 0.6;
+}
+.l-imprint svg { width: 100%; height: 100%; display: block; }
+.l-imprint--faint { opacity: 0.22; }
+
+/* a paper speech-tag beside the thing she tapped (quip.js) */
+.quip {
+  position: absolute;
+  z-index: 30;
+  margin: 0;
+  width: max-content;
+  max-width: min(72vw, 15rem);
+  padding: 0.3rem 0.85rem 0.4rem;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  text-align: center;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--line);
+  border-radius: 12px;
+  box-shadow: var(--pop-sm);
+  pointer-events: none;
+}
+.quip[hidden] { display: none; }
+.quip::after {
+  content: "";
+  position: absolute;
+  left: var(--tail, 50%);
+  top: 100%;
+  width: 12px;
+  height: 12px;
+  translate: -50% -50%;
+  rotate: 45deg;
+  background: var(--paper);
+  border-right: var(--line);
+  border-bottom: var(--line);
+}
+.quip--below::after { top: 0; rotate: 225deg; }
+html[lang="bn"] .quip { font-size: 1.1rem; line-height: 1.35; }

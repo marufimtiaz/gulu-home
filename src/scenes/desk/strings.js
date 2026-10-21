@@ -28,4 +28,10 @@ export default {
   blot: ['oops. (it\'s a heart, if you squint.)', 'another one. blaming the pen.'],
   pen: ['phew. it stopped right at the edge.', 'saved it. again.'],
   moon: ['even the moon is shy tonight.', 'it keeps peeking. can\'t blame it, Susu.'],
+  lamp: ['mood lighting.', 'even the lamp has a crush on you, Jhijhi.', 'it does that when you\'re here.'],
+  stampMore: [
+    'that\'s all the P.S. there is. (for now.)',
+    'running out of ink, Gu-een. not out of love.',
+    'okay, King. one more. and one more.',
+  ],
 }

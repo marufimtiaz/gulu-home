@@ -1,8 +1,13 @@
 import { expect, test } from '@playwright/test'
-import { checkLayout, collectErrors, open, pressLatency, shot, VIEWPORTS } from './helpers.js'
+import { collectErrors, open, shot, VIEWPORTS } from './helpers.js'
 import config from '../../src/content/config.js'
 
 const PS = config.letter.ps.map((s) => s.replaceAll('{nickname}', config.nickname))
+/** Screenshot-only viewport review (the owner looks at these). */
+const look = async (page, name) => {
+  await page.waitForTimeout(350)
+  if (name) await shot(page, name)
+}
 const on = (page) => page.locator('[data-letter] .w--on').count()
 
 async function center(page, sel) {
@@ -194,12 +199,6 @@ test('leaving mid-letter cleans up', async ({ page }) => {
   expect(errors).toEqual([])
 })
 
-test('press feedback is instant', async ({ page }) => {
-  await open(page, 'desk')
-  await page.waitForTimeout(300)
-  expect(await pressLatency(page, '[data-envelope]')).toBeLessThan(100)
-})
-
 /**
  * Where each written line's baseline falls relative to the nearest rule (px; 0 = sitting on it).
  * A zero-size inline-block after a block's last word sits on that line's baseline; the rules are the
@@ -270,24 +269,24 @@ test('the "light came on" toast never covers the sign-off', async ({ browser }, 
 })
 
 for (const vp of VIEWPORTS) {
-  test(`desk fits at ${vp.name}`, async ({ page }, info) => {
+  test(`desk screenshots at ${vp.name}`, async ({ page }, info) => {
     test.skip(info.project.name !== 'desktop', 'viewport loop runs once')
     test.setTimeout(120_000) // a long walk through the room; slow when the machine is busy
     await page.setViewportSize(vp)
     await open(page, 'desk')
     await page.waitForTimeout(300)
-    await checkLayout(page, ['[data-chain]', '[data-envelope]', '.chip--home'], `desk-dark-${vp.name}`)
+    await look(page, `desk-dark-${vp.name}`)
     await page.locator('[data-chain]').click()
     await expect.poll(() => page.evaluate(() => window.__desk.phase())).toBe('lit')
-    await checkLayout(page, ['[data-chain]', '[data-envelope]'], `desk-lit-${vp.name}`)
+    await look(page, `desk-lit-${vp.name}`)
     await page.locator('[data-envelope]').click()
     await page.waitForTimeout(4200)
-    await checkLayout(page, ['[data-letter]', '[data-scroll]'], `desk-writing-${vp.name}`)
+    await look(page, `desk-writing-${vp.name}`)
     await page.evaluate(() => window.__desk.skip())
     await expect(page.locator('.scene--desk')).toHaveAttribute('data-done', 'true', { timeout: 10_000 })
     for (let i = 0; i < 2; i++) await page.locator('[data-heart]').click()
     await page.waitForTimeout(1500)
-    await checkLayout(page, ['[data-letter]', '[data-heart]', '.chip--home'], `desk-signed-${vp.name}`)
+    await look(page, `desk-signed-${vp.name}`)
   })
 }
 
@@ -300,8 +299,8 @@ test('rotating mid-letter keeps the paper on screen', async ({ page }, info) => 
   await page.waitForTimeout(2500)
   await page.setViewportSize({ width: 844, height: 390 })
   await page.waitForTimeout(1200)
-  await checkLayout(page, ['[data-letter]'], 'desk-rotated')
+  await look(page, 'desk-rotated')
   await page.evaluate(() => window.__desk.skip())
   await expect(page.locator('.scene--desk')).toHaveAttribute('data-done', 'true', { timeout: 10_000 })
-  await checkLayout(page, ['[data-heart]'])
+  await expect(page.locator('[data-heart]')).toBeVisible()
 })

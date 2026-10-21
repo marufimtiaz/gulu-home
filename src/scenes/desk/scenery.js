@@ -5,7 +5,7 @@
  *   books      the stack shifts; from the 2nd tap a book slides out, titled with one of her
  *              names ("Sensitive" — a memoir, "How to Be a Topper", by Gulu …)
  *   inkpot     the ink ripples; every 3rd tap a drop jumps out and leaves a heart-ish blot
- *   pen        rattles in the pot; every 3rd tap it tips out, rolls, and stops teetering at
+ *   pen        rattles in the pot; every 3rd tap it tips out in front of it, rolls, and stops teetering at
  *              the desk's edge ("phew"); the next tap pops it back in
  *   drawer     sticks (rattle) — then slides open on the next tap: what's inside (cycles)
  *   desk       knock-knock: a running joke, one line per knock ("Orangotang er bou …")
@@ -64,7 +64,7 @@ export function scenery(root, ctx, { quip }) {
     sound.play('paper')
     if (!reduced) {
       gsap.killTweensOf(b)
-      G(gsap.timeline().to(b, { x: 22, duration: 0.3, ease: 'power2.out' }).to(b, { x: 0, duration: 0.5, ease: 'power2.inOut' }, '+=2'))
+      G(gsap.timeline().to(b, { x: -20, duration: 0.3, ease: 'back.out(2)' }).to(b, { x: 0, duration: 0.5, ease: 'power2.inOut' }, '+=2'))
     }
     quip.say(line('books', k), b)
   })
@@ -83,9 +83,11 @@ export function scenery(root, ctx, { quip }) {
         (n) => {
           if (n % 3) return
           const k = blotN++
-          const x = 296 + ((k * 17) % 26)
+          const x = 377 + ((k * 7) % 12)
           const drop = document.createElementNS(NS, 'circle')
           drop.setAttribute('r', 2.6)
+          drop.setAttribute('cx', 349)
+          drop.setAttribute('cy', 198)
           drop.classList.add('d-drop')
           blots.append(drop)
           const blot = document.createElementNS(NS, 'path')
@@ -98,7 +100,7 @@ export function scenery(root, ctx, { quip }) {
           while (blots.querySelectorAll('.d-blot').length > 3) blots.querySelector('.d-blot').parentElement.remove()
           const tl = G(gsap.timeline())
           if (!reduced) {
-            tl.fromTo(drop, { attr: { cx: 349, cy: 198 } }, { attr: { cx: (349 + x) / 2 }, duration: 0.25, ease: 'none' })
+            tl.to(drop, { attr: { cx: (349 + x) / 2 }, duration: 0.25, ease: 'none' })
               .to(drop, { attr: { cy: 180 }, duration: 0.25, ease: 'power2.out' }, 0)
               .to(drop, { attr: { cx: x }, duration: 0.25, ease: 'none' })
               .to(drop, { attr: { cy: 230 }, duration: 0.25, ease: 'power2.in' }, '<')
@@ -114,39 +116,46 @@ export function scenery(root, ctx, { quip }) {
     }),
   )
 
-  // ── the pen: rattles; tips out and teeters at the edge; hops back ──
-  const penHit = $('[data-poke="pen"]')
-  const pen = $('[data-pen]')
+  // ── the pen: rattles in the pot; every 3rd tap it tips out, lands in front of the pot, rolls
+  //    to the desk's edge and stops there, teetering; the next tap puts it back ──
+  const penHit = $('[data-poke="pen"]') // the pen and its hit area move together
+  const inkG = $('[data-poke="inkpot"]')
   const penTap = counter()
   let fallen = false
   let saves = 0
   const PIVOT = '362 213'
+  const FLAT = 72 // the pen leans 18° in the pot: 72° more and it lies flat
   bespoke(penHit, 'tip', () => {
     const n = penTap()
-    gsap.killTweensOf(pen)
+    gsap.killTweensOf(penHit)
     if (fallen) {
       fallen = false
       sound.play('ting', { i: 4 })
-      G(gsap.to(pen, { rotation: 0, x: 0, y: 0, svgOrigin: PIVOT, duration: reduced ? 0.01 : 0.45, ease: 'back.out(1.6)' }))
+      const tl = G(gsap.timeline())
+      tl.to(penHit, { rotation: 0, x: 0, y: 0, svgOrigin: PIVOT, duration: reduced ? 0.01 : 0.45, ease: 'back.out(1.6)' })
+      tl.call(() => inkG.before(penHit)) // back in the pot: behind its glass
       return
     }
     if (n % 3) {
       sound.play('ting', { i: 2 + (n % 3) })
-      if (!reduced) G(gsap.to(pen, { keyframes: { rotation: [0, -5, 4, -3, 2, 0] }, svgOrigin: PIVOT, duration: 0.35, ease: 'none' }))
+      if (!reduced) G(gsap.to(penHit, { keyframes: { rotation: [0, -5, 4, -3, 2, 0] }, svgOrigin: PIVOT, duration: 0.35, ease: 'none' }))
       return
     }
     fallen = true
     sound.play('knock')
+    inkG.after(penHit) // out of the pot, in front of it
     const tl = G(gsap.timeline())
     if (!reduced) {
-      tl.to(pen, { rotation: 70, svgOrigin: PIVOT, duration: 0.35, ease: 'power2.in' })
-        .to(pen, { y: 18, duration: 0.15, ease: 'power2.in' }, '-=0.12')
+      tl.to(penHit, { rotation: FLAT, x: -36, svgOrigin: PIVOT, duration: 0.35, ease: 'power2.in' })
+        .to(penHit, { y: 18, duration: 0.16, ease: 'power2.in' }, '-=0.14')
         .call(() => sound.play('knock'))
-        .to(pen, { x: 10, duration: 0.5, ease: 'power1.out' })
-        // over the edge… teeter… stay
-        .to(pen, { keyframes: { rotation: [70, 78, 66, 75, 68, 72, 70] }, svgOrigin: PIVOT, duration: 1, ease: 'sine.inOut' })
-    } else tl.set(pen, { rotation: 70, y: 18, x: 10, svgOrigin: PIVOT })
-    tl.call(() => quip.say(line('pen', saves++), pen))
+        .to(penHit, { y: 15, duration: 0.08, ease: 'power1.out' })
+        .to(penHit, { y: 18, duration: 0.08, ease: 'power1.in' })
+        // rolls to the edge… teeters over it… stays
+        .to(penHit, { x: -19, duration: 0.7, ease: 'power2.out' }, '<')
+        .to(penHit, { keyframes: { rotation: [FLAT, FLAT + 7, FLAT - 3, FLAT + 4, FLAT - 1, FLAT + 2] }, svgOrigin: PIVOT, duration: 1.1, ease: 'sine.inOut' })
+    } else tl.set(penHit, { rotation: FLAT + 2, y: 18, x: -19, svgOrigin: PIVOT })
+    tl.call(() => quip.say(line('pen', saves++), penHit))
   })
 
   // ── the drawer: sticks, then slides open on the next tap ──
@@ -177,7 +186,7 @@ export function scenery(root, ctx, { quip }) {
   })
 
   // ── the desk itself: knock-knock ──
-  const onDesk = [...bookEls, pen, $('[data-inkpot]'), $('[data-lamp]')]
+  const onDesk = [...bookEls, penHit, $('[data-inkpot]'), $('[data-lamp]')]
   const knockTap = counter()
   for (const el of root.querySelectorAll('[data-poke="desk-top"], [data-poke="desk-front"]')) {
     bespoke(el, 'knock', (e) => {
@@ -187,8 +196,7 @@ export function scenery(root, ctx, { quip }) {
       if (!reduced) {
         G(gsap.timeline().to(onDesk, { y: '-=2', duration: 0.06, ease: 'power2.out', stagger: 0.015 }).to(onDesk, { y: '+=2', duration: 0.3, ease: 'bounce.out', stagger: 0.015 }))
       }
-      const m = (n - 1) % 5
-      if (m > 0) quip.say(line('knock', m - 1), { x: e.clientX, y: e.clientY - 10 })
+      quip.say(line('knock', n - 1), { x: e.clientX, y: e.clientY - 10 })
     })
   }
 

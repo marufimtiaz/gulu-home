@@ -88,15 +88,15 @@ export function scenery(root, ctx, { quip, flick, shed, busy }) {
       steps: [
         (n) => {
           if (n % 3 || busy()) return
+          const k = sheds++
           const tl = tw(gsap.timeline())
           tl.to(flick, { opacity: 0, duration: 0.06, overwrite: true })
             .to(shed, { attr: { opacity: 0.5 }, duration: reduced ? 0 : 0.35, ease: 'power2.out' }, 0)
-            .call(() => quip.say(line('shed', sheds), lampEl), null, 0.3)
+            .call(() => quip.say(line('shed', k), lampEl), null, 0.3)
             .call(() => sound.play('lampOn'), null, 1.9)
             .to(flick, { keyframes: [{ opacity: 0.7, duration: 0.05 }, { opacity: 0.1, duration: 0.09 }, { opacity: 1, duration: 0.3 }] }, 1.9)
             .to(shed, { attr: { opacity: 0 }, duration: reduced ? 0 : 0.4 }, 1.95)
           if (reduced) tl.timeScale(4)
-          sheds++
         },
       ],
     }),

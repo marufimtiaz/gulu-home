@@ -203,8 +203,12 @@ export default {
         .to(spoonNudge, { a: 0, duration: 0.7, ease: 'elastic.out(1, 0.5)', onUpdate: () => placeSpoon(shownSpoon + spoonNudge.a) })
     }
     const nextJar = () => jars.find((_, i) => !used[i])
-    const guide = nudge(nextJar(), { style: (el) => (el.classList.contains('jar') ? lidRattle(el) : el === potWrap ? stirHint() : null), arrow: true })
+    // the jars are the main action of the first phase: the hand-drawn arrow may come if she's stuck
+    const guide = nudge(nextJar(), { style: lidRattle, arrow: true })
     offs.push(() => guide.stop())
+    // stirring has its own arrow (the arc round the pot), so its nudge brings no second one
+    let stirGuide = null
+    offs.push(() => stirGuide?.stop())
     const clearNudge = () => kitchen.classList.remove('kitchen--nudge')
     on(root, 'pointerdown', clearNudge, true)
 
@@ -350,6 +354,8 @@ export default {
       if (stage !== 'adding') return
       stage = 'stirring'
       kitchen.classList.add('kitchen--stir', 'kitchen--nudge') // show the stir arrow straight away
+      guide.stop()
+      stirGuide = nudge(potWrap, { style: stirHint })
       spoon.dataset.on = ''
       placeSpoon(spoonAngle)
       G.fromTo(spoon, { y: -80, opacity: 0 }, { y: 0, opacity: 1, duration: T(0.6), ease: 'bounce.out', onComplete: () => {
@@ -523,7 +529,7 @@ export default {
       potWrap.dataset.mood = 'squeeze'
       const heart = steam.querySelector('.heart')
       const heartFill = steam.querySelector('.heart-fill')
-      guide.set([])
+      stirGuide?.stop()
       const tl = G.tl({ onComplete: () => offs.push(nudge(backBtn).stop) })
       tl.to(spoon, { y: -70, opacity: 0, duration: T(0.35), ease: 'power2.in' })
         .call(() => delete spoon.dataset.on)

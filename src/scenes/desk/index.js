@@ -18,11 +18,13 @@
  */
 import { gsap } from 'gsap'
 import './scene.css'
-import { DESK, deskSVG, envelopeSVG, heartSVG, nibSVG, ringSVG, windowSVG } from './art.js'
+import { DESK, HEART, deskSVG, envelopeSVG, heartSVG, nibSVG, ringSVG, windowSVG } from './art.js'
 import { placeNib, write } from './writer.js'
 import { onDrag } from '../../ui/drag.js'
 import { EASE, T, beat, moment } from '../../ui/choreo.js'
-import { haptic, nudge, poke, press, wobble } from '../../ui/feel.js'
+import { haptic, nudge, press, wobble } from '../../ui/feel.js'
+import { makeQuip } from './quip.js'
+import { scenery } from './scenery.js'
 
 const MS = 35 // per character, the letter's pace
 const MS_PS = 26 // the P.S. lines are quicker, giddier
@@ -51,6 +53,7 @@ export default {
           <button class="chain" type="button" data-chain aria-label="${esc(t('desk.chain'))}">
             <span class="chain__sway"><span class="chain__links"></span><span class="chain__bead"></span></span>
           </button>
+          <span class="study__heart" data-heartpool aria-hidden="true">${heartSVG()}</span>
           <button class="envelope" type="button" data-envelope aria-label="${esc(t('desk.envelope'))}">
             ${envelopeSVG()}
             <span class="envelope__to hand">${esc(t('desk.to'))}</span>
@@ -186,13 +189,36 @@ export default {
     layout()
     on(window, 'resize', layout)
 
-    // ── idle guidance: the next thing to touch ──
-    const guide = nudge(chain)
+    // ── idle guidance, in the study's own language (ui/feel nudge):
+    //    dark   → the chain gives a little tug, as if someone pulled it from above (arrow if stuck)
+    //    lit    → the envelope's flap lifts a fraction and drops, the seal with it (arrow if stuck)
+    //    signed → the stamp lifts and presses the air, once (no arrow: the P.S. are a bonus)
+    const chainHint = () =>
+      track(gsap.timeline().to(chain, { '--pull': '10px', duration: 0.2, ease: 'power2.out' }).to(chain, { '--pull': '0px', duration: 0.9, ease: EASE.wobble }))
+    const envHint = () =>
+      track(
+        gsap
+          .timeline()
+          .to(flap, { scaleY: 0.78, svgOrigin: '80 12', duration: 0.22, ease: 'power2.out' })
+          .to(seal, { y: -11, rotation: -12, svgOrigin: '80 60', duration: 0.22, ease: 'power2.out' }, 0)
+          .to(flap, { scaleY: 1, svgOrigin: '80 12', duration: 0.6, ease: 'bounce.out' })
+          .to(seal, { y: 0, rotation: 0, svgOrigin: '80 60', duration: 0.6, ease: 'bounce.out' }, '<'),
+      )
+    const stampHint = () =>
+      track(
+        gsap
+          .timeline()
+          .to(heart, { y: -9, rotation: -6, duration: 0.35, ease: 'power2.out' })
+          .to(heart, { y: 3, rotation: 6, duration: 0.09, ease: 'power3.in' })
+          .to(heart, { y: 0, rotation: 0, duration: 0.5, ease: EASE.wobble }),
+      )
+    const guide = nudge(chain, { style: (el) => (el === chain ? chainHint() : el === envelope ? envHint() : null), arrow: true })
     offs.push(() => guide.stop())
+    let stampGuide = null
+    offs.push(() => stampGuide?.stop())
 
     // ── the chain ──
     offs.push(wobble(sway, { deg: 3.5, period: 2.8 }))
-    offs.push(press(chain, { sound: 'tap', scale: 0.96 }))
     const setPull = (px) => chain.style.setProperty('--pull', `${Math.max(0, px).toFixed(1)}px`)
     const pullNow = () => parseFloat(chain.style.getPropertyValue('--pull')) || 0
     const springBack = () => track(gsap.to(chain, { '--pull': '0px', duration: reduced ? 0.01 : T.reveal, ease: EASE.wobble, overwrite: true }))
@@ -204,10 +230,14 @@ export default {
           moved = false
           clicked = false
           gsap.killTweensOf(chain, '--pull')
+          // the chain takes her weight at once: a few links of give, a little clink
+          sound.play('tap')
+          haptic(6)
+          setPull(5)
         },
         onMove(p) {
           if (Math.abs(p.dy) > 4) moved = true
-          const d = Math.max(0, p.dy)
+          const d = Math.max(5, p.dy)
           const px = d < MAX_PULL ? d : MAX_PULL + (d - MAX_PULL) * 0.15 // rubber band past the end
           setPull(px)
           if (!clicked && px >= PULL) {
@@ -278,23 +308,75 @@ export default {
       tl.to([glow, beam], { keyframes: [{ opacity: 0.2, duration: 0.06 }, { opacity: 1, duration: 0.2 }] }, 0.06)
     }
 
-    // tapping the lamp itself
+    // tapping the lamp itself (bespoke, documented: data-react="flicker"): it rocks on its
+    // brass foot either way; in the dark the shade rings and the chain swings — that's the way
+    // on; lit, the bulb stutters and buzzes, and every 3rd time it throws a heart of light on
+    // the wall behind it.
+    const line = (key, k) => {
+      const list = t(`desk.${key}`)
+      return Array.isArray(list) ? list[k % list.length] : list
+    }
+    const quip = makeQuip(study)
+    offs.push(() => quip.kill())
+    const heartPool = $('[data-heartpool]')
+    let lampTaps = 0
+    let moods = 0
+    lamp.dataset.react = 'flicker'
     on(lamp, 'pointerdown', (e) => {
+      haptic(5)
+      const lr = lamp.getBoundingClientRect()
+      const side = e.clientX < lr.left + lr.width / 2 ? 1 : -1
+      if (!reduced) {
+        gsap.killTweensOf(lamp, 'rotation')
+        track(
+          gsap
+            .timeline()
+            .to(lamp, { rotation: 3 * side, svgOrigin: '90 236', duration: 0.1, ease: 'power2.out' })
+            .to(lamp, { rotation: 0, svgOrigin: '90 236', duration: 0.6, ease: 'elastic.out(1, 0.35)' }),
+        )
+      }
       if (phase === 'dark') {
-        sound.play('tap')
+        sound.play('ting', { i: 2 })
         track(gsap.fromTo(chain, { y: 0 }, { keyframes: { y: [0, 6, -3, 0] }, duration: 0.5, ease: 'none', overwrite: 'auto' }))
         guide.reset()
-      } else {
-        blink(false)
-        fx.sparkles(e.clientX, e.clientY, { count: 5 })
+        return
       }
+      sound.play('buzz')
+      blink(true)
+      if (++lampTaps % 3 || phase === 'lighting') return
+      const tl = track(moment())
+      tl.fromTo(heartPool, { opacity: 0, scale: 0.5 }, { opacity: 0.85, scale: 1, duration: T.move, ease: EASE.spring }, 0.1)
+        .call(() => {
+          sound.play('sparkle')
+          quip.say(line('lamp', moods++), lamp)
+        }, null, '<0.2')
+        .to(heartPool, { opacity: 0, duration: T.reveal, ease: 'power1.in' }, `+=${T.linger}`)
     })
 
-    // ── decorations answer a tap ──
-    for (const el of root.querySelectorAll('[data-poke]')) offs.push(poke(el))
+    // ── everything else on the desk answers a tap like what it is (scenery.js) ──
+    offs.push(scenery(root, ctx, { quip }))
 
     // ── the envelope ──
-    offs.push(press(envelope, { sound: 'tap', scale: 0.95 }))
+    // she picks it up a little: it lifts off the desk and the flap gives (not a squash)
+    on(envelope, 'pointerdown', () => {
+      if (envelope.disabled) return
+      sound.play('paper')
+      haptic(6)
+      if (reduced) return
+      gsap.killTweensOf([envelope, flap, seal])
+      track(gsap.to(envelope, { y: -7, rotation: 2.5, duration: 0.08, ease: 'power2.out' }))
+      track(gsap.to(flap, { scaleY: 0.86, svgOrigin: '80 12', duration: 0.12, ease: 'power2.out' }))
+      track(gsap.to(seal, { y: -7, svgOrigin: '80 60', duration: 0.12, ease: 'power2.out' }))
+    })
+    const envUp = () => {
+      if (reduced || phase === 'opening' || envelope.disabled) return
+      track(gsap.to(envelope, { y: 0, rotation: 0, duration: 0.55, ease: EASE.wobble }))
+      track(gsap.to(flap, { scaleY: 1, svgOrigin: '80 12', duration: 0.4, ease: 'bounce.out' }))
+      track(gsap.to(seal, { y: 0, svgOrigin: '80 60', duration: 0.4, ease: 'bounce.out' }))
+    }
+    on(envelope, 'pointerup', envUp)
+    on(envelope, 'pointerleave', envUp)
+    on(envelope, 'pointercancel', envUp)
     on(envelope, 'click', () => {
       if (phase === 'dark' || phase === 'lighting') {
         setPrompt(t('desk.tooDark'))
@@ -308,6 +390,7 @@ export default {
     function openLetter() {
       setPhase('opening')
       guide.set([])
+      gsap.killTweensOf([envelope, flap, seal])
       envelope.disabled = true
       study.classList.add('study--reading')
 
@@ -526,7 +609,8 @@ export default {
       gsap.set(pressLabel, { autoAlpha: 0 })
       const tl = track(moment({ onComplete: () => {
         ctx.complete()
-        guide.set(heart)
+        guide.stop()
+        stampGuide = nudge(heart, { style: stampHint })
       } }))
       // read-it-all glides down to the end; otherwise just keep the signature in view
       if (allCtl.signal.aborted) {
@@ -544,7 +628,39 @@ export default {
     }
 
     // ── the heart: every press writes the next P.S. ──
-    offs.push(press(heart, { sound: null, scale: 0.9 }))
+    // a rubber stamp: it comes down flat onto the paper under her finger and lifts off again
+    on(heart, 'pointerdown', () => {
+      if (reduced || phase !== 'signed') return
+      gsap.killTweensOf(heart, 'y,rotation')
+      track(gsap.to(heart, { y: 5, rotation: 8, duration: 0.06, ease: 'power3.in' }))
+    })
+    const stampUp = () => {
+      if (reduced || phase !== 'signed') return
+      track(gsap.to(heart, { y: 0, rotation: 0, duration: 0.6, ease: EASE.wobble, overwrite: 'auto' }))
+    }
+    on(heart, 'pointerup', stampUp)
+    on(heart, 'pointerleave', stampUp)
+    on(heart, 'pointercancel', stampUp)
+
+    /** The stamp leaves its ink on the paper: beside a new P.S., or anywhere once they're all out. */
+    const imprints = []
+    function imprint(nearLine, faint) {
+      const mark = document.createElement('span')
+      mark.className = `l-imprint${faint ? ' l-imprint--faint' : ''}`
+      mark.setAttribute('aria-hidden', 'true')
+      mark.innerHTML = `<svg viewBox="0 0 24 24"><path d="${HEART}"/></svg>`
+      const pr = parseFloat(getComputedStyle(body).paddingRight) || 20
+      const size = 24
+      const top = nearLine ? nearLine.offsetTop - 2 : sig.offsetTop + Math.random() * Math.max(10, psList.offsetTop + psList.offsetHeight - sig.offsetTop - size)
+      const left = nearLine ? body.clientWidth - pr - size * 0.4 : body.clientWidth * (0.45 + Math.random() * 0.4)
+      mark.style.top = `${top.toFixed(1)}px`
+      mark.style.left = `${Math.min(body.clientWidth - size - 2, left).toFixed(1)}px`
+      mark.style.rotate = `${((Math.random() - 0.5) * 40).toFixed(1)}deg`
+      body.append(mark)
+      imprints.push(mark)
+      if (imprints.length > psLines.length + 8) imprints.splice(psLines.length, 1)[0].remove()
+      if (!reduced) track(gsap.from(mark, { scale: 1.5, opacity: 0, duration: 0.18, ease: 'power3.in' }))
+    }
     let presses = 0
     let shown = 0
     let psCtl = null
@@ -566,18 +682,18 @@ export default {
       })
     }
     let confettiDone = false
+    let moreN = 0
+    const lineOf = line // (pressHeart names its new paragraph `line`)
     function pressHeart() {
       if (phase !== 'signed') return
       presses++
       haptic(10)
       if (presses === 1) {
-        guide.stop()
+        stampGuide?.stop()
         track(gsap.to(pressLabel, { autoAlpha: 0, duration: T.quick, overwrite: true }))
       }
-      const grow = Math.min(1 + presses * 0.035, 1.25)
       const tl = track(moment())
       beat(tl, 'stamp', 0)
-      tl.fromTo(heartFace, { scale: grow * 1.25 }, { scale: grow, duration: T.reveal, ease: EASE.wobble, overwrite: 'auto' }, 0)
       tl.call(() => {
         const r = heart.getBoundingClientRect()
         fx.hearts(r.left + r.width / 2, r.top + r.height * 0.3, { count: Math.min(3 + presses, 10) })
@@ -589,10 +705,15 @@ export default {
         line.dataset.ps = String(i)
         psList.append(line)
         lastPs = line
-        // the words arrive once the stamp has landed
+        // the ink lands, then the words arrive
+        tl.call(() => imprint(line, false), null, 0.04)
         tl.call(() => writePs(line, psLines[i]), null, T.tap)
       } else if (lastPs) {
-        tl.fromTo(lastPs, { rotation: -2.5, scale: 1.04 }, { rotation: 0, scale: 1, duration: T.reveal, ease: EASE.wobble, transformOrigin: '0% 50%', overwrite: 'auto' }, 0.05)
+        // every P.S. is written: the stamp keeps stamping, its ink running out — and it says so
+        const extra = presses - psLines.length
+        tl.call(() => imprint(null, extra > 5), null, 0.04)
+        tl.fromTo(lastPs, { rotation: -2.5 }, { rotation: 0, duration: T.reveal, ease: EASE.wobble, transformOrigin: '0% 50%', overwrite: 'auto' }, 0.05)
+        if (extra === 2 || extra === 6 || (extra > 6 && extra % 5 === 1)) tl.call(() => quip.say(lineOf('stampMore', moreN++), lastPs), null, 0.1)
       }
     }
     on(heart, 'click', pressHeart)
@@ -629,7 +750,7 @@ export default {
       live.forEach((a) => a.kill())
       live.clear()
       offs.forEach((fn) => fn())
-      gsap.killTweensOf([study, windowEl, chain, sway, glow, beam, envelope, seal, flap, flapOpen, envLetter, sheet, scroller, nib, hint, heart, heartFace, pressLabel, end, ring, ringFill, prompt, ...creases])
+      gsap.killTweensOf([study, windowEl, chain, sway, glow, beam, envelope, seal, flap, flapOpen, envLetter, sheet, scroller, nib, hint, heart, heartFace, pressLabel, end, ring, ringFill, prompt, lamp, heartPool, ...creases, ...imprints])
     }
     ctx.onCleanup(teardown)
   },
