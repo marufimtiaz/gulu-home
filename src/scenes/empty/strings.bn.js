@@ -1,1 +1,20 @@
-export default {}
+// Empty room UI strings — Bengali draft (Maruf edits). Missing keys fall back to English.
+export default {
+  kicker: 'খালি ঘর',
+  title: 'আমরা ভরাব',
+  pick: 'আগে আমাদের দেয়ালের একটা রং বাছো',
+  painting: 'রং লাগছে…',
+  write: 'এবার লেখো, আমরা কী কী করব। না লিখলেও চলবে — ঘরটা তো আমাদেরই।',
+  prompt: 'যা যা আমরা করব',
+  added: 'দেয়ালে উঠে গেল ♥',
+  more: 'আরেকটা?',
+  nothing: 'আগে কিছু লেখো',
+  left: 'আর {n}টা অক্ষর',
+  full: 'দেয়াল ভরে গেছে স্বপ্নে। ভালোই হলো।',
+  swatches: 'রঙের কৌটা',
+  swatch: 'দেয়াল রং করো, {total}টার মধ্যে {n} নম্বর রং',
+  add: 'দেয়ালে লিখে দাও',
+  input: 'আমরা যা করব',
+  note: 'লেখাটা পড়ো',
+  close: 'টোকা দিলে ফিরে যাবে',
+}
