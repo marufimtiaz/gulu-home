@@ -187,9 +187,8 @@ camera-style filenames (`IMG_YYYYMMDD_…`).
 
 Port site two's synthesized engine (Web Audio, no files) as an ES module. House theme: a slow
 music-box arrangement of the theme in `sound/theme.js` (a note table — the verse plays from the
-hub onward; the chorus is reserved for the finale). Default theme: *A Thousand Years*. Note
-this is a copyrighted melody; site two deliberately used Pachelbel's Canon (public domain).
-Swapping the melody is editing one table — decision left to Maruf. Per-scene layers: clock tick that speeds with scrub velocity (living), bubbles/plops
+hub onward; the chorus is reserved for the finale). Theme: *A Thousand Years* (decided — the site
+is private). Per-scene layers: clock tick that speeds with scrub velocity (living), bubbles/plops
 (kitchen), crickets + water (garden), wind pad + a pitched ting per connected star (rooftop),
 pen scratch + lamp click (desk), marker squeak + roller (empty), bells + fireworks (finale),
 door lock click + creak (door). Mode button 🎶 → 🔊 → 🔇, remembered. Audio unlocks on first
