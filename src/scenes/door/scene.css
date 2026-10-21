@@ -84,10 +84,8 @@
   position: absolute;
   left: 9%;
   top: 50%;
-  width: calc(var(--sky-h) * 0.82);
-  height: calc(var(--sky-h) * 0.82);
-  max-width: 84px;
-  max-height: 84px;
+  height: min(72%, 84px);
+  aspect-ratio: 1;
   transform: translateY(-50%) rotate(-12deg);
 }
 .moon__halo { fill: var(--moon); opacity: 0.08; }
@@ -190,8 +188,7 @@
 .is-lit .porch-art .lamp__glass { fill: var(--lamp); }
 .is-lit .porch-art .lamp__bulb { fill: var(--moon); }
 .porch-art .lamp-glow { opacity: 0; mix-blend-mode: screen; }
-.porch-art .spill { opacity: 0; mix-blend-mode: screen; transition: opacity 1.4s ease 0.3s; }
-.door--open ~ .porch-art .spill { opacity: 1; }
+.porch-art .spill { opacity: 0; mix-blend-mode: screen; }
 
 /* ── the door: inside light, then the leaf that swings in on its left hinge ── */
 .door {
@@ -215,21 +212,15 @@
 .inside-art .in-cord { stroke: var(--ink); stroke-width: 2; }
 .inside-art .in-bulb { fill: var(--moon); stroke: var(--ink); stroke-width: 2; }
 
-.door__leaf {
-  transform-origin: 0 50%;
-  transform: rotateY(0deg);
-  transition: transform 1.7s cubic-bezier(0.45, 0.05, 0.2, 1);
-  will-change: transform;
-}
-.door__leaf::after { /* the leaf darkens as it turns away from the moon */
-  content: "";
+.door__leaf { transform-origin: 0 50%; will-change: transform; } /* GSAP swings it */
+.door__shade { /* the leaf darkens as it turns away from the moon (GSAP) */
   position: absolute;
   inset: 0;
+  z-index: 2;
   border-radius: 50% 50% 0 0 / 26% 26% 0 0;
   background: var(--night-deep);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 1.7s ease;
 }
 .door__leaf::before, .dw__sky::after, .who::before { /* paper fibres */
   content: "";
@@ -241,8 +232,6 @@
   z-index: 1;
 }
 .door__leaf::before { border-radius: 50% 50% 0 0 / 26% 26% 0 0; }
-.door--open .door__leaf { transform: rotateY(74deg); }
-.door--open .door__leaf::after { opacity: 0.55; }
 
 .leaf-art .leaf__face { fill: var(--door); stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
 .leaf-art .leaf__hi { fill: none; stroke: var(--door-hi); stroke-width: 3; stroke-linecap: round; opacity: 0.8; }
@@ -312,10 +301,8 @@
   border: var(--line);
   border-radius: 18px;
   box-shadow: var(--pop-sm);
-  transform: rotate(-6deg);
   transform-origin: 90% 100%;
-  pointer-events: none;
-  animation: door-who 0.6s var(--bounce) 0.5s both, door-bob 4s ease-in-out 1.2s infinite;
+  animation: door-bob 4s ease-in-out 1.2s infinite; /* translate only — GSAP owns transform */
 }
 .who::after { /* tail, pointing at the door */
   content: "";
@@ -331,7 +318,6 @@
 }
 .is-lit .who { background: var(--butter); }
 .is-lit .who::after { background: var(--butter); }
-@keyframes door-who { from { opacity: 0; transform: rotate(-14deg) scale(0.4); } }
 @keyframes door-bob { 50% { translate: 0 -4px; } }
 
 /* ── controls on the porch floor ── */
@@ -366,7 +352,7 @@
   box-shadow: var(--pop-sm);
   transform: rotate(-2deg);
 }
-.dw__controls .btn { font-size: 1.15rem; padding: 0.5em 1.8em 0.55em; }
+.dw__controls .btn { font-size: 1.15rem; min-height: 48px; min-width: 120px; justify-content: center; padding: 0.5em 1.8em 0.55em; }
 .dw__controls .btn:disabled { opacity: 0.7; cursor: default; }
 
 /* wide screens: dark cottage windows either side, so the porch sits in a house, not a void */
@@ -392,5 +378,34 @@
 
 @media (prefers-reduced-motion: reduce) {
   .who { animation: none; }
-  .door__leaf { transition: none; }
+}
+
+/* ── things that answer a tap ── */
+.porch-art .pokeable, .leaf-art .pokeable { pointer-events: auto; cursor: pointer; }
+.pokeable { cursor: pointer; }
+.who.pokeable { pointer-events: auto; }
+
+/* idle nudge: the brass catches the light while it wiggles */
+.lock svg { transition: filter 0.3s ease; }
+.nudge-lock .lock svg { filter: drop-shadow(3px 4px 0 var(--ink)) drop-shadow(0 0 14px var(--lamp-glow)); }
+.nudge-try [data-try] { box-shadow: var(--pop-sm), 0 0 18px var(--lamp-glow); }
+
+/* landscape phones: the porch takes the height, the controls sit on the wall to its right */
+@media (orientation: landscape) and (max-height: 560px) {
+  .scene--door { --sky-h: 22px; --ctrl-h: 0px; }
+  .dw__eave { height: 14px; }
+  .porch { margin-top: 10px; --ph: min(calc(100svh - var(--sky-h) - 34px), 640px); }
+  .porch__win { display: block; top: 26%; width: 40%; }
+  .porch__win--r { display: none; }
+  .porch__win--l { right: calc(100% + 10%); }
+  .dw__controls {
+    position: absolute;
+    left: calc(50% + var(--ph) * 0.36 + 12px);
+    right: 0;
+    top: 26%;
+    width: auto;
+    min-height: 0;
+    padding: 0 max(0.8rem, env(safe-area-inset-right)) 0 0;
+  }
+  .hint { font-size: 1.2rem; }
 }

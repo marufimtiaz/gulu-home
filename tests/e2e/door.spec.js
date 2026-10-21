@@ -96,3 +96,77 @@ test('leaving the door removes its debug hook', async ({ page }) => {
   await expect(page.locator('.scene[data-scene="house"]')).toBeVisible({ timeout: 5000 })
   await expect.poll(() => page.evaluate(() => typeof window.__door)).toBe('undefined')
 })
+
+const SIZES = [
+  [360, 640], [390, 844], [412, 915], [844, 390], [768, 1024], [1280, 800], [1920, 1080],
+]
+
+test('every control is on screen and finger-sized at every size', async ({ page }, info) => {
+  test.skip(info.project.name !== 'mobile', 'viewport sweep runs once')
+  await open(page, 'door', { doorSeen: false })
+  for (const [w, h] of SIZES) {
+    await page.setViewportSize({ width: w, height: h })
+    await page.waitForTimeout(250)
+    for (const sel of ['.lock', '[data-try]', '.door', '[data-hint]']) {
+      const b = await page.locator(sel).boundingBox()
+      expect(b, `${sel} @${w}x${h}`).not.toBeNull()
+      expect(b.x, `${sel} left @${w}x${h}`).toBeGreaterThanOrEqual(0)
+      expect(b.y, `${sel} top @${w}x${h}`).toBeGreaterThanOrEqual(0)
+      expect(b.x + b.width, `${sel} right @${w}x${h}`).toBeLessThanOrEqual(w)
+      expect(b.y + b.height, `${sel} bottom @${w}x${h}`).toBeLessThanOrEqual(h)
+      if (sel === '.lock' || sel === '[data-try]') {
+        expect(b.width, `${sel} width @${w}x${h}`).toBeGreaterThanOrEqual(44)
+        expect(b.height, `${sel} height @${w}x${h}`).toBeGreaterThanOrEqual(44)
+      }
+    }
+    const lock = await page.locator('.lock').boundingBox()
+    const btn = await page.locator('[data-try]').boundingBox()
+    const apart = btn.y >= lock.y + lock.height || btn.x >= lock.x + lock.width
+    expect(apart, `try button clear of the lock @${w}x${h}`).toBe(true)
+    await shot(page, `door-${w}x${h}`)
+  }
+  // still works after all that resizing (live layout, no stale geometry)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.waitForTimeout(200)
+  await page.evaluate(() => window.__door.set(12, 0))
+  const box = await page.locator('.lock').boundingBox()
+  const cx = box.x + box.width / 2, cy = box.y + box.height / 2
+  await page.mouse.move(cx, cy - box.height * 0.35)
+  await page.mouse.down()
+  await page.mouse.move(cx + box.width * 0.35, cy, { steps: 8 })
+  await page.mouse.up()
+  expect(await page.evaluate(() => window.__door.get().minute)).toBe(15)
+})
+
+test('touching the lock answers at once; idle nudges point at the next thing', async ({ page }) => {
+  await open(page, 'door', { doorSeen: false })
+  const box = await page.locator('.lock').boundingBox()
+  const cx = box.x + box.width / 2, cy = box.y + box.height / 2
+  await page.mouse.move(cx, cy - box.height * 0.35)
+  await page.mouse.down()
+  await page.waitForTimeout(100)
+  await expect(page.locator('.lock')).toHaveClass(/is-turning/)
+  const pressed = await page.evaluate(() => getComputedStyle(document.querySelector('.lock svg')).transform)
+  expect(pressed).not.toBe('none')
+  await page.mouse.up()
+  // she grabbed but turned nothing → after ~4 s the lock is nudged
+  await expect(page.locator('.scene--door')).toHaveClass(/nudge-lock/, { timeout: 6000 })
+  // once she has turned the hands, the nudge moves on to the button
+  await page.locator('.lock').focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(page.locator('.scene--door')).toHaveClass(/nudge-try/, { timeout: 6000 })
+})
+
+test('decorations answer a tap', async ({ page }) => {
+  const errors = collectErrors(page)
+  await open(page, 'door', { doorSeen: false })
+  for (const sel of ['.porch-art .plant', '.porch-art .mat', '.leaf-art .plate', '.porch-art .lamp']) {
+    const b = await page.locator(sel).boundingBox()
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height * 0.7)
+  }
+  await page.waitForTimeout(120)
+  const moved = await page.evaluate(() => document.querySelector('.porch-art .mat').getAttribute('transform') || getComputedStyle(document.querySelector('.porch-art .mat')).transform)
+  expect(moved).not.toBe('none')
+  expect(moved).toBeTruthy()
+  expect(errors).toEqual([])
+})

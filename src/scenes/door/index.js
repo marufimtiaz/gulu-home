@@ -66,6 +66,7 @@ export default {
                      aria-label="${t('door.lock')}" aria-valuemin="0" aria-valuemax="715">
                   ${lockSVG()}
                 </div>
+                <div class="door__shade"></div>
               </div>
             </div>
             ${porchSVG()}
@@ -91,6 +92,9 @@ export default {
     const who = $('[data-who]')
     const controls = $('.dw__controls')
     const glows = root.querySelectorAll('[data-lamp-glow], [data-lamp]')
+    const leaf = $('.door__leaf')
+    const shade = $('.door__shade')
+    const spill = $('[data-spill]')
 
     // ── the clock ──
     let mins = 600 // 0‥719 — starts at 10:00: hands apart, nothing given away
@@ -122,6 +126,38 @@ export default {
     }
 
     const snap5 = (v) => Math.round(v / 5) * 5
+    const lockFace = lock.querySelector('svg')
+
+    // ── nudges: if she does nothing for a while, point at the next thing to touch ──
+    // phase 'lock' (she hasn't turned the hands since the last try) → wiggle the lock;
+    // phase 'try' (she has) → bounce the button. Any touch restarts the wait.
+    let phase = 'lock'
+    let nudgeCall = null
+    let nudgeTl = null
+    function idle() {
+      nudgeCall?.kill()
+      if (busy || ctx.reduced) return
+      nudgeCall = gsap.delayedCall(4, nudge)
+    }
+    function nudge() {
+      if (busy) return
+      nudgeTl?.progress(1).kill()
+      if (phase === 'lock') {
+        nudgeTl = gsap
+          .timeline()
+          .to(lockFace, { rotation: -7, duration: 0.14, ease: 'power2.out', transformOrigin: '50% 50%' })
+          .to(lockFace, { rotation: 6, duration: 0.16, ease: 'power1.inOut' })
+          .to(lockFace, { rotation: 0, duration: 0.7, ease: 'elastic.out(1.1, 0.35)' })
+      } else {
+        nudgeTl = gsap
+          .timeline()
+          .to(tryBtn, { y: -10, duration: 0.18, ease: 'power2.out' })
+          .to(tryBtn, { y: 0, duration: 0.6, ease: 'bounce.out' })
+      }
+      root.classList.add(`nudge-${phase}`)
+      nudgeTl.call(() => root.classList.remove('nudge-lock', 'nudge-try'))
+      nudgeCall = gsap.delayedCall(4, nudge) // keep nudging gently until she engages
+    }
 
     // which hand did she grab? the one nearest her finger; a tie goes to the minute hand
     let which = null, rawM = 0, rawH = 0
@@ -131,6 +167,8 @@ export default {
         center: () => rectCenter(lock),
         onStart(a) {
           if (busy) return false
+          nudgeCall?.kill()
+          nudgeTl?.progress(1).kill()
           const ca = clockAngle(a)
           const dm = gap(ca, ((mins % 60) / 60) * TAU)
           const dh = gap(ca, ((mins % 720) / 720) * TAU)
@@ -139,8 +177,12 @@ export default {
           rawH = Math.floor(mins / 60)
           lock.classList.add('is-turning')
           ;(which === 'hour' ? hourHand : minHand).classList.add('is-held')
+          // press: the brass squashes in under her finger
+          ctx.sound.play('tap')
+          gsap.to(lockFace, { scale: 0.95, duration: 0.08, ease: 'power2.out', transformOrigin: '50% 50%', overwrite: 'auto' })
         },
         onRotate(d) {
+          const before = mins
           if (which === 'minute') {
             rawM += (d / TAU) * 60
             setMins(snap5(rawM))
@@ -148,12 +190,15 @@ export default {
             rawH += (d / TAU) * 12
             setMins(mod(Math.round(rawH), 12) * 60 + (mins % 60))
           }
+          if (mins !== before) phase = 'try'
         },
         onEnd() {
           lock.classList.remove('is-turning')
           hourHand.classList.remove('is-held')
           minHand.classList.remove('is-held')
           which = null
+          gsap.to(lockFace, { scale: 1, duration: 0.6, ease: 'elastic.out(1.2, 0.4)', overwrite: 'auto' })
+          idle()
         },
       }),
     )
@@ -164,6 +209,8 @@ export default {
       if (step) {
         e.preventDefault()
         setMins(mins + step)
+        phase = 'try'
+        idle()
       } else if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault()
         check()
@@ -173,24 +220,37 @@ export default {
     cleanups.push(() => lock.removeEventListener('keydown', onKey))
 
     // ── trying the lock ──
-    let tl = null
+    let tl = null // the one timeline for the current multi-step moment (wrong try, or opening)
 
     function check() {
       if (busy) return
+      nudgeCall?.kill()
+      nudgeTl?.progress(1).kill()
       const ok = Math.floor(mins / 60) % 12 === answer.hour % 12 && mins % 60 === answer.minute
       if (ok) open()
       else wrong()
     }
 
     function wrong() {
-      ctx.sound.play('tap')
       const line = hints[Math.min(attempt, hints.length - 1)]
       attempt++
-      if (line) hint.textContent = line
-      hint.classList.add('hint--wrong')
-      if (ctx.reduced) return
-      gsap.fromTo(lock, { x: 0 }, { keyframes: { x: [0, -9, 8, -6, 4, -2, 0] }, duration: 0.5, ease: 'none' })
-      gsap.fromTo(hint, { scale: 0.86, rotate: -6 }, { scale: 1, rotate: -2, duration: 0.45, ease: 'back.out(2.4)' })
+      phase = 'lock'
+      tl?.progress(1).kill()
+      const showHint = () => {
+        if (line) hint.textContent = line
+        hint.classList.add('hint--wrong')
+      }
+      ctx.sound.play('tap')
+      if (ctx.reduced) {
+        showHint()
+        idle()
+        return
+      }
+      // the lock rattles first; the hint lands once the rattle has
+      tl = gsap.timeline({ onComplete: idle })
+      tl.to(lock, { keyframes: { x: [0, -9, 8, -6, 4, -2, 0] }, duration: 0.42, ease: 'none' })
+      tl.call(showHint)
+      tl.fromTo(hint, { scale: 0.7, rotation: -8 }, { scale: 1, rotation: -2, duration: 0.5, ease: 'back.out(2.6)' })
     }
 
     function finish() {
@@ -200,24 +260,35 @@ export default {
 
     function open() {
       busy = true
+      tl?.progress(1).kill()
       tryBtn.disabled = true
       lock.setAttribute('aria-disabled', 'true')
       ctx.sound.play('lockClick')
       root.classList.add('is-unlocked')
 
       if (ctx.reduced) {
-        gsap.set(glows, { opacity: 1 })
-        root.classList.add('is-lit')
-        door.classList.add('door--open')
-        who.textContent = t('door.welcome')
-        ctx.sound.play('lampOn')
-        tl = gsap.timeline({ delay: 0.6 }).to(world, { opacity: 0, duration: 0.3 }).call(finish)
+        tl = gsap.timeline({ onComplete: finish })
+        tl.set(glows, { opacity: 1 })
+        tl.set(spill, { opacity: 1 })
+        tl.call(() => {
+          ctx.sound.play('lampOn')
+          root.classList.add('is-lit')
+          door.classList.add('door--open')
+          gsap.set(leaf, { rotationY: 74 })
+          gsap.set(shade, { opacity: 0.55 })
+          who.textContent = t('door.welcome')
+        })
+        tl.to(world, { opacity: 0, duration: 0.3 }, 0.9)
         return
       }
 
-      tl = gsap.timeline()
-      tl.to(lock, { scale: 1.07, duration: 0.12, yoyo: true, repeat: 1, ease: 'power2.out' }, 0)
-      tl.call(() => ctx.sound.play('lampOn'), null, 0.5)
+      tl = gsap.timeline({ onComplete: finish })
+      // 1. the lock clicks: a little brass jump
+      tl.to(lock, { scale: 1.08, duration: 0.12, yoyo: true, repeat: 1, ease: 'power2.out' }, 0)
+      tl.to(controls, { opacity: 0, y: 16, duration: 0.4, ease: 'power1.in' }, 0.25)
+      // 2. the porch lamp stutters on
+      tl.addLabel('lamp', 0.5)
+      tl.call(() => ctx.sound.play('lampOn'), null, 'lamp')
       tl.to(
         glows,
         {
@@ -229,43 +300,123 @@ export default {
             { opacity: 1, duration: 0.3 },
           ],
         },
-        0.5,
+        'lamp',
       )
-      tl.call(() => root.classList.add('is-lit'), null, 1.0)
-      tl.to(controls, { opacity: 0, y: 16, duration: 0.4, ease: 'power1.in' }, 1.1)
+      tl.call(() => root.classList.add('is-lit'), null, 'lamp+=0.61')
+      // 3. the door swings in onto warm light
+      tl.addLabel('swing', 'lamp+=0.8')
       tl.call(
         () => {
           ctx.sound.play('creak')
           door.classList.add('door--open')
-          who.textContent = t('door.welcome')
         },
         null,
-        1.25,
+        'swing',
       )
-      // the camera pulls back and up: the porch shrinks into the house above it
-      tl.set(world, { willChange: 'transform' }, 2.6)
-      tl.to(world, { scale: 0.7, yPercent: 10, duration: 0.95, ease: 'power2.inOut' }, 2.65)
-      tl.call(finish, null, 3.5)
+      tl.to(leaf, { rotationY: 74, duration: 1.5, ease: 'power2.inOut' }, 'swing')
+      tl.to(shade, { opacity: 0.55, duration: 1.5, ease: 'power1.in' }, 'swing')
+      tl.to(spill, { opacity: 1, duration: 1.1, ease: 'power1.out' }, 'swing+=0.4')
+      // 4. only once it's open does the voice inside answer
+      tl.addLabel('open', 'swing+=1.5')
+      tl.to(who, { scale: 0.6, opacity: 0, duration: 0.14, ease: 'power1.in' }, 'open-=0.3')
+      tl.call(() => (who.textContent = t('door.welcome')), null, 'open-=0.16')
+      tl.to(who, { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(2.2)' }, 'open-=0.16')
+      // 5. the camera pulls back and up: the porch shrinks into the house above it
+      tl.set(world, { willChange: 'transform' }, 'open+=0.45')
+      tl.to(world, { scale: 0.7, yPercent: 10, duration: 0.95, ease: 'power2.inOut' }, 'open+=0.45')
     }
 
     const onTry = () => check()
     tryBtn.addEventListener('click', onTry)
     cleanups.push(() => tryBtn.removeEventListener('click', onTry))
 
-    // first touch anywhere unlocks audio (iOS needs a gesture)
+    // first touch anywhere unlocks audio (iOS needs a gesture); any touch restarts the idle wait
     const unlock = () => ctx.sound.unlock()
     root.addEventListener('pointerdown', unlock, { once: true })
-    cleanups.push(() => root.removeEventListener('pointerdown', unlock))
+    root.addEventListener('pointerdown', idle)
+    cleanups.push(() => {
+      root.removeEventListener('pointerdown', unlock)
+      root.removeEventListener('pointerdown', idle)
+    })
+
+    // ── tapping around: the little things answer back ──
+    const POKE = {
+      '.porch-art .plant': 'sway',
+      '.porch-art .flowers': 'sway',
+      '.porch-art .lamp': 'lamp',
+      '.porch-art .mat': 'squash',
+      '.porch-art .vent': 'pop',
+      '.leaf-art .plate': 'swing',
+      '.leaf-art .knob': 'pop',
+      '.moon': 'pop',
+      '.window-art': 'pop',
+      '.who': 'wiggle',
+    }
+    const pokeables = []
+    for (const [sel, kind] of Object.entries(POKE)) {
+      for (const el of root.querySelectorAll(sel)) {
+        el.classList.add('pokeable')
+        pokeables.push(el)
+        const onPoke = (e) => {
+          if (ctx.reduced) return ctx.sound.play('tap')
+          poke(el, kind, e)
+        }
+        el.addEventListener('pointerdown', onPoke)
+        cleanups.push(() => el.removeEventListener('pointerdown', onPoke))
+      }
+    }
+    function poke(el, kind, e) {
+      ctx.sound.play(kind === 'lamp' ? 'tap' : 'pop')
+      if (kind !== 'lamp') ctx.fx.sparkles(e.clientX, e.clientY, { count: 6 })
+      const o = { overwrite: 'auto' }
+      if (kind === 'sway') {
+        gsap.timeline()
+          .to(el, { rotation: -6, scaleY: 0.94, duration: 0.1, transformOrigin: '50% 100%', ...o })
+          .to(el, { rotation: 0, scaleY: 1, duration: 0.9, ease: 'elastic.out(1.2, 0.3)' })
+      } else if (kind === 'squash') {
+        gsap.timeline()
+          .to(el, { scaleY: 0.82, scaleX: 1.06, duration: 0.08, transformOrigin: '50% 100%', ...o })
+          .to(el, { scaleY: 1, scaleX: 1, duration: 0.7, ease: 'elastic.out(1.2, 0.35)' })
+      } else if (kind === 'swing') {
+        gsap.timeline()
+          .to(el, { rotation: 14, duration: 0.12, svgOrigin: '110 136', ...o })
+          .to(el, { rotation: 0, duration: 1.4, ease: 'elastic.out(1.3, 0.18)' })
+      } else if (kind === 'wiggle') {
+        gsap.timeline()
+          .to(el, { rotation: -12, duration: 0.1, ...o })
+          .to(el, { rotation: -6, duration: 0.8, ease: 'elastic.out(1.4, 0.3)' })
+      } else if (kind === 'lamp') {
+        // not yet: a tiny hopeful flicker, then dark again (until the door opens)
+        if (busy) return
+        const light = el.querySelector('[data-lamp]')
+        gsap.timeline()
+          .to(el, { rotation: 8, duration: 0.1, svgOrigin: '392 236', ...o })
+          .to(el, { rotation: 0, duration: 1, ease: 'elastic.out(1.3, 0.2)' })
+          .fromTo(light, { opacity: 0.7 }, { opacity: 0.25, duration: 0.35 }, 0)
+      } else {
+        gsap.timeline()
+          .to(el, { scale: 0.88, duration: 0.08, transformOrigin: '50% 50%', ...o })
+          .to(el, { scale: 1, duration: 0.6, ease: 'back.out(3)' })
+      }
+    }
 
     // ambient
     cleanups.push(ctx.fx.starfield($('.dw__sky'), { count: 36 }))
     if (!ctx.reduced) cleanups.push(ctx.fx.fireflies($('.porch'), { count: 5 }))
 
+    // the voice behind the door pipes up once she's had a moment to look
+    if (!ctx.reduced) gsap.fromTo(who, { scale: 0.4, rotation: -14, opacity: 0 }, { scale: 1, rotation: -6, opacity: 1, duration: 0.6, delay: 0.5, ease: 'back.out(2.2)' })
+    else gsap.set(who, { rotation: -6 })
+
     render()
+    idle()
 
     if (ctx.params.has('debug')) {
       window.__door = {
-        set: (h, m) => setMins((h % 12) * 60 + m, { quiet: true }),
+        set: (h, m) => {
+          setMins((h % 12) * 60 + m, { quiet: true })
+          phase = 'try'
+        },
         get: () => ({ hour: hourOf(mins), minute: mins % 60 }),
       }
       cleanups.push(() => delete window.__door)
@@ -273,7 +424,10 @@ export default {
 
     teardown = () => {
       tl?.kill()
-      gsap.killTweensOf([world, lock, hint, controls, ...glows])
+      nudgeTl?.kill()
+      nudgeCall?.kill()
+      gsap.killTweensOf([world, lock, lockFace, hint, controls, tryBtn, who, leaf, shade, spill, ...glows, ...pokeables])
+      for (const el of pokeables) gsap.killTweensOf(el.querySelectorAll('*'))
       cleanups.forEach((fn) => fn())
     }
   },
