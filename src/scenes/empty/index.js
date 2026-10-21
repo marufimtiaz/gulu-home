@@ -352,8 +352,10 @@ export default {
       tl.to({}, { duration: T.quick }) // let the others shuffle over first
       fresh.forEach((el) => writeIn(tl, el, '>'))
       tl.call(() => {
-        const r = fresh.at(-1).getBoundingClientRect()
-        fx.hearts(r.left + Math.min(r.width, 120) / 2, r.top + 10, { count: 4 })
+        // the hearts come off the marker that wrote it, never over the words themselves
+        const pen = addBtn.getBoundingClientRect()
+        const r = pen.width ? pen : fresh.at(-1).getBoundingClientRect()
+        fx.hearts(r.left + r.width / 2, r.top + r.height * 0.3, { count: 4 })
         syncFull()
         setPrompt(isFull() ? t('empty.full') : t(n === 1 ? 'empty.added' : 'empty.more'))
         guide.set(isFull() ? [] : [document.querySelector('.chip--home')].filter(Boolean))
@@ -442,7 +444,15 @@ export default {
         }
         // a keyboard is up (not just a focused field on a desktop): give the wall everything
         room.classList.toggle('empty--typing', !!focused && window.innerHeight - vv.height > 80)
+        unshift()
       })
+    }
+    /** Undo any scroll the browser gave the room's containers to bring the field into view. */
+    function unshift() {
+      for (let el = root; el && el !== document.body; el = el.parentElement) {
+        if (el.scrollTop || el.scrollLeft) el.scrollTo(0, 0)
+      }
+      if (document.scrollingElement?.scrollTop || document.scrollingElement?.scrollLeft) document.scrollingElement.scrollTo(0, 0)
     }
     if (vv) {
       on(vv, 'resize', fit)
