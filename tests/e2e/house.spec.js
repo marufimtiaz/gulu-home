@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { collectErrors, open, ROOMS, shot } from './helpers.js'
+import { collectErrors, open, pressLatency, ROOMS, shot } from './helpers.js'
 
 const FIVE = ['living', 'kitchen', 'garden', 'rooftop', 'desk']
 const win = (page, id) => page.locator(`[data-window="${id}"]`)
@@ -131,4 +131,25 @@ test('reduced motion renders the house still', async ({ browser }) => {
 test('bengali caption', async ({ page }) => {
   await open(page, 'house', { lang: 'bn', done: ['living'] })
   await expect(page.locator('[data-caption]')).toHaveText('৬টার মধ্যে ১টা আলো জ্বলছে')
+})
+
+test('a window answers a press within 100 ms', async ({ page }) => {
+  await open(page, 'house', { done: ROOMS })
+  await page.waitForTimeout(300)
+  const ms = await pressLatency(page, '[data-window="kitchen"]')
+  expect(ms).toBeLessThan(100)
+})
+
+test('idle on the hub nudges the suggested window', async ({ page }) => {
+  await open(page, 'house', { done: ['living'] })
+  await expect(win(page, 'kitchen')).toHaveClass(/nudge/, { timeout: 7000 })
+})
+
+test('scenery answers a tap without navigating', async ({ page }) => {
+  const errors = collectErrors(page)
+  await open(page, 'house')
+  await page.locator('.h-tank').click()
+  await page.waitForTimeout(400)
+  await expect(page).toHaveURL(/#\/house$/)
+  expect(errors).toEqual([])
 })

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireflies, starfield, sparkles, hearts } from '../../src/fx/index.js'
+import { fireflies, starfield, sparkles, hearts, fireworks } from '../../src/fx/index.js'
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="fx-layer"></div><div id="box" style="width:300px;height:300px"></div>'
@@ -29,5 +29,21 @@ describe('fx', () => {
     expect(layer.children.length).toBeGreaterThan(0)
     await new Promise((r) => setTimeout(r, 1500))
     expect(layer.children.length).toBe(0)
+  })
+  it('fireworks returns a promise with a stop handle, even when it cannot draw', async () => {
+    const box = document.getElementById('box')
+    const show = fireworks(box, { duration: 60000 })
+    expect(typeof show.then).toBe('function')
+    expect(typeof show.stop).toBe('function')
+    show.stop()
+    await show // resolves instead of waiting a minute
+    expect(box.querySelector('canvas')).toBe(null)
+  })
+  it('fireworks with an already-aborted signal does nothing and resolves', async () => {
+    const box = document.getElementById('box')
+    const ac = new AbortController()
+    ac.abort()
+    await fireworks(box, { duration: 60000, signal: ac.signal })
+    expect(box.querySelector('canvas')).toBe(null)
   })
 })

@@ -519,7 +519,8 @@ export function houseSVG({ labels, plate, est, letter = '' }) {
       </g>
       <rect class="h-slot-lip" x="139" y="538" width="22" height="5" rx="1.5"/>
       <path class="letter-glint" d="M144 529 l3 -3 M146 530 l1.5 -1.5"/>
-      <rect class="w-hit" x="126" y="528" width="48" height="48"/>
+      <!-- padded, invisible: the envelope is tiny, the finger isn't (≥ 44 px down to 0.76 px/unit) -->
+      <rect class="w-hit" x="120" y="524" width="60" height="58"/>
     </g>
 
     ${garden()}

@@ -8,6 +8,10 @@
  * appended to the container; launches stop in time for the last sparks to fade, then the
  * canvas is removed and the promise resolves at `duration`.
  * Reduced motion → three still bursts, held briefly, then resolve (well under 1 s).
+ *
+ * Stopping early: the returned promise has .stop() (removes the canvas at once and resolves),
+ * and fireworks(el, { signal }) does the same when the AbortSignal fires. Scenes call it on
+ * unmount: ctx.onCleanup(() => show.stop()).
  */
 import { loop, reduced } from '../ui/motion.js'
 
@@ -42,8 +46,11 @@ function palettes() {
   })
 }
 
-export function fireworks(container, { duration = 6000 } = {}) {
-  if (!container) return Promise.resolve()
+/** A resolved promise that still has the .stop() handle, so callers never need to check. */
+const settled = () => Object.assign(Promise.resolve(), { stop() {} })
+
+export function fireworks(container, { duration = 6000, signal } = {}) {
+  if (!container || signal?.aborted) return settled()
   if (container !== document.body && getComputedStyle(container).position === 'static') container.style.position = 'relative'
 
   const canvas = document.createElement('canvas')
@@ -54,7 +61,27 @@ export function fireworks(container, { duration = 6000 } = {}) {
   const ctx = canvas.getContext('2d')
   if (!ctx) {
     canvas.remove()
-    return Promise.resolve()
+    return settled()
+  }
+
+  // one exit for every way this ends: natural finish, .stop(), or the abort signal
+  let finish = null
+  let ended = false
+  const timers = []
+  let stopLoop = () => {}
+  const end = () => {
+    if (ended) return
+    ended = true
+    timers.forEach(clearTimeout)
+    stopLoop()
+    removeEventListener('resize', resize)
+    signal?.removeEventListener('abort', end)
+    canvas.remove()
+    finish?.()
+  }
+  const show = (promise) => {
+    signal?.addEventListener('abort', end, { once: true })
+    return Object.assign(promise, { stop: end })
   }
 
   let w = 0
@@ -166,14 +193,19 @@ export function fireworks(container, { duration = 6000 } = {}) {
       s.life = rand(0.6, 1)
     }
     draw()
-    return new Promise((resolve) => setTimeout(() => (canvas.remove(), resolve()), Math.min(400, duration)))
+    return show(
+      new Promise((resolve) => {
+        finish = resolve
+        timers.push(setTimeout(end, Math.min(400, duration)))
+      }),
+    )
   }
 
   addEventListener('resize', resize, { passive: true })
   const start = performance.now()
   const quietAt = Math.max(700, duration - 1900) // stop launching so the last sparks can fade
   let nextAt = start + 120
-  const stopLoop = loop((dt, now) => {
+  stopLoop = loop((dt, now) => {
     if (now >= nextAt && now - start < quietAt) {
       launch()
       if (Math.random() < 0.25) launch() // the odd double
@@ -205,14 +237,11 @@ export function fireworks(container, { duration = 6000 } = {}) {
     draw()
   })
 
-  return new Promise((resolve) => {
-    const fadeAt = Math.max(0, duration - 450)
-    setTimeout(() => canvas.classList.add('fireworks--out'), fadeAt)
-    setTimeout(() => {
-      stopLoop()
-      removeEventListener('resize', resize)
-      canvas.remove()
-      resolve()
-    }, duration)
-  })
+  return show(
+    new Promise((resolve) => {
+      finish = resolve
+      timers.push(setTimeout(() => canvas.classList.add('fireworks--out'), Math.max(0, duration - 450)))
+      timers.push(setTimeout(end, duration))
+    }),
+  )
 }
