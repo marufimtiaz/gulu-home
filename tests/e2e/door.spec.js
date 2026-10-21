@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { collectErrors, open, shot } from './helpers.js'
+import { checkLayout, collectErrors, open, pressLatency, shot, VIEWPORTS } from './helpers.js'
 
 async function setClock(page, hour, minute) {
   await page.evaluate(([h, m]) => window.__door.set(h, m), [hour, minute])
@@ -97,33 +97,27 @@ test('leaving the door removes its debug hook', async ({ page }) => {
   await expect.poll(() => page.evaluate(() => typeof window.__door)).toBe('undefined')
 })
 
-const SIZES = [
-  [360, 640], [390, 844], [412, 915], [844, 390], [768, 1024], [1280, 800], [1920, 1080],
-]
-
-test('every control is on screen and finger-sized at every size', async ({ page }, info) => {
-  test.skip(info.project.name !== 'mobile', 'viewport sweep runs once')
+test('every control is on screen and finger-sized at every size; the chips have clear sky', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'viewport sweep runs once')
+  test.setTimeout(120_000)
+  const errors = collectErrors(page)
   await open(page, 'door', { doorSeen: false })
-  for (const [w, h] of SIZES) {
-    await page.setViewportSize({ width: w, height: h })
-    await page.waitForTimeout(250)
-    for (const sel of ['.lock', '[data-try]', '.door', '[data-hint]']) {
+  for (const vp of VIEWPORTS) {
+    await page.setViewportSize(vp)
+    await checkLayout(page, ['.lock', '[data-try]', '.chip--lang'], `door-${vp.name}`)
+    for (const sel of ['.door', '[data-hint]']) {
       const b = await page.locator(sel).boundingBox()
-      expect(b, `${sel} @${w}x${h}`).not.toBeNull()
-      expect(b.x, `${sel} left @${w}x${h}`).toBeGreaterThanOrEqual(0)
-      expect(b.y, `${sel} top @${w}x${h}`).toBeGreaterThanOrEqual(0)
-      expect(b.x + b.width, `${sel} right @${w}x${h}`).toBeLessThanOrEqual(w)
-      expect(b.y + b.height, `${sel} bottom @${w}x${h}`).toBeLessThanOrEqual(h)
-      if (sel === '.lock' || sel === '[data-try]') {
-        expect(b.width, `${sel} width @${w}x${h}`).toBeGreaterThanOrEqual(44)
-        expect(b.height, `${sel} height @${w}x${h}`).toBeGreaterThanOrEqual(44)
-      }
+      expect(b.y, `${sel} top @${vp.name}`).toBeGreaterThanOrEqual(0)
+      expect(b.y + b.height, `${sel} bottom @${vp.name}`).toBeLessThanOrEqual(vp.height)
     }
     const lock = await page.locator('.lock').boundingBox()
     const btn = await page.locator('[data-try]').boundingBox()
     const apart = btn.y >= lock.y + lock.height || btn.x >= lock.x + lock.width
-    expect(apart, `try button clear of the lock @${w}x${h}`).toBe(true)
-    await shot(page, `door-${w}x${h}`)
+    expect(apart, `try button clear of the lock @${vp.name}`).toBe(true)
+    // the language chip sits in open sky, above the roof edge (eave + its scallops)
+    const chip = await page.locator('.chip--lang').boundingBox()
+    const eave = await page.locator('.dw__eave').boundingBox()
+    expect(chip.y + chip.height, `chip clear of the roof edge @${vp.name}`).toBeLessThanOrEqual(eave.y)
   }
   // still works after all that resizing (live layout, no stale geometry)
   await page.setViewportSize({ width: 390, height: 844 })
@@ -136,6 +130,13 @@ test('every control is on screen and finger-sized at every size', async ({ page 
   await page.mouse.move(cx + box.width * 0.35, cy, { steps: 8 })
   await page.mouse.up()
   expect(await page.evaluate(() => window.__door.get().minute)).toBe(15)
+  expect(errors).toEqual([])
+})
+
+test('the try button and the lock squash under a press within 100 ms', async ({ page }) => {
+  await open(page, 'door', { doorSeen: false })
+  expect(await pressLatency(page, '[data-try]')).toBeLessThan(100)
+  expect(await pressLatency(page, '.lock svg')).toBeLessThan(100)
 })
 
 test('touching the lock answers at once; idle nudges point at the next thing', async ({ page }) => {
