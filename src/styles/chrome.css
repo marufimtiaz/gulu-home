@@ -15,7 +15,7 @@
   border: var(--line);
   border-radius: 999px;
   box-shadow: var(--pop-sm);
-  transition: transform var(--t-fast) ease, opacity var(--t-med) ease;
+  transition: opacity var(--t-med) ease;
 }
 .chip:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
 .chip[hidden] { display: none; }
