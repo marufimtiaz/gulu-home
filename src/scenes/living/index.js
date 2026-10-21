@@ -9,12 +9,15 @@ import './scene.css'
 import { gsap } from 'gsap'
 import { onRotate, rectCenter } from '../../ui/drag.js'
 import { loop } from '../../ui/motion.js'
+import { beat, EASE, moment as momentTl, T } from '../../ui/choreo.js'
+import { press } from '../../ui/feel.js'
 import { parseDate } from '../../i18n.js'
 import { makeScrubber } from './clock.js'
 import { CLOCK, PLANT, SAFE, VIEW, roomSVG } from './art.js'
 
 const TAU = Math.PI * 2
 const DAWN = 0.01 // first 1 % of the span
+const TURNS = 14
 const DEG = 180 / Math.PI
 const FRAME_ORDER = [1, 0, 2] // newest photo in the middle frame
 
@@ -33,7 +36,11 @@ export default {
     const { t, c, sound, fx, reduced } = ctx
     const start = parseDate(ctx.raw().togetherSince)
     const end = new Date()
-    const scrub = makeScrubber({ start, end })
+    const scrub = makeScrubber({ start, end, turns: TURNS })
+    // an event card belongs to the moment she passes it: it stays up only while the plate
+    // is within half a turn (~2 months) before its date, and goes the instant she winds
+    // forward past it again or rewinds well beyond it
+    const EVENT_NEAR = (+end - +start) / TURNS / 2
     const pool = ctx.photos.all().filter((p) => p.date && +p.date > +start)
     const events = (c('living.events') ?? [])
       .map((e) => ({ ...e, d: parseDate(e.date) }))
@@ -224,31 +231,46 @@ export default {
       el.moonBite.setAttribute('opacity', (1 - 0.7 * monsoon).toFixed(3))
     }
 
+    let shownEvent = null
+    let pendingEvent = null // passed while time was rushing by; shown if she slows near it
+    const READABLE = 8 // rad/s (~5 months a second): any faster and a card would only flash
+    const near = (e, d) => e && +d <= +e.d && +e.d - +d <= EVENT_NEAR
     function renderEvents(d) {
-      if (busy) {
-        lastDate = d
-        return
-      }
-      if (+d < +lastDate) {
+      if (shownEvent && !near(shownEvent, d)) hideEvent()
+      if (pendingEvent && !near(pendingEvent, d)) pendingEvent = null
+      if (!busy && +d < +lastDate) {
+        // the nearest event she just rewound past
         let hit = null
         for (const e of events) if (+e.d >= +d && +e.d < +lastDate) hit = e
-        if (hit) showEvent(hit)
+        if (hit && hit !== shownEvent && near(hit, d)) pendingEvent = hit
+      }
+      if (!busy && pendingEvent && speed < READABLE) {
+        showEvent(pendingEvent)
+        pendingEvent = null
       }
       lastDate = d
     }
 
     function showEvent(e) {
+      shownEvent = e
       el.event.querySelector('.lv-event__date').textContent = ctx.date(e.d, 'long')
       el.event.querySelector('.lv-event__line').textContent = e.line
+      el.event.dataset.eventDate = e.d.toISOString()
       el.event.hidden = false
-      sound.play('chime')
       eventTl?.kill()
-      eventTl = tw(
-        gsap
-          .timeline({ onComplete: () => (el.event.hidden = true) })
-          .fromTo(el.event, { opacity: 0, y: 16, rotate: -4, scale: 0.9 }, { opacity: 1, y: 0, rotate: -1.5, scale: 1, duration: reduced ? 0.01 : 0.45, ease: 'back.out(2)' })
-          .to(el.event, { opacity: 0, y: -10, duration: reduced ? 0.01 : 0.4, ease: 'power1.in' }, '+=2.2'),
-      )
+      const tl = momentTl({ onComplete: hideEvent })
+      beat(tl, 'chime', 0)
+      tl.fromTo(el.event, { opacity: 0, y: 16, rotate: -4, scale: 0.9 }, { opacity: 1, y: 0, rotate: -1.5, scale: 1, duration: 0.45, ease: 'back.out(2)' })
+        .to(el.event, { opacity: 0, y: -10, duration: 0.4, ease: 'power1.in' }, `+=${T.linger}`)
+      eventTl = tw(tl)
+    }
+
+    function hideEvent() {
+      // she moved on: the card goes at once, so it never sits beside the wrong date
+      shownEvent = null
+      eventTl?.kill()
+      eventTl = null
+      el.event.hidden = true
     }
 
     function render() {
@@ -324,11 +346,12 @@ export default {
 
     // ── moments: each is ONE timeline; starting a new one kills the last, so no two ever
     //    animate the same property. Sounds, text and state changes sit on the timeline. ──
-    const D = reduced ? 0.01 : 1
+    // reduced motion: the same timelines, compressed by moment() (timeScale) — not a second path
+    const D = 1
     let moment = null
     const newMoment = () => {
       moment?.kill()
-      moment = tw(gsap.timeline())
+      moment = tw(momentTl())
       return moment
     }
 
@@ -383,12 +406,19 @@ export default {
       stopNudge()
       if (!dragging) snapToStart()
       newMoment()
-        .call(() => sound.play('sparkle'))
         .to(lamp, { v: 0, duration: 0.8 * D, ease: 'steps(4)' }, 0)
         .to(el.dim, { attr: { opacity: 0.76 }, duration: 1.4 * D, ease: 'power2.inOut' }, 0)
         .to(blend, { v: 1, duration: 1.2 * D, ease: 'power2.out' }, 0)
         .to(el.dawnsky, { attr: { opacity: 1 }, duration: 2 * D }, 0.4 * D)
         .to(el.phoneWrap, { attr: { opacity: 1 }, duration: 0.9 * D }, 0.9 * D)
+        // the sparkle sounds as the phone lights, and sparkles fly off it
+        .call(() => {
+          sound.play('sparkle')
+          if (!reduced) {
+            const r = el.phone.getBoundingClientRect()
+            fx.sparkles?.(r.left + r.width / 2, r.top + r.height / 2, { count: 10 })
+          }
+        }, null, 0.9 * D)
         // the hint only once the phone is actually glowing
         .call(() => {
           setHint(t('living.tapPhone'))
@@ -440,15 +470,18 @@ export default {
       tl.set(el.bubble, { opacity: 0, scale: 0.4 })
         .set(el.on, { opacity: 0 })
         .fromTo(el.card, { opacity: 0, y: 70, scale: 0.55, rotate: -6 }, { opacity: 1, y: 0, scale: 1, rotate: -1.5, duration: 0.75 * D, ease: 'back.out(1.5)' })
+        // the card IS the phone now: the little glowing one on the sofa goes, so it never
+        // sits under "tap to go on"
+        .to(el.phoneWrap, { attr: { opacity: 0 }, duration: 0.3 * D }, '<')
         .call(() => sound.play('pop'))
         .to(el.bubble, { opacity: 1, scale: 1, duration: 0.55 * D, ease: 'back.out(2.4)' })
         .call(() => {
           const r = el.bubble.getBoundingClientRect()
           fx.hearts?.(r.left + r.width * 0.85, r.top + r.height / 2, { count: 6 })
         })
-        .to(el.on, { opacity: 0.9, duration: 0.4 * D }, reduced ? '>' : '+=0.6')
+        .to(el.on, { opacity: 0.9, duration: 0.4 * D }, '+=0.6')
         .addLabel('read')
-        .addLabel('out', reduced ? '+=0.8' : '+=2.6')
+        .addLabel('out', `+=${T.linger + 0.4}`)
         .to(el.card, { opacity: 0, y: 40, scale: 0.8, duration: 0.5 * D, ease: 'power2.in' }, 'out')
         .call(() => {
           el.card.hidden = true
@@ -458,7 +491,6 @@ export default {
         })
         .addLabel('spin')
         .to(blend, { v: 0, duration: 0.6 * D }, 'spin')
-        .to(el.phoneWrap, { attr: { opacity: 0 }, duration: 0.5 * D }, 'spin')
         .to(el.dawnsky, { attr: { opacity: 0 }, duration: 1.4 * D }, 'spin')
         .to(el.dim, { attr: { opacity: 0 }, duration: 2 * D, ease: 'power1.inOut' }, `spin+=${0.4 * D}`)
         .to(o, { t: 1, duration: 2.6 * D, ease: 'power2.inOut', onUpdate: () => scrub.set(o.t) }, 'spin')
@@ -473,9 +505,15 @@ export default {
         .call(() => {
           busy = false
           el.counter.hidden = false
+        })
+        .fromTo(el.counter, { opacity: 0, y: 24, scale: 0.92 }, { opacity: 1, y: 0, scale: 1, duration: 0.7 * D, ease: EASE.spring })
+        // the counter has landed: the chime, a little burst, and the window lights
+        .call(() => {
+          sound.play('success')
+          const r = el.counter.getBoundingClientRect()
+          if (!reduced) fx.sparkles?.(r.left + r.width / 2, r.top + 12, { count: 14 })
           ctx.complete()
         })
-        .fromTo(el.counter, { opacity: 0, y: 24, scale: 0.92 }, { opacity: 1, y: 0, scale: 1, duration: 0.7 * D, ease: 'back.out(1.8)' })
     }
 
     // tapping the phone card skips the wait (only once the text has landed)
@@ -583,6 +621,7 @@ export default {
     const onBack = () => ctx.back()
     const backBtn = root.querySelector('[data-back]')
     backBtn.addEventListener('click', onBack)
+    offs.push(press(backBtn))
     offs.push(() => backBtn.removeEventListener('click', onBack))
 
     // ── run ──
@@ -618,6 +657,9 @@ export default {
       const m = render()
       stepSparks(dt, m)
       tickSound()
+      // the clock's own tick-tock follows how fast time is rushing past, and settles back
+      // to one tick a second when the hands stop
+      stopLayer?.setRate?.(Math.min(1, speed / 25))
     })
 
     if (ctx.params.has('debug')) {
@@ -631,6 +673,15 @@ export default {
           render()
         },
         t: () => scrub.t(),
+        /** t at which the plate shows this date */
+        tAt: (iso) => (+parseDate(iso) - +start) / (+end - +start),
+        date: () => scrub.date().toISOString(),
+        /** release the hand at v rad/s, as onRotate's onEnd would */
+        fling(v) {
+          if (busy) return
+          snap?.kill()
+          scrub.fling(v)
+        },
       }
     }
 

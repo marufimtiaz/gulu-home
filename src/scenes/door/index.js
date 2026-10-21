@@ -7,6 +7,8 @@
 import './scene.css'
 import { gsap } from 'gsap'
 import { onRotate, rectCenter } from '../../ui/drag.js'
+import { beat, EASE, moment, T } from '../../ui/choreo.js'
+import { press } from '../../ui/feel.js'
 import { defsSVG, insideSVG, leafSVG, lockSVG, porchSVG, skySVG, windowSVG } from './art.js'
 
 const TAU = Math.PI * 2
@@ -240,17 +242,13 @@ export default {
         if (line) hint.textContent = line
         hint.classList.add('hint--wrong')
       }
-      ctx.sound.play('tap')
-      if (ctx.reduced) {
-        showHint()
-        idle()
-        return
-      }
-      // the lock rattles first; the hint lands once the rattle has
-      tl = gsap.timeline({ onComplete: idle })
+      // the lock rattles first (knock — the button's press was the first knock); the hint
+      // lands once the rattle has. Reduced motion: the same timeline, compressed.
+      tl = moment({ onComplete: idle })
       tl.to(lock, { keyframes: { x: [0, -9, 8, -6, 4, -2, 0] }, duration: 0.42, ease: 'none' })
+      beat(tl, 'tap', 0.14)
       tl.call(showHint)
-      tl.fromTo(hint, { scale: 0.7, rotation: -8 }, { scale: 1, rotation: -2, duration: 0.5, ease: 'back.out(2.6)' })
+      tl.fromTo(hint, { scale: 0.7, rotation: -8 }, { scale: 1, rotation: -2, duration: T.move, ease: 'back.out(2.6)' })
     }
 
     function finish() {
@@ -263,32 +261,19 @@ export default {
       tl?.progress(1).kill()
       tryBtn.disabled = true
       lock.setAttribute('aria-disabled', 'true')
-      ctx.sound.play('lockClick')
       root.classList.add('is-unlocked')
 
-      if (ctx.reduced) {
-        tl = gsap.timeline({ onComplete: finish })
-        tl.set(glows, { opacity: 1 })
-        tl.set(spill, { opacity: 1 })
-        tl.call(() => {
-          ctx.sound.play('lampOn')
-          root.classList.add('is-lit')
-          door.classList.add('door--open')
-          gsap.set(leaf, { rotationY: 74 })
-          gsap.set(shade, { opacity: 0.55 })
-          who.textContent = t('door.welcome')
-        })
-        tl.to(world, { opacity: 0, duration: 0.3 }, 0.9)
-        return
-      }
-
-      tl = gsap.timeline({ onComplete: finish })
+      // ONE timeline: click → lamp → creak + swing → "welcome" → pull-back → house.
+      // Reduced motion runs the same beats compressed (moment() timeScale), with a fade
+      // instead of the camera pull-back.
+      tl = moment({ onComplete: finish })
       // 1. the lock clicks: a little brass jump
-      tl.to(lock, { scale: 1.08, duration: 0.12, yoyo: true, repeat: 1, ease: 'power2.out' }, 0)
+      beat(tl, 'lockClick', 0)
+      tl.to(lock, { scale: 1.08, duration: T.tap, yoyo: true, repeat: 1, ease: 'power2.out' }, 0)
       tl.to(controls, { opacity: 0, y: 16, duration: 0.4, ease: 'power1.in' }, 0.25)
-      // 2. the porch lamp stutters on
-      tl.addLabel('lamp', 0.5)
-      tl.call(() => ctx.sound.play('lampOn'), null, 'lamp')
+      // 2. the porch lamp stutters on — the hum starts with the first flicker
+      tl.addLabel('lamp', T.move)
+      beat(tl, 'lampOn', 'lamp')
       tl.to(
         glows,
         {
@@ -303,31 +288,31 @@ export default {
         'lamp',
       )
       tl.call(() => root.classList.add('is-lit'), null, 'lamp+=0.61')
-      // 3. the door swings in onto warm light
+      // 3. the door swings in onto warm light; the creak starts as the leaf moves
       tl.addLabel('swing', 'lamp+=0.8')
-      tl.call(
-        () => {
-          ctx.sound.play('creak')
-          door.classList.add('door--open')
-        },
-        null,
-        'swing',
-      )
-      tl.to(leaf, { rotationY: 74, duration: 1.5, ease: 'power2.inOut' }, 'swing')
-      tl.to(shade, { opacity: 0.55, duration: 1.5, ease: 'power1.in' }, 'swing')
+      beat(tl, 'creak', 'swing')
+      tl.call(() => door.classList.add('door--open'), null, 'swing')
+      tl.to(leaf, { rotationY: 74, duration: T.moment, ease: EASE.inOut }, 'swing')
+      tl.to(shade, { opacity: 0.55, duration: T.moment, ease: 'power1.in' }, 'swing')
       tl.to(spill, { opacity: 1, duration: 1.1, ease: 'power1.out' }, 'swing+=0.4')
       // 4. only once it's open does the voice inside answer
-      tl.addLabel('open', 'swing+=1.5')
+      tl.addLabel('open', `swing+=${T.moment}`)
       tl.to(who, { scale: 0.6, opacity: 0, duration: 0.14, ease: 'power1.in' }, 'open-=0.3')
       tl.call(() => (who.textContent = t('door.welcome')), null, 'open-=0.16')
-      tl.to(who, { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(2.2)' }, 'open-=0.16')
+      tl.to(who, { scale: 1, opacity: 1, duration: T.move, ease: 'back.out(2.2)' }, 'open-=0.16')
+      beat(tl, 'chime', 'open')
       // 5. the camera pulls back and up: the porch shrinks into the house above it
-      tl.set(world, { willChange: 'transform' }, 'open+=0.45')
-      tl.to(world, { scale: 0.7, yPercent: 10, duration: 0.95, ease: 'power2.inOut' }, 'open+=0.45')
+      if (ctx.reduced) {
+        tl.to(world, { opacity: 0, duration: 1.2 }, 'open+=0.45') // 0.3 s once compressed
+      } else {
+        tl.set(world, { willChange: 'transform' }, 'open+=0.45')
+        tl.to(world, { scale: 0.7, yPercent: 10, duration: 0.95, ease: EASE.inOut }, 'open+=0.45')
+      }
     }
 
     const onTry = () => check()
     tryBtn.addEventListener('click', onTry)
+    cleanups.push(press(tryBtn))
     cleanups.push(() => tryBtn.removeEventListener('click', onTry))
 
     // first touch anywhere unlocks audio (iOS needs a gesture); any touch restarts the idle wait
@@ -401,7 +386,9 @@ export default {
     }
 
     // ambient
-    cleanups.push(ctx.fx.starfield($('.dw__sky'), { count: 36 }))
+    // the sky is a strip above the roof: density per width so wide screens aren't bare
+    const skyW = $('.dw__sky').clientWidth || 390
+    cleanups.push(ctx.fx.starfield($('.dw__sky'), { count: Math.round(Math.min(64, Math.max(28, skyW / 26))) }))
     if (!ctx.reduced) cleanups.push(ctx.fx.fireflies($('.porch'), { count: 5 }))
 
     // the voice behind the door pipes up once she's had a moment to look

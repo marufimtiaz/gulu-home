@@ -24,7 +24,9 @@
   --mat: color-mix(in srgb, var(--mustard) 52%, var(--night));
   --shade: color-mix(in srgb, var(--night-deep) 62%, transparent);
 
-  --sky-h: clamp(52px, 9svh, 100px);
+  /* the chrome row (corner chips) needs clear sky above the roof edge: chip top + 2.75rem + shadow */
+  --chrome-clear: calc(max(0.7rem, env(safe-area-inset-top)) + 2.75rem + 10px);
+  --sky-h: max(var(--chrome-clear), clamp(52px, 9svh, 100px));
   --ctrl-h: 150px;
   display: block;
   background: var(--night-deep);
@@ -372,7 +374,7 @@
 .window-art .fl-b { fill: color-mix(in srgb, var(--butter) 70%, var(--night)); stroke: var(--ink); stroke-width: 1.5; }
 .window-art .fl-eye { fill: color-mix(in srgb, var(--mustard) 70%, var(--night)); stroke: var(--ink); stroke-width: 1.2; }
 @media (min-aspect-ratio: 5/4) {
-  .scene--door { --ctrl-h: 118px; --sky-h: 44px; }
+  .scene--door { --ctrl-h: 118px; --sky-h: var(--chrome-clear); }
   .porch__win { display: block; }
 }
 
@@ -392,7 +394,7 @@
 
 /* landscape phones: the porch takes the height, the controls sit on the wall to its right */
 @media (orientation: landscape) and (max-height: 560px) {
-  .scene--door { --sky-h: 22px; --ctrl-h: 0px; }
+  .scene--door { --sky-h: var(--chrome-clear); --ctrl-h: 0px; }
   .dw__eave { height: 14px; }
   .porch { margin-top: 10px; --ph: min(calc(100svh - var(--sky-h) - 34px), 640px); }
   .porch__win { display: block; top: 26%; width: 40%; }
