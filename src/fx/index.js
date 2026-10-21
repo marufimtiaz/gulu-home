@@ -11,6 +11,8 @@
  *
  * All honour prefers-reduced-motion (static or skipped) and pause in background tabs.
  */
+import './fx.css'
+
 export { toast } from './toast.js'
 export { fireflies } from './fireflies.js'
 export { starfield } from './stars.js'
