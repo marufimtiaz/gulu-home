@@ -40,17 +40,21 @@ export function deskSVG() {
     </defs>
 
     <!-- the desk's top face (objects stand on it) -->
-    <path class="d-top" d="M20 224 H380 L396 238 H4 Z"/>
-    <path class="d-grain" d="M60 230 H170 M220 228 H330 M110 234 H260"/>
+    <g data-poke="desk-top">
+      <path class="d-top" d="M20 224 H380 L396 238 H4 Z"/>
+      <path class="d-grain" d="M60 230 H170 M220 228 H330 M110 234 H260"/>
+    </g>
+    <g class="d-blots" data-blots></g>
 
     <!-- books -->
-    <g class="d-books" data-poke>
-      <rect class="bk bk--a" x="8" y="222" width="54" height="14" rx="2"/>
-      <path class="ink-thin" d="M16 222 v14 M54 222 v14"/>
-      <rect class="bk bk--b" x="13" y="209" width="46" height="13" rx="2"/>
-      <path class="ink-thin" d="M20 209 v13"/>
-      <rect class="bk bk--c" x="6" y="197" width="50" height="12" rx="2"/>
-      <path class="ink-thin" d="M48 197 v12"/>
+    <g class="d-books" data-poke="books">
+      <rect class="d-hit" x="0" y="180" width="70" height="60"/>
+      <g data-book="0"><rect class="bk bk--a" x="8" y="222" width="54" height="14" rx="2"/>
+      <path class="ink-thin" d="M16 222 v14 M54 222 v14"/></g>
+      <g data-book="1"><rect class="bk bk--b" x="13" y="209" width="46" height="13" rx="2"/>
+      <path class="ink-thin" d="M20 209 v13"/></g>
+      <g data-book="2"><rect class="bk bk--c" x="6" y="197" width="50" height="12" rx="2"/>
+      <path class="ink-thin" d="M48 197 v12"/></g>
     </g>
 
     <!-- the lamp's beam and the dust in it -->
@@ -71,23 +75,36 @@ export function deskSVG() {
     </g>
 
     <!-- inkpot and pen -->
-    <g class="d-ink" data-poke>
-      <path class="pen-body" d="M358 212 L374 160 q2 -5 6 -3 q4 2 2 7 L366 214 Z"/>
-      <path class="pen-band" d="M369 176 l9 3.5 l-1.6 4 l-9 -3.5 Z"/>
-      <path class="pot" d="M332 236 q-7 0 -7 -7 v-13 q0 -8 10 -9 h26 q10 1 10 9 v13 q0 7 -7 7 Z"/>
-      <rect class="pot-neck" x="339" y="199" width="20" height="9" rx="2"/>
-      <path class="pot-shine" d="M332 216 v8"/>
+    <g class="d-pen" data-poke="pen">
+      <rect class="d-hit" x="356" y="150" width="34" height="62"/>
+      <g data-pen>
+        <path class="pen-body" d="M358 212 L374 160 q2 -5 6 -3 q4 2 2 7 L366 214 Z"/>
+        <path class="pen-band" d="M369 176 l9 3.5 l-1.6 4 l-9 -3.5 Z"/>
+      </g>
+    </g>
+    <g class="d-ink" data-poke="inkpot">
+      <g data-inkpot>
+        <path class="pot" d="M332 236 q-7 0 -7 -7 v-13 q0 -8 10 -9 h26 q10 1 10 9 v13 q0 7 -7 7 Z"/>
+        <rect class="pot-neck" x="339" y="199" width="20" height="9" rx="2"/>
+        <ellipse class="pot-ink" data-ink cx="349" cy="200.5" rx="8" ry="2"/>
+        <path class="pot-shine" d="M332 216 v8"/>
+      </g>
     </g>
 
     <!-- desk front, drawer, legs -->
-    <rect class="d-edge" x="4" y="237" width="392" height="13" rx="3"/>
-    <rect class="d-apron" x="16" y="250" width="368" height="34"/>
-    <g class="d-drawer" data-poke>
-      <rect class="d-drawer__face" x="146" y="255" width="108" height="24" rx="3"/>
-      <circle class="lamp-brass" cx="200" cy="267" r="4.5"/>
+    <g data-poke="desk-front">
+      <rect class="d-edge" x="4" y="237" width="392" height="13" rx="3"/>
+      <rect class="d-apron" x="16" y="250" width="368" height="34"/>
+      <rect class="d-leg" x="26" y="284" width="18" height="60"/>
+      <rect class="d-leg" x="356" y="284" width="18" height="60"/>
     </g>
-    <rect class="d-leg" x="26" y="284" width="18" height="60"/>
-    <rect class="d-leg" x="356" y="284" width="18" height="60"/>
+    <g class="d-drawer" data-poke="drawer">
+      <rect class="d-drawer__gap" data-drawer-gap x="146" y="255" width="108" height="0"/>
+      <g data-drawer>
+        <rect class="d-drawer__face" x="146" y="255" width="108" height="24" rx="3"/>
+        <circle class="lamp-brass" cx="200" cy="267" r="4.5"/>
+      </g>
+    </g>
   </svg>`
 }
 
@@ -102,11 +119,11 @@ export function windowSVG() {
       </linearGradient>
       <clipPath id="desk-pane"><path d="M56 222 V84 Q56 44 100 44 Q144 44 144 84 V222 Z"/></clipPath>
     </defs>
-    <g class="shutter shutter--l" data-poke>
+    <g class="shutter shutter--l" data-poke="shutter-l">
       <path class="sh" d="M6 52 H44 V226 H6 Z"/>
       <path class="ink-thin" d="M12 72 H38 M12 92 H38 M12 112 H38 M12 132 H38 M12 152 H38 M12 172 H38 M12 192 H38 M12 212 H38"/>
     </g>
-    <g class="shutter shutter--r" data-poke>
+    <g class="shutter shutter--r" data-poke="shutter-r">
       <path class="sh" d="M156 52 H194 V226 H156 Z"/>
       <path class="ink-thin" d="M162 72 H188 M162 92 H188 M162 112 H188 M162 132 H188 M162 152 H188 M162 172 H188 M162 192 H188 M162 212 H188"/>
     </g>
@@ -114,7 +131,7 @@ export function windowSVG() {
     <path d="M56 222 V84 Q56 44 100 44 Q144 44 144 84 V222 Z" fill="url(#desk-sky)"/>
     <g clip-path="url(#desk-pane)">
       <g class="win-stars">${stars.map(([x, y, r], i) => `<circle class="wstar" cx="${x}" cy="${y}" r="${r}" style="--i:${i}"/>`).join('')}</g>
-      <g class="win-moon" data-poke>
+      <g class="win-moon" data-poke="moon">
         <circle class="moon-glow" cx="120" cy="88" r="30"/>
         <circle class="moon" cx="120" cy="88" r="15"/>
         <circle class="moon-dent" cx="114" cy="84" r="3"/><circle class="moon-dent" cx="125" cy="94" r="2"/>
@@ -125,7 +142,7 @@ export function windowSVG() {
     <path class="win-bar" d="M100 44 V222 M56 140 H144"/>
     <path class="ink-line" d="M56 222 V84 Q56 44 100 44 Q144 44 144 84 V222 Z" fill="none"/>
     <rect class="win-sill" x="34" y="224" width="132" height="12" rx="3"/>
-    <g class="sill-plant" data-poke>
+    <g class="sill-plant" data-poke="sill-plant">
       <path class="leaf" d="M128 210 q-12 -14 -2 -24 q8 10 2 24 Z"/>
       <path class="leaf" d="M132 210 q8 -16 20 -14 q-4 12 -20 14 Z"/>
       <path class="plant-pot" d="M120 224 l3 -14 h18 l3 14 Z"/>

@@ -10,7 +10,9 @@ import { gsap } from 'gsap'
 import { onRotate, rectCenter } from '../../ui/drag.js'
 import { loop } from '../../ui/motion.js'
 import { beat, EASE, moment as momentTl, T } from '../../ui/choreo.js'
-import { press } from '../../ui/feel.js'
+import { nudge, press } from '../../ui/feel.js'
+import { makeQuip } from './quip.js'
+import { scenery } from './scenery.js'
 import { parseDate } from '../../i18n.js'
 import { makeScrubber } from './clock.js'
 import { CLOCK, PLANT, SAFE, VIEW, roomSVG } from './art.js'
@@ -89,6 +91,8 @@ export default {
       progress: $('[data-progress]'),
       arc: $('[data-hint-arc]'),
       glow: $('[data-lampglow]'),
+      flick: $('[data-flick]'),
+      shed: $('[data-shed]'),
       bulb: $('[data-bulb]'),
       dim: $('[data-dim]'),
       dawnsky: $('[data-dawnsky]'),
@@ -146,7 +150,7 @@ export default {
       const liveMin = (now.getMinutes() + now.getSeconds() / 60) * 6
       const liveHour = ((now.getHours() % 12) + now.getMinutes() / 60) * 30
       const rad = scrub.rad()
-      let m = liveMin + rad * DEG + nudge.v
+      let m = liveMin + rad * DEG + twitch.v
       let h = liveHour + (rad * DEG) / 12
       if (blend.v > 0) {
         m += wrap180(180 - m) * blend.v
@@ -284,7 +288,8 @@ export default {
       renderEvents(d)
       const flicker = speed > 3 ? 1 - Math.min(0.35, speed / 70) * Math.random() : 1
       el.glow.setAttribute('opacity', (lamp.v * flicker).toFixed(3))
-      el.bulb.setAttribute('opacity', (0.25 + 0.75 * lamp.v).toFixed(3))
+      const flick = Number(gsap.getProperty(el.flick, 'opacity')) // the lamp's own flicker / load-shedding
+      el.bulb.setAttribute('opacity', ((0.25 + 0.75 * lamp.v) * (0.3 + 0.7 * flick)).toFixed(3))
       el.trail.setAttribute('opacity', Math.min(0.9, speed / 28).toFixed(3))
       // continuous progress: how far back she has wound, as an arc round the rim
       el.progress.setAttribute('stroke-dasharray', `${(1 - tt).toFixed(4)} 2`)
@@ -365,35 +370,29 @@ export default {
       snap = tw(gsap.to(o, { t: 0, duration: 0.7, ease: 'power2.out', onUpdate: () => scrub.set(o.t) }))
     }
 
-    // ── nudges: if she does nothing for ~4 s, point at the next thing to touch ──
-    const nudge = { v: 0 } // degrees added to the minute hand
+    // ── nudges (ui/feel nudge): after ~4 s idle, point at the next thing in the room's own
+    //    language — the minute hand twitches backwards (and the arc brightens); at dawn the
+    //    phone buzzes on the sofa. The hand-drawn arrow comes only if she stays stuck.
+    const twitch = { v: 0 } // degrees added to the minute hand
     let engaged = false
-    let idleCall = null
-    function armNudge() {
-      idleCall?.kill()
-      idleCall = reduced ? null : gsap.delayedCall(4, doNudge)
+    const clockHint = () => {
+      gsap.killTweensOf(twitch)
+      tw(gsap.timeline().to(twitch, { v: -18, duration: 0.25, ease: 'power2.out' }).to(twitch, { v: 0, duration: 1, ease: 'elastic.out(1, 0.3)' }))
+      return tw(gsap.fromTo(el.arc, { opacity: 1, strokeWidth: 4.5 }, { opacity: 0.85, strokeWidth: 2.6, duration: 0.9, ease: 'power2.out', clearProps: 'opacity,strokeWidth' }))
     }
-    function stopNudge() {
-      idleCall?.kill()
-      idleCall = null
-    }
-    function doNudge() {
+    const phoneHint = () => {
       if (busy) return
-      if (dawn) {
-        gsap.killTweensOf(el.phoneWrap, 'scale')
-        tw(
-          gsap
-            .timeline()
-            .to(el.phoneWrap, { scale: 1.35, svgOrigin: '548 640', duration: 0.18, ease: 'power2.out' })
-            .to(el.phoneWrap, { scale: 1, svgOrigin: '548 640', duration: 0.8, ease: 'elastic.out(1, 0.35)' }),
-        )
-      } else if (!engaged) {
-        gsap.killTweensOf(nudge)
-        tw(gsap.timeline().to(nudge, { v: -18, duration: 0.25, ease: 'power2.out' }).to(nudge, { v: 0, duration: 1, ease: 'elastic.out(1, 0.3)' }))
-        tw(gsap.fromTo(el.arc, { scale: 1.07, svgOrigin: `${cx} ${cy}` }, { scale: 1, svgOrigin: `${cx} ${cy}`, duration: 0.7, ease: 'back.out(3)' }))
-      } else return
-      armNudge()
+      sound.play('buzz')
+      gsap.killTweensOf(el.phone, 'x,rotation')
+      return tw(
+        gsap.timeline()
+          .to(el.phone, { keyframes: { x: [0, -2.2, 2.2, -2, 2, -1.6, 1.6, -1, 0], rotation: [0, -2, 2, -2, 2, -1, 1, 0, 0] }, svgOrigin: '548 640', duration: 0.42, ease: 'none' })
+          .to(el.phone, { keyframes: { x: [0, -2, 2, -1.6, 1.6, 0] }, duration: 0.3, ease: 'none' }, '+=0.18'),
+      )
     }
+    const guide = nudge(el.clock, { style: (n) => (n === el.phone ? phoneHint() : clockHint()), arrow: true })
+    const armNudge = () => guide.set(dawn ? el.phone : engaged ? [] : el.clock)
+    const stopNudge = () => guide.set([])
 
     // ── dawn: 4:30 AM, 20 April 2022 ──
     function enterDawn() {
@@ -529,36 +528,11 @@ export default {
       tw(gsap.to(el.counter, { opacity: 0, duration: 0.25, onComplete: () => (el.counter.hidden = true) }))
     }
 
-    // ── decorative things react when tapped ──
+    // ── everything else in the room answers a tap like what it is (scenery.js) ──
     const art = root.querySelector('.lv-art')
-    const onPoke = (e) => {
-      const g = e.target.closest?.('[data-poke]')
-      if (!g) return
-      const kind = g.dataset.poke
-      gsap.killTweensOf(g)
-      sound.play('tap')
-      fx.sparkles?.(e.clientX, e.clientY, { count: 8 })
-      if (reduced) return
-      if (kind === 'squash') {
-        tw(
-          gsap
-            .timeline()
-            .to(g, { scaleY: 0.9, scaleX: 1.05, transformOrigin: '50% 100%', duration: 0.09, ease: 'power2.out' })
-            .to(g, { scaleY: 1, scaleX: 1, transformOrigin: '50% 100%', duration: 0.7, ease: 'elastic.out(1, 0.35)' }),
-        )
-      } else {
-        const origin = kind === 'top' ? '50% 0%' : '50% 100%'
-        const dir = Math.random() < 0.5 ? -1 : 1
-        tw(
-          gsap
-            .timeline()
-            .to(g, { rotation: 5 * dir, transformOrigin: origin, duration: 0.09, ease: 'power2.out' })
-            .to(g, { rotation: 0, transformOrigin: origin, duration: 0.9, ease: 'elastic.out(1.1, 0.3)' }),
-        )
-      }
-    }
-    art.addEventListener('pointerdown', onPoke)
-    offs.push(() => art.removeEventListener('pointerdown', onPoke))
+    const quip = makeQuip(root.querySelector('.lv'))
+    offs.push(scenery(root, ctx, { quip, flick: el.flick, shed: el.shed, busy: () => busy || dawn }))
+    offs.push(() => quip.kill())
 
     // ── input ──
     offs.push(
@@ -571,24 +545,24 @@ export default {
           dragging = true
           engaged = true
           if (!dawn) stopNudge()
-          gsap.killTweensOf(nudge)
-          nudge.v = 0
+          gsap.killTweensOf(twitch)
+          twitch.v = 0
           snap?.kill()
           scrub.fling(0)
           hideCounter()
           if (hintShown && !dawn) setHint(null)
           el.arc.classList.add('lv-hint-arc--gone')
-          // press: the clock gives a little under her finger
-          gsap.killTweensOf(el.clock, 'scale')
-          tw(gsap.to(el.clock, { scale: 0.965, svgOrigin: `${cx} ${cy}`, duration: 0.08, ease: 'power2.out' }))
+          // the clock gives on its nail under her finger: it rocks a little the way she turns
+          gsap.killTweensOf(el.clock, 'rotation')
+          tw(gsap.to(el.clock, { rotation: -2.5, svgOrigin: `${cx} ${cy}`, duration: 0.08, ease: 'power2.out' }))
         },
         onRotate(d) {
           scrub.angle(d)
         },
         onEnd(v) {
           dragging = false
-          gsap.killTweensOf(el.clock, 'scale')
-          tw(gsap.to(el.clock, { scale: 1, svgOrigin: `${cx} ${cy}`, duration: 0.7, ease: 'elastic.out(1, 0.4)' }))
+          gsap.killTweensOf(el.clock, 'rotation')
+          tw(gsap.to(el.clock, { rotation: 0, svgOrigin: `${cx} ${cy}`, duration: 0.9, ease: 'elastic.out(1, 0.3)' }))
           if (dawn) snapToStart()
           else scrub.fling(v)
         },
@@ -692,11 +666,10 @@ export default {
       stop()
       stopLayer?.()
       offs.forEach((fn) => fn())
-      stopNudge()
+      guide.stop()
       moment?.kill()
       tweens.forEach((x) => x.kill())
-      gsap.killTweensOf([el.dim, lamp, blend, nudge, el.dawnsky, el.phoneWrap, el.hint, el.card, el.bubble, el.on, el.counter, el.event, el.plate, el.clock, el.arc])
-      root.querySelectorAll('[data-poke]').forEach((g) => gsap.killTweensOf(g))
+      gsap.killTweensOf([el.dim, lamp, blend, twitch, el.phone, el.dawnsky, el.phoneWrap, el.hint, el.card, el.bubble, el.on, el.counter, el.event, el.plate, el.clock, el.arc])
       el.frames.forEach((f) => gsap.killTweensOf(f.querySelector('[data-flip]')))
       if (window.__living) delete window.__living
     }

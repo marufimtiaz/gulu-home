@@ -151,7 +151,8 @@ html[lang="bn"] .lv-time { font-family: "Atma", var(--bn); font-size: 14px; }
 .lv-dim { fill: var(--night-deep); pointer-events: none; }
 .lv-phone { pointer-events: none; outline: none; }
 .lv-phone--on { pointer-events: auto; cursor: pointer; outline: none; }
-.lv-phone-glow { transform-box: fill-box; transform-origin: center; animation: lvGlow 2.4s ease-in-out infinite alternate; }
+.lv-phone:not(.lv-phone--on) .lv-hit { pointer-events: none; } /* the hidden phone must not swallow taps on the sofa */
+.lv-phone-glow { pointer-events: none; transform-box: fill-box; transform-origin: center; animation: lvGlow 2.4s ease-in-out infinite alternate; }
 @keyframes lvGlow { from { transform: scale(0.85); opacity: 0.65; } to { transform: scale(1.12); opacity: 1; } }
 .lv-phone-body { fill: var(--ink); }
 .lv-phone-screen { fill: var(--moon); }
@@ -312,3 +313,51 @@ html[lang="bn"] .lv-counter__text { font-family: var(--bn); font-weight: 700; }
 
 /* at dawn the frames are empty — the last card floats there, clear of the phone */
 .living--dawn .lv-event { top: 46%; }
+
+/* ── scenery reactions (scenery.js) ── */
+[data-react] { cursor: pointer; }
+.lv-shed { fill: var(--night-deep); pointer-events: none; }
+.lv-shoot path { stroke: var(--star); stroke-width: 2.4; stroke-linecap: round; fill: none; }
+.lv-shoot circle { fill: var(--star); }
+.lv-thread { fill: none; stroke: var(--berry); stroke-width: 3.4; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 100; opacity: 0; pointer-events: none; }
+.lv-item { stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.lv-item--clip { fill: var(--berry); }
+.lv-item--note { fill: var(--sage); }
+.lv-item--straw { fill: none; stroke: var(--tomato); stroke-width: 4; stroke-linecap: round; }
+.lv-item-mark { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+.lv-found { pointer-events: none; }
+
+/* a paper speech-tag beside the thing she tapped (quip.js) */
+.quip {
+  position: absolute;
+  z-index: 30;
+  margin: 0;
+  width: max-content;
+  max-width: min(72vw, 15rem);
+  padding: 0.3rem 0.85rem 0.4rem;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  text-align: center;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--line);
+  border-radius: 12px;
+  box-shadow: var(--pop-sm);
+  pointer-events: none;
+}
+.quip[hidden] { display: none; }
+.quip::after {
+  content: "";
+  position: absolute;
+  left: var(--tail, 50%);
+  top: 100%;
+  width: 12px;
+  height: 12px;
+  translate: -50% -50%;
+  rotate: 45deg;
+  background: var(--paper);
+  border-right: var(--line);
+  border-bottom: var(--line);
+}
+.quip--below::after { top: 0; rotate: 225deg; }
+html[lang="bn"] .quip { font-size: 1.1rem; line-height: 1.35; }
