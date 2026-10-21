@@ -1,1 +1,286 @@
-.scene--rooftop .stub { display: grid; gap: 1rem; justify-items: center; color: var(--paper); }
+/* Rooftop — the night sky. Paper cut-outs on a plum sky; colours only from tokens. */
+.scene--rooftop {
+  --rt-paper: color-mix(in oklab, var(--paper-2) 74%, var(--dusk));
+  --rt-paper-dim: color-mix(in oklab, var(--paper-2) 50%, var(--night));
+  --rt-shadow: color-mix(in oklab, var(--ink) 70%, var(--night-deep));
+  display: block;
+  background:
+    radial-gradient(90% 34% at 50% 100%, color-mix(in oklab, var(--dusk) 60%, var(--mustard)) 0%, transparent 70%),
+    linear-gradient(180deg, var(--night-deep) 0%, var(--night) 46%, var(--indigo) 78%, var(--dusk) 100%);
+}
+
+.rooftop { position: absolute; inset: 0; overflow: hidden; }
+.rt-sky { position: absolute; inset: 0 0 18% 0; pointer-events: none; }
+.rt-horizon {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 42%;
+  background: radial-gradient(60% 55% at 50% 100%, color-mix(in oklab, var(--lamp) 22%, transparent), transparent 75%);
+  pointer-events: none;
+}
+
+/* ───────── header ───────── */
+.rt-head {
+  position: absolute; left: 0; right: 0;
+  top: calc(max(0.7rem, env(safe-area-inset-top)) + 2.95rem);
+  padding: 0 4.6rem;
+  text-align: center; pointer-events: none; z-index: 3;
+}
+.rt-kicker { display: none; font-size: 1.25rem; line-height: 1.1; color: var(--mustard); transform: rotate(-2deg); }
+.rt-title {
+  font-weight: 800; font-size: clamp(1.6rem, 7.4vw, 2.5rem); line-height: 1.05; color: var(--paper);
+  letter-spacing: -0.01em; text-shadow: 0 2px 0 var(--night-deep), 0 0 18px var(--lamp-glow);
+}
+.rt-prompt {
+  margin-top: 0.3rem; min-height: 1.6em;
+  font-size: clamp(1.15rem, 4.8vw, 1.45rem); line-height: 1.2; color: var(--butter);
+}
+html[lang="bn"] .rt-title { font-family: var(--bn); font-weight: 700; }
+@media (min-height: 760px) {
+  .rt-kicker { display: block; }
+}
+
+/* ───────── moon ───────── */
+.rt-moon {
+  position: absolute; z-index: 1; overflow: visible; cursor: pointer;
+  width: clamp(50px, 14vw, 96px);
+  right: max(4vw, calc(50% - 22rem));
+  top: calc(max(0.7rem, env(safe-area-inset-top)) + 3.2rem);
+}
+.rt-moon__halo { fill: var(--moon); opacity: 0.08; }
+.rt-moon__halo--2 { opacity: 0.05; }
+.rt-moon__shadow { fill: var(--night-deep); }
+.rt-moon__disc { fill: var(--moon); stroke: var(--ink); stroke-width: 2.5; }
+.rt-moon__crater { fill: color-mix(in oklab, var(--moon) 78%, var(--mustard)); }
+.rt-moon__shine { fill: none; stroke: var(--paper); stroke-width: 2.2; stroke-linecap: round; opacity: 0.8; }
+
+/* ───────── constellations ───────── */
+.rt-field { position: absolute; z-index: 2; touch-action: none; }
+.rt-cg {
+  position: absolute;
+  --g: clamp(17px, calc(var(--s, 130px) * 0.17), 24px);
+  --gl: clamp(21px, calc(var(--s, 130px) * 0.21), 30px);
+  --gd2: clamp(19px, calc(var(--s, 130px) * 0.19), 26px);
+}
+/* each memory sits in its own soft patch of light, so a group reads as a group */
+.rt-cg::before {
+  content: ""; position: absolute; inset: -16%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--lamp) 16%, transparent), color-mix(in oklab, var(--sky) 7%, transparent) 62%, transparent);
+  animation: rtBreathe 4.2s ease-in-out var(--gd, 0s) infinite alternate;
+}
+@keyframes rtBreathe { from { opacity: 0.55; } to { opacity: 1; } }
+.rt-cg.is-active::before { animation: none; opacity: 1; background: radial-gradient(closest-side, color-mix(in oklab, var(--lamp) 26%, transparent), color-mix(in oklab, var(--sky) 9%, transparent) 62%, transparent); }
+.rt-cg.is-done::before { animation: none; opacity: 0.8; }
+.rt-cg__ink {
+  position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none;
+  filter: drop-shadow(0 0 4px var(--lamp-glow));
+}
+.rt-cg__outline {
+  fill: none; stroke: var(--butter); stroke-width: calc(var(--u, 0.01) * 2.4);
+  stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0;
+}
+.rt-line {
+  fill: none; stroke: var(--star); stroke-width: calc(var(--u, 0.01) * 1.8);
+  stroke-linecap: round; stroke-dasharray: 1; opacity: 0.9;
+}
+
+.rt-star {
+  position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; padding: 0;
+  display: grid; place-items: center;
+  background: none; border: 0; border-radius: 50%;
+  cursor: pointer; touch-action: none; -webkit-tap-highlight-color: transparent;
+}
+.rt-star:focus-visible { outline: 2px dashed var(--butter); outline-offset: -4px; }
+.rt-glyph {
+  width: var(--g, 22px); height: var(--g, 22px); overflow: visible;
+  filter: drop-shadow(0 0 4px var(--lamp-glow));
+  animation: rtTwinkle 2.6s ease-in-out var(--d, 0s) infinite alternate;
+  transition: width var(--t-med) var(--bounce), height var(--t-med) var(--bounce);
+}
+.rt-glyph__halo { fill: var(--star); opacity: 0.12; }
+.rt-glyph__star { fill: var(--star); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.rt-glyph__core { fill: var(--paper); opacity: 0.9; }
+@keyframes rtTwinkle {
+  from { scale: 0.82; filter: drop-shadow(0 0 2px var(--lamp-glow)); }
+  to { scale: 1.04; filter: drop-shadow(0 0 7px var(--lamp-glow)); }
+}
+.rt-star.is-lit .rt-glyph { width: var(--gl, 28px); height: var(--gl, 28px); animation: none; filter: drop-shadow(0 0 7px var(--lamp)); }
+.rt-star.is-lit .rt-glyph__star { fill: var(--lamp); }
+.rt-star.is-lit .rt-glyph__halo { fill: var(--lamp); opacity: 0.32; }
+.rt-cg.is-done .rt-glyph { width: var(--gd2, 24px); height: var(--gd2, 24px); }
+.rt-cg.is-done .rt-glyph__star { fill: var(--butter); }
+.rooftop--all .rt-cg.is-done .rt-glyph { animation: rtTwinkle 1.8s ease-in-out var(--d, 0s) infinite alternate; }
+
+/* ───────── terrace ───────── */
+.rt-terrace-wrap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; pointer-events: none; }
+.rt-terrace { display: block; overflow: visible; pointer-events: none; }
+.rt-terrace [data-poke] { pointer-events: auto; cursor: pointer; }
+.rt-hit { fill: transparent; }
+.rt-city, .rt-city path { fill: color-mix(in oklab, var(--indigo) 40%, var(--night-deep)); stroke: color-mix(in oklab, var(--indigo) 40%, var(--night-deep)); stroke-width: 2; }
+.rt-citywin { fill: var(--lamp); opacity: 0.55; }
+.rt-shadow { fill: var(--rt-shadow); opacity: 0.9; }
+.rt-rail { fill: var(--rt-paper); stroke: var(--ink); stroke-width: 2; }
+.rt-baluster rect { fill: var(--rt-paper-dim); stroke: var(--ink); stroke-width: 1.5; }
+.rt-wall { fill: var(--rt-paper-dim); }
+.rt-hut .rt-wall { fill: var(--rt-paper); }
+.rt-speckle { fill: url(#rt-speckle); pointer-events: none; }
+#rt-speckle circle { fill: var(--ink); opacity: 0.22; }
+.rt-ink { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rt-faint { fill: none; stroke: var(--ink); stroke-width: 1; opacity: 0.2; }
+.rt-outline { fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
+.rt-roof { fill: var(--berry-deep); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.rt-doorlight { fill: url(#rt-door); }
+.rt-st-door0 { stop-color: var(--butter); }
+.rt-st-door1 { stop-color: var(--mustard); }
+.rt-st-halo0 { stop-color: var(--lamp); stop-opacity: 0.7; }
+.rt-st-halo1 { stop-color: var(--lamp); stop-opacity: 0; }
+.rt-spill { fill: url(#rt-halo); opacity: 0.75; pointer-events: none; }
+.rt-stairs { fill: none; stroke: color-mix(in oklab, var(--ink) 55%, var(--mustard)); stroke-width: 2; stroke-linejoin: round; }
+.rt-leafdoor { fill: var(--berry-deep); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.rt-bulb { fill: var(--lamp); stroke: var(--ink); stroke-width: 1.2; filter: drop-shadow(0 0 6px var(--lamp)); }
+.rt-tankbody { fill: color-mix(in oklab, var(--sky) 40%, var(--night)); stroke: var(--ink); stroke-width: 2; }
+.rt-tanklid { fill: color-mix(in oklab, var(--sky) 30%, var(--night-deep)); stroke: var(--ink); stroke-width: 2; }
+.rt-shine { fill: none; stroke: var(--paper); stroke-width: 3; stroke-linecap: round; opacity: 0.22; }
+.rt-wire polyline { fill: none; stroke: var(--ink); stroke-width: 1.3; }
+.rt-fairy { stroke: var(--ink); stroke-width: 0.9; animation: rtFairy 2.4s ease-in-out calc(var(--i) * -0.37s) infinite alternate; }
+.rt-fairy--0 { fill: var(--lamp); filter: drop-shadow(0 0 4px var(--lamp)); }
+.rt-fairy--1 { fill: var(--pink); filter: drop-shadow(0 0 4px var(--pink)); }
+.rt-fairy--2 { fill: var(--sky); filter: drop-shadow(0 0 4px var(--sky)); }
+.rt-fairy--3 { fill: var(--butter); filter: drop-shadow(0 0 4px var(--butter)); }
+.rt-fairy--4 { fill: var(--mustard); filter: drop-shadow(0 0 4px var(--mustard)); }
+@keyframes rtFairy { from { opacity: 0.55; } to { opacity: 1; } }
+.rooftop--all .rt-fairy { animation: rtChase 0.9s steps(2, jump-none) calc(var(--i) * -0.15s) infinite; }
+@keyframes rtChase { 0% { opacity: 0.35; } 100% { opacity: 1; } }
+.rt-cat__body { fill: var(--ink); }
+.rt-cat__tail { fill: none; stroke: var(--ink); stroke-width: 4; stroke-linecap: round; }
+.rt-leaf { fill: color-mix(in oklab, var(--sage) 70%, var(--night)); stroke: var(--ink); stroke-width: 1.4; stroke-linejoin: round; }
+.rt-clay { fill: color-mix(in oklab, var(--tomato) 60%, var(--night)); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+
+/* ───────── the shooting star ───────── */
+.rt-shoot {
+  position: absolute; left: 0; top: 0; z-index: 4;
+  width: 96px; height: 96px; margin: -48px 0 0 -48px; padding: 0;
+  background: none; border: 0; border-radius: 50%; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.rt-shoot[hidden] { display: none; }
+.rt-shoot__head {
+  position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; overflow: visible;
+  filter: drop-shadow(0 0 8px var(--lamp)) drop-shadow(0 0 2px var(--paper));
+}
+.rt-shoot__head .rt-glyph__star { fill: var(--star); }
+.rt-shoot__head .rt-glyph__halo { fill: var(--lamp); opacity: 0.4; }
+.rt-shoot__tail {
+  position: absolute; right: 50%; top: 50%; width: 170px; height: 5px; margin-top: -2.5px;
+  border-radius: 5px; transform-origin: 100% 50%;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--butter) 60%, transparent) 60%, var(--star));
+}
+
+/* ───────── the wish ───────── */
+.rt-wish {
+  position: absolute; left: 50%; top: var(--wish-y, 45%); z-index: 5;
+  width: min(92vw, 26rem); transform: translate(-50%, -50%);
+  display: grid; justify-items: center; gap: 0.5rem; text-align: center;
+}
+.rt-wish[hidden] { display: none; }
+/* a pool of dark sky behind the wish so the words read over the constellations */
+.rt-wish::before {
+  content: ""; position: absolute; inset: -18% -12%; z-index: -1; pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--night-deep) 88%, transparent) 30%, transparent);
+}
+.rt-field { transition: opacity var(--t-slow) ease; }
+.rooftop--wishing .rt-field { opacity: 0.4; }
+.rt-wish__text {
+  font-weight: 800; font-size: clamp(1.7rem, 7vw, 2.5rem); line-height: 1.1; color: var(--paper);
+  text-shadow: 0 2px 0 var(--night-deep), 0 0 22px var(--lamp-glow);
+}
+.rt-wish__text.is-after { font-family: var(--hand); font-weight: 700; font-size: clamp(2rem, 8.4vw, 2.9rem); color: var(--butter); transform: rotate(-2deg); }
+html[lang="bn"] .rt-wish__text.is-after { font-family: var(--bn-hand); }
+.rt-wish__star {
+  position: relative; width: 136px; height: 136px; padding: 0;
+  display: grid; place-items: center;
+  background: radial-gradient(circle, color-mix(in oklab, var(--lamp) 34%, transparent) 0%, transparent 68%);
+  border: 0; border-radius: 50%; cursor: pointer; touch-action: none; -webkit-tap-highlight-color: transparent;
+}
+.rt-wish__star.is-spent { visibility: hidden; height: 24px; }
+.rt-wish__ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.rt-wish__track { fill: none; stroke: var(--paper); stroke-width: 3; stroke-dasharray: 1.5 7; stroke-linecap: round; opacity: 0.45; }
+.rt-wish__fill { fill: none; stroke: var(--lamp); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; filter: drop-shadow(0 0 5px var(--lamp)); }
+.rt-wish__glow { display: grid; place-items: center; width: 78px; height: 78px; }
+.rt-wish__glyph { width: 78px; height: 78px; overflow: visible; filter: drop-shadow(0 0 12px var(--lamp)) drop-shadow(0 0 3px var(--paper)); animation: rtPulse 1.5s ease-in-out infinite alternate; }
+.rt-wish__glyph .rt-glyph__star { fill: var(--lamp); stroke-width: 0.7; }
+.rt-wish__glyph .rt-glyph__halo { fill: var(--lamp); opacity: 0.3; }
+.rt-wish.is-holding .rt-wish__glyph { animation-duration: 0.35s; }
+@keyframes rtPulse { from { scale: 0.92; opacity: 0.85; } to { scale: 1.06; opacity: 1; } }
+.rt-wish__hint { font-size: 1.35rem; line-height: 1.2; color: var(--butter); }
+.rt-back { margin-top: 0.6rem; min-height: 44px; }
+.rt-back[hidden] { display: none; }
+
+/* ───────── polaroid ───────── */
+.rt-veil { position: absolute; inset: 0; z-index: 6; background: color-mix(in oklab, var(--night-deep) 66%, transparent); }
+.rt-veil[hidden] { display: none; }
+.rt-polaroid {
+  --w: min(84vw, 21rem, calc((100svh - 2rem) * 0.52));
+  position: absolute; inset: 0; z-index: 7; margin: auto;
+  width: var(--w); height: fit-content; max-height: calc(100% - 1.5rem);
+  padding: 12px 12px 14px;
+  color: var(--ink); background: var(--paper);
+  border: var(--line); border-radius: 5px; box-shadow: var(--pop);
+}
+.rt-polaroid[hidden] { display: none; }
+.rt-tape {
+  position: absolute; top: -14px; width: 84px; height: 26px; z-index: 1;
+  background: color-mix(in oklab, var(--mustard) 72%, transparent);
+  border-inline: 2px dotted color-mix(in oklab, var(--ink) 16%, transparent);
+}
+.rt-tape--l { left: 8%; rotate: -7deg; }
+.rt-tape--r { right: 8%; rotate: 6deg; background: color-mix(in oklab, var(--pink) 80%, transparent); }
+.rt-polaroid__photo {
+  position: relative; aspect-ratio: 1; overflow: hidden;
+  border: 2px solid var(--ink); border-radius: 2px; background: var(--blush);
+}
+.rt-polaroid__photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.polaroid--paper .rt-polaroid__photo {
+  background:
+    radial-gradient(circle at 30% 25%, color-mix(in oklab, var(--paper) 70%, transparent), transparent 60%),
+    repeating-linear-gradient(transparent 0 23px, color-mix(in oklab, var(--sky) 40%, transparent) 23px 24px),
+    var(--paper-2);
+}
+.rt-sketch { display: block; width: 100%; height: 100%; }
+.rt-sketch__chart circle, .rt-sketch__chart path { fill: none; stroke: color-mix(in oklab, var(--sky) 60%, var(--ink)); stroke-width: 0.004; stroke-dasharray: 0.012 0.016; opacity: 0.7; }
+.rt-sketch__line { fill: none; stroke: var(--ink); stroke-width: 0.014; stroke-linecap: round; stroke-linejoin: round; }
+.rt-sketch__star { fill: var(--mustard); stroke: var(--ink); stroke-width: 2.4; stroke-linejoin: round; }
+.rt-polaroid__drawn {
+  position: absolute; right: 0.6rem; bottom: 0.35rem;
+  font-size: 1.15rem; color: var(--berry); transform: rotate(-4deg);
+}
+.rt-polaroid__words { display: grid; justify-items: center; gap: 0.15rem; padding-top: 0.55rem; text-align: center; }
+.rt-polaroid__title { font-size: clamp(1.55rem, 6.4vw, 1.95rem); line-height: 1.05; color: var(--ink); }
+.rt-polaroid__date {
+  font: 700 0.78rem/1.3 var(--body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--berry);
+}
+.rt-polaroid__date[hidden] { display: none; }
+.rt-polaroid__text { margin-top: 0.2rem; font-size: 0.95rem; line-height: 1.42; color: var(--ink-soft); }
+html[lang="bn"] .rt-polaroid__text { font-family: var(--bn); }
+.rt-polaroid__close { margin-top: 0.65rem; min-height: 44px; }
+
+/* ───────── landscape phones: header on one line between the chips, polaroid side by side ───────── */
+@media (orientation: landscape) and (max-height: 560px) {
+  .rt-head { top: calc(max(0.45rem, env(safe-area-inset-top)) + 0.1rem); padding: 0 9.5rem; }
+  .rt-kicker { display: none; }
+  .rt-title { font-size: clamp(1.35rem, 4.6vh, 1.7rem); }
+  .rt-prompt { margin-top: 0.1rem; font-size: 1.15rem; }
+  .rt-moon { width: 44px; top: calc(max(0.45rem, env(safe-area-inset-top)) + 0.05rem); left: calc(max(0.7rem, env(safe-area-inset-left)) + 3.5rem); right: auto; }
+  .rt-polaroid {
+    --w: min(92vw, 40rem);
+    display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: center;
+    padding: 12px;
+  }
+  .rt-polaroid[hidden] { display: none; }
+  .rt-polaroid__photo { height: min(68svh, 17rem); }
+  .rt-polaroid__words { padding: 0 0.4rem 0 0; }
+  .rt-wish { gap: 0.25rem; }
+  .rt-wish__star { width: 104px; height: 104px; }
+  .rt-wish__glow, .rt-wish__glyph { width: 58px; height: 58px; }
+}
+
+.rooftop--still .rt-glyph, .rooftop--still .rt-fairy, .rooftop--still .rt-wish__glyph { animation: none; }

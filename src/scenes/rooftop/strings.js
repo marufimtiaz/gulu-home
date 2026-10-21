@@ -1,1 +1,21 @@
-export default {}
+// Rooftop UI strings — read as t('rooftop.<key>'). The memories themselves live in config.js.
+export default {
+  label: 'the rooftop at night — join the bright stars',
+  kicker: 'the rooftop',
+  title: 'our night sky',
+  prompt: 'tap the brightest stars to join them up',
+  left: '{n} more stars…',
+  leftOne: 'one more star…',
+  finish: 'finish this one first ✦',
+  progress: '{n} of {total} memories in the sky',
+  again: 'tap a constellation to see it again',
+  group: 'a constellation of bright stars',
+  star: 'a bright star',
+  keep: 'keep looking up',
+  drawn: 'drawn from memory',
+  allDone: 'every one of them, up where we can see it',
+  shooting: 'look — a shooting star! catch it',
+  hold: 'press and hold, and wish',
+  holding: 'keep holding…',
+  wishStar: 'the wishing star — press and hold',
+}
