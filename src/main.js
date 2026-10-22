@@ -11,7 +11,9 @@ import * as router from './router.js'
 const params = new URLSearchParams(location.search)
 if (params.has('reset')) state.reset()
 if (params.has('skip')) state.update({ doorSeen: true })
-if (params.has('door')) state.update({ doorSeen: false })
+// the bare address (no #/room) always opens at the door; a reload inside the house keeps its room
+if (params.has('door') || (!location.hash.replace(/^#\/?/, '') && !params.has('skip') && !params.has('unlock')))
+  state.update({ doorSeen: false })
 // ?unlock: everything lit (rooms + finale), so the finale and the reception card can be opened directly
 if (params.has('unlock')) {
   state.update({ doorSeen: true })
